@@ -1,0 +1,13 @@
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+.tags
+.sourcetree
+*.swp
+CTestTestfile.cmake
+Testing
+build
+*.xb
+t.xml
+*.md.html
