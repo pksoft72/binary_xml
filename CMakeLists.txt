@@ -1,10 +1,11 @@
 # jdu na to
-cmake_minimum_required (VERSION 3.5.1)
+#cmake_minimum_required (VERSION 3.5.1)
+cmake_minimum_required (VERSION 3.0.2)
 project (binary_xml)
 
 #-----------------------------------------------------------------------------------------------
 set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
-set_property(CACHE TARGET_DEVICE PROPERTY STRINGS pc)
+set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
 
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fPIC")
