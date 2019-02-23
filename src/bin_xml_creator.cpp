@@ -33,6 +33,12 @@ Bin_src_plugin::~Bin_src_plugin()
 {
 }
 
+void Bin_src_plugin::LinkCreator(Bin_xml_creator *bin_xml_creator)
+{
+    assert(this->bin_xml_creator = nullptr);
+    this->bin_xml_creator = bin_xml_creator;
+}
+
 bool Bin_src_plugin::Initialize()
 {
     this->file_size = file_getsize(filename);
@@ -59,6 +65,21 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
 
 
 // 2nd pass to fill tables
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        this->symbol_table[t] = nullptr;
+        this->symbol_table_types[t] = nullptr;
+        this->symbol_count[t] = 0;
+    }
+}
+
+Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
+{
+    this->src = src;
+    this->src->LinkCreator(this); // link it
+    this->dst = dst;
+    this->data = nullptr;
+
     for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
     {
         this->symbol_table[t] = nullptr;

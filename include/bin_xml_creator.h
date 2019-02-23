@@ -28,6 +28,7 @@ public:
     Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_creator);
     virtual ~Bin_src_plugin();
     virtual bool Initialize();
+    void LinkCreator(Bin_xml_creator *bin_xml_creator);
 
     virtual void *getRoot()=0;
     virtual const char *getNodeName(void *element)=0;
@@ -62,6 +63,7 @@ protected:
     int                     symbol_count[SYMBOL_TABLES_COUNT];
 public:
     Bin_xml_creator(const char *src,const char *dst);
+    Bin_xml_creator(Bin_src_plugin *src,const char *dst);
     virtual ~Bin_xml_creator();
 
     bool DoAll();
