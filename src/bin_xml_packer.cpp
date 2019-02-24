@@ -55,6 +55,7 @@ struct _SortingNodes
 //-------------------------------------------------------------------------------------------------
 
 Bin_src_plugin *Bin_src_plugin_selector(const char *filename,Bin_xml_creator *bin_xml_creator)
+// will create input plugin by analysing filename extension
 {
     const char *dot = strrchr(filename,'.');
     if (dot == nullptr) return nullptr; // no extension
@@ -62,8 +63,8 @@ Bin_src_plugin *Bin_src_plugin_selector(const char *filename,Bin_xml_creator *bi
         return new Bin_xml_plugin(filename,bin_xml_creator);
     if (strcmp(dot,".json") == 0)
         return new Bin_json_plugin(filename,bin_xml_creator);
-//    if (strncmp(filename,"<internal-write>",16) == 0)
-//        return new Bin_write_plugin(atoi(dot+1),bin_xml_creator);
+    if (strncmp(filename,"<internal-write>",16) == 0)
+        return new Bin_write_plugin(atoi(dot+1),bin_xml_creator);
     return nullptr;
 }
 
@@ -307,12 +308,27 @@ Bin_xml_packer::Bin_xml_packer(const char *src,const char *dst)
     assert((char*)&A-(char*)&A.length == (char*)&B-(char*)&B.length); 
 }
 
+Bin_xml_packer::Bin_xml_packer(Bin_src_plugin *src,const char *dst)
+    : Bin_xml_creator(src,dst)
+{
+    XML_Item A;
+    _XML_Reference B;
+
+    assert(sizeof(A) == sizeof(B));
+    assert((char*)&A-(char*)&A.length == (char*)&B-(char*)&B.length); 
+}
+
 bool Bin_xml_packer::Convert(const char *src,const char *dst)
 {
     Bin_xml_packer XC(src,dst);
     return XC.DoAll();
 }
 
+bool Bin_xml_packer::Convert(Bin_src_plugin *src,const char *dst)
+{
+    Bin_xml_packer XC(src,dst);
+    return XC.DoAll();
+}
 
 bool Bin_xml_packer::GetXB(const char *xml_filename,char *xb_filename,const char **err_message)
 {

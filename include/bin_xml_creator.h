@@ -48,6 +48,7 @@ class Bin_xml_creator
 {
 protected:
     Bin_src_plugin  *src;
+    bool        src_allocated;
     const char  *dst;
 
     int32_t     dst_file_size;

@@ -59,6 +59,7 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
     assert(BIN_SRC_PLUGIN_SELECTOR != nullptr);
 
     this->src = BIN_SRC_PLUGIN_SELECTOR(src,this);
+    this->src_allocated = true;
     this->dst = dst;
     
     this->data = nullptr;
@@ -77,6 +78,7 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
 {
     this->src = src;
     this->src->LinkCreator(this); // link it
+    this->src_allocated = false;
     this->dst = dst;
     this->data = nullptr;
 
@@ -90,6 +92,12 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
 
 Bin_xml_creator::~Bin_xml_creator()
 {
+    if (src_allocated && src != nullptr)
+    {
+        delete src;
+        src = nullptr;
+        src_allocated = false;
+    }
     for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
     {
         for(int i = 0;i < symbol_count[t];i++)
