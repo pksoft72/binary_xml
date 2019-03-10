@@ -80,3 +80,8 @@ add_custom_target(run
     COMMAND test -f ${XB_RESULT} && hexdump -C ${XB_RESULT})
 add_custom_target(dbg   COMMAND gdb xml2xbin)
 
+
+install(TARGETS 2xb xb2xml binary_xml binary_xml_static
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib/static)
