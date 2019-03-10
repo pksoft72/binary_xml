@@ -79,14 +79,15 @@ int32_t Bin_xml_packer::Pack()
 
     DBG(std::cout << "\n===========================================================\n");
 // now i should recursively copy/repair all
-    data2 = reinterpret_cast<char *>(alloca(dst_file_size));
+    data2 = new char [dst_file_size]; // reinterpret_cast<char *>(alloca(dst_file_size));
     char *_wp = data2;
 
     XML_Item *X_dst = reinterpret_cast<XML_Item*>(PackNode(&_wp,this->data));
     memcpy(data,data2,X_dst->length);
+    int32_t size = X_dst->length;
     
-    data2 = nullptr;
-    return X_dst->length;
+    delete [] data2;data2 = nullptr;
+    return size;
 }
 
 void Bin_xml_packer::MarkReferences()
@@ -103,9 +104,9 @@ void Bin_xml_packer::MarkReferences()
     SN.total_node_count = total_node_count;
 
     size_t size;
-    SN.node_links = reinterpret_cast<relative_ptr_t*>(alloca(size = sizeof(relative_ptr_t)*total_node_count));
+    SN.node_links = new relative_ptr_t[total_node_count];// reinterpret_cast<relative_ptr_t*>(alloca(size = sizeof(relative_ptr_t)*total_node_count));
     memset(SN.node_links,0,size);
-    SN.node_hashes = reinterpret_cast<hash192_t*>(alloca(size = sizeof(hash192_t)*total_node_count));
+    SN.node_hashes = new hash192_t[total_node_count]; // reinterpret_cast<hash192_t*>(alloca(size = sizeof(hash192_t)*total_node_count));
     memset(SN.node_hashes,0,size);
     int filled_links = 0;
     int computed_hashes = 0;
@@ -228,7 +229,8 @@ void Bin_xml_packer::MarkReferences()
             ph = h;
         }
     }
-        
+    delete [] SN.node_links;
+    delete [] SN.node_hashes;
 }
 
 char *Bin_xml_packer::PackNode(char **_wp,char *_X)
