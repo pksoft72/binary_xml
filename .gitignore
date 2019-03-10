@@ -11,3 +11,4 @@ build
 *.xb
 t.xml
 *.md.html
+install_manifest.txt

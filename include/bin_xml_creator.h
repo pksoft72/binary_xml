@@ -12,6 +12,8 @@ enum SymbolTableTypes
     SYMBOL_TABLES_COUNT
 };
 
+const int MAX_SYMBOL_COUNT = 32768; // symbols are stored into 16bit words, negative values are reserved
+
 class Bin_xml_creator;
 
 typedef void (*OnElement_t)(void *element,void *userdata);

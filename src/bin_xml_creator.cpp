@@ -129,7 +129,7 @@ bool Bin_xml_creator::DoAll()
         // I don't know final size of array yet, I will allocate more
         for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
         {
-                int count = (t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
+                int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
                 this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
                 this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
                 memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
@@ -504,6 +504,7 @@ void Bin_xml_creator::XStoreChildrenEvent(void *element,void *userdata)
 int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
 {
     if (symbol == nullptr) return -1;
+    
 // binary search
     int B = 0;
     int E = symbol_count[t]-1;
@@ -522,6 +523,11 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
             E = M-1;
         else
             B = M+1;
+    }
+    if (symbol_count[t] >= MAX_SYMBOL_COUNT)
+    {
+        fprintf(stderr,"Cannot add symbol '%s' to symbol table of %s - limit %d reached",symbol,(t == SYMBOL_TABLE_NODES ? "tags" : "params"),MAX_SYMBOL_COUNT);
+        return -1; // failed
     }
 // not found --> add
     int P = E+1;
