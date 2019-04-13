@@ -1,5 +1,11 @@
 #include "bin_xml_creator.h"
 
+// This code should be able to create binary xml on the fly like fprintf(f,"<database><files><file name="test.xml">content</file><file name="test.xb">----</file></files></database>")
+// Task: I want to make "open-end" variant of binary XML.
+//       It will have fixed symbol tables (known at file create moment)
+//       Most objects will be classic XML_Item base fully processed, but one will be open with empty children list.
+//       All children of that object will be following and written sequentially, fully specified (with correctly filled children references).
+
 #define BIN_WRITE_ELEMENT_FLAG  1   // element (1) or attribute (0)
 #define BIN_WRITE_REMOTE_VALUE  2  // for sharing big values with stable pointers ouf of pool
 
