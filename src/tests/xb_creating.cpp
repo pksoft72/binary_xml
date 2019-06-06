@@ -30,10 +30,20 @@ int main(int argc,char **argv)
 
 // I neet some nice and error-prone recursive representation
 
+    W.setRoot(W.tag(TAG_MAIN)
+
+    W.setRoot(
+        W.tag(TAG_MAIN)
+            .attrInt(ATTR_ID,1)
+            .children(
+            
+            )
+    );
+
     W.tag(TAG_MAIN).children(
         W.tag(TAG_PERSON).attrInt32(ATTR_ID,1).children(
             W.tag(TAG_NAME).valueString("Petr").
-            tag(TAG_SURNAME).valueString("Kundrata")
+            W.tag(TAG_SURNAME).valueString("Kundrata")
         )
     );
     W.set( // will set root
