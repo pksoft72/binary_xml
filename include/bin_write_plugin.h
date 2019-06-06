@@ -51,8 +51,8 @@ private:
     char *allocator;    // pointer to the first empty space
 
 private:
-    int32_t elements_start,*elements;
-    int32_t attributes_start,*attributes;
+    int32_t elements_offset,*elements;
+    int32_t attributes_offset,*attributes;
     int32_t root_offset;
 
     int32_t max_element_id;
@@ -71,7 +71,7 @@ public:
 // 
     void setRoot(Bin_write_element *X);
     
-    void makeTable(int32_t **table,int max_id,int32_t start,int32_t end);
+    int32_t *makeTable(int max_id,int32_t start,int32_t end);
 
     Bin_write_element     *tag(int16_t id);
     Bin_write_element     *tagStr(int16_t id,const char *value);
