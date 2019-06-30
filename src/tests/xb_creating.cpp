@@ -30,7 +30,7 @@ int main(int argc,char **argv)
 
 // I neet some nice and error-prone recursive representation
 
-    W.setRoot(W.tag(TAG_MAIN)
+    W.setRoot(W.tag(TAG_MAIN));
 
     W.setRoot(
         W.tag(TAG_MAIN)

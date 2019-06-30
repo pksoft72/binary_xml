@@ -12,32 +12,44 @@
 namespace pklib_xml {
 
 class Bin_write_plugin;
-class Bin_write_element
+class Bin_write_element // 64B
 {
 // This is DOM element
 public:
-    Bin_write_plugin    *owner; // I need some fixed point in space - owner->pool + XXX_offset makes a pointer
+    Bin_write_plugin        *owner; // I need some fixed point in space - owner->pool + XXX_offset makes a pointer
 
-    int16_t     identification; // reference to symbol table for tags/params
-    uint16_t    flags;          // BIN_WRITE_ELEMENT_FLAG | BIN_WRITE_REMOTE_VALUE | ... 
+    int16_t                 identification; // reference to symbol table for tags/params
+    uint8_t                 flags;          // BIN_WRITE_ELEMENT_FLAG | BIN_WRITE_REMOTE_VALUE | ... 
+    XML_Binary_Type_Stored  value_type;     // 8-bits: XBT_NULL,...
 
-    int32_t     next;
+    int32_t                 next;
 
-    int32_t     first_child_offset;
-    int32_t     last_child_offset;
-    int32_t     first_attribute_offset;
-    int32_t     last_attribute_offset;
+    int32_t                 first_child_offset;
+    int32_t                 last_child_offset;
+    int32_t                 first_attribute_offset;
+    int32_t                 last_attribute_offset;
 
-
-    uint16_t    value_type;   // XBT_NULL,...
-    int32_t     value; // on this position can be any data - even longer than 32bit
-                       // when variable sized value is used (STRING/BLOB ...) size is stored here
+    // value is placed just after this object
 
     void init(int16_t id,int16_t type,int16_t flags);
 };
 
-class Bin_write_tag : public Bin_write_element
+typedef int32_t         BW_offset_t;                // pool + this value -> pointer
+
+// TODO: Big problem
+// I would like to have only offset & nothing else (because safety of offset), 
+// but with offset only is impossible to access values any internals. For this I need Bin_write_plugin 
+// pointer.
+
+class BW_element_link
 {
+private:
+    Bin_write_plugin    *owner;
+    BW_offset_t         offset;        // pool + this value -> pointer to Bin_write_element
+public:
+    BW_element_link(Bin_write_plugin *owner,BW_offset_t offset);
+    BW_element_link     add(BW_element_link tag);
+    Bin_write_element*  BWE() const;
 };
 
 class Bin_write_plugin : public Bin_src_plugin
@@ -46,47 +58,56 @@ class Bin_write_plugin : public Bin_src_plugin
 // Can be use to produce xb file via several passes.
 // This can be also used to produce open-end xb on incremental base.
 private:
-    int  pool_size;
-    char *pool;         // preallocated memory pool - all data in pool are referenced relatively (with exception BIN_WRITE_REMOTE_VALUE)
-    char *allocator;    // pointer to the first empty space
+    int32_t     pool_size;
+    char        *pool;        // preallocated memory pool - all data in pool are referenced relatively (with exception BIN_WRITE_REMOTE_VALUE)
+    BW_offset_t allocator;    // pointer to the first empty space
 
-private:
-    int32_t elements_offset,*elements;
-    int32_t attributes_offset,*attributes;
-    int32_t root_offset;
-
+private: // beginning of parts
+    BW_offset_t elements_offset;
+    BW_offset_t attributes_offset;
+    BW_offset_t root_offset;
+private: // maximum defines sizes of indexes
     int32_t max_element_id;
     int32_t max_attribute_id;
+private: // index tables (indexed by id) - allocated out of pool
+    BW_offset_t *elements;
+    BW_offset_t *attributes;
+
+// construction
 public:
     Bin_write_plugin(int initial_pool_size,Bin_xml_creator *bin_xml_creator); 
     virtual ~Bin_write_plugin();
 
-// allocation 
-    char *allocate(int size);
+protected: // allocation 
+    BW_offset_t          allocate(int size);
+    BW_element_link      new_element(XML_Binary_Type type,int size);
+public: // translation offset to pointer
+    Bin_write_element*   BWE(BW_offset_t offset) const;
 
-// element registration
-    void registerElement(int16_t id,const char *name,XML_Binary_Type_Stored type);
-    void registerAttribute(int16_t id,const char *name,XML_Binary_Type_Stored type);
-
-// 
+public: // element registration
+    void registerElement(int16_t id,const char *name,XML_Binary_Type type);
+    void registerAttribute(int16_t id,const char *name,XML_Binary_Type type);
     void setRoot(Bin_write_element *X);
     
+    XML_Binary_Type getTagType(int16_t id);
+
+protected:    
     int32_t *makeTable(int max_id,int32_t start,int32_t end);
 
-    Bin_write_element     *tag(int16_t id);
-    Bin_write_element     *tagStr(int16_t id,const char *value);
-    Bin_write_element     *tagHexStr(int16_t id,const char *value);
-    Bin_write_element     *tagBLOB(int16_t id,const char *value,int32_t size);
-    Bin_write_element     *tagInt32(int16_t id,int32_t value);
-    Bin_write_element     *tagInt64(int16_t id,int64_t value);
-    Bin_write_element     *tagFloat(int16_t id,float value);
-    Bin_write_element     *tagDouble(int16_t id,double value);
-    Bin_write_element     *tagGUID(int16_t id,const char *value);
-    Bin_write_element     *tagSHA1(int16_t id,const char *value);
-    Bin_write_element     *tagTime(int16_t id,time_t value);
-    Bin_write_element     *tagIPv4(int16_t id,const char *value);
-    Bin_write_element     *tagIPv6(int16_t id,const char *value);
-    
+public: // tag creation
+    BW_element_link     tag(int16_t id);
+    BW_element_link     tagStr(int16_t id,const char *value);
+    BW_element_link     tagHexStr(int16_t id,const char *value);
+    BW_element_link     tagBLOB(int16_t id,const char *value,int32_t size);
+    BW_element_link     tagInt32(int16_t id,int32_t value);
+    BW_element_link     tagInt64(int16_t id,int64_t value);
+    BW_element_link     tagFloat(int16_t id,float value);
+    BW_element_link     tagDouble(int16_t id,double value);
+    BW_element_link     tagGUID(int16_t id,const char *value);
+    BW_element_link     tagSHA1(int16_t id,const char *value);
+    BW_element_link     tagTime(int16_t id,time_t value);
+    BW_element_link     tagIPv4(int16_t id,const char *value);
+    BW_element_link     tagIPv6(int16_t id,const char *value);
 public: // Bin_src_plugin
     virtual bool Initialize();
     virtual void *getRoot();
