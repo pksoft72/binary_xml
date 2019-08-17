@@ -71,6 +71,11 @@ add_executable(json-test src/tests/json-test.cpp)
     target_include_directories(json-test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/jsmn)
     target_link_libraries(json-test binary_xml)
 
+add_executable(xb_creating src/tests/xb_creating.cpp)
+    target_include_directories(xb_creating PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(xb_creating binary_xml)
+    
+
 #--------------------------------------------------------------------------------------------------
 add_custom_target(tests COMMAND ctest .)
 

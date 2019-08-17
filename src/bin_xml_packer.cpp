@@ -64,7 +64,7 @@ Bin_src_plugin *Bin_src_plugin_selector(const char *filename,Bin_xml_creator *bi
     if (strcmp(dot,".json") == 0)
         return new Bin_json_plugin(filename,bin_xml_creator);
     if (strncmp(filename,"<internal-write>",16) == 0)
-        return new Bin_write_plugin(atoi(dot+1),bin_xml_creator);
+        return new BW_plugin(atoi(dot+1),bin_xml_creator);
     return nullptr;
 }
 
