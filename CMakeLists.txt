@@ -9,7 +9,7 @@ set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
 
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fPIC")
-find_package (OpenSSL)  #sudo apt-get install libssl-dev
+#find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
 #--------------------------------------------------------------------------------------------------
@@ -66,14 +66,14 @@ add_executable(xb2xml src/tests/xb2xml.cpp)
     target_link_libraries(xb2xml binary_xml)
     add_test(xb2xml xb2xml ${XB_SOURCES} )
     
-add_executable(json-test src/tests/json-test.cpp)
-    target_include_directories(json-test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    target_include_directories(json-test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/jsmn)
-    target_link_libraries(json-test binary_xml)
+add_executable(test-json src/tests/test-json.cpp)
+    target_include_directories(test-json PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_include_directories(test-json PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/jsmn)
+    target_link_libraries(test-json binary_xml)
 
-add_executable(xb_creating src/tests/xb_creating.cpp)
-    target_include_directories(xb_creating PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    target_link_libraries(xb_creating binary_xml)
+add_executable(test-creating src/tests/test-creating.cpp)
+    target_include_directories(test-creating PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(test-creating binary_xml)
     
 
 #--------------------------------------------------------------------------------------------------

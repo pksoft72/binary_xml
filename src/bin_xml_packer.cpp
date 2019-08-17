@@ -103,11 +103,11 @@ void Bin_xml_packer::MarkReferences()
 
     SN.total_node_count = total_node_count;
 
-    size_t size;
+    //size_t size;
     SN.node_links = new relative_ptr_t[total_node_count];// reinterpret_cast<relative_ptr_t*>(alloca(size = sizeof(relative_ptr_t)*total_node_count));
-    memset(SN.node_links,0,size);
+    memset(SN.node_links,0,sizeof(relative_ptr_t)*total_node_count);
     SN.node_hashes = new hash192_t[total_node_count]; // reinterpret_cast<hash192_t*>(alloca(size = sizeof(hash192_t)*total_node_count));
-    memset(SN.node_hashes,0,size);
+    memset(SN.node_hashes,0,sizeof(hash192_t)*total_node_count);
     int filled_links = 0;
     int computed_hashes = 0;
     SN.node_links[filled_links++] = 0;  // reference to root

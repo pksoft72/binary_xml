@@ -98,6 +98,68 @@ char*            BW_element_link::BWD(BW_offset_t offset) const
 
 //-------------------------------------------------------------------------------------------------
 
+BW_element_link     BW_element_link::attrStr(int16_t id,const char *value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrHexStr(int16_t id,const char *value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrBLOB(int16_t id,const char *value,int32_t size)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrInt32(int16_t id,int32_t value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrInt64(int16_t id,int64_t value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrFloat(int16_t id,float value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrDouble(int16_t id,double value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrGUID(int16_t id,const char *value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrSHA1(int16_t id,const char *value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrTime(int16_t id,time_t value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrIPv4(int16_t id,const char *value)
+{
+    return *this;
+}
+
+BW_element_link     BW_element_link::attrIPv6(int16_t id,const char *value)
+{
+    return *this;
+}
+
+//-------------------------------------------------------------------------------------------------
+
 BW_plugin::BW_plugin(int initial_pool_size,Bin_xml_creator *bin_xml_creator)
     :Bin_src_plugin("<internal-write>",bin_xml_creator)
 {
@@ -217,12 +279,11 @@ BW_element_link  BW_plugin::new_element(XML_Binary_Type type,int size)
     return result;
 }
 
-/*
 BW_element*   BW_plugin::BWE(BW_offset_t offset) const
 { 
     return reinterpret_cast<BW_element*>(pool + offset); 
 }
-*/
+
 void BW_plugin::registerElement(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with element names    
 // element names starts at offset elements_offset and ends at attributes_offset
@@ -240,7 +301,7 @@ void BW_plugin::registerElement(int16_t id,const char *name,XML_Binary_Type type
     int len = strlen(name);
 
 // allocation
-    char *dst = pool + allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1);
+    char *dst = pool + allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
     dst += sizeof(int16_t);
@@ -270,7 +331,7 @@ void BW_plugin::registerAttribute(int16_t id,const char *name,XML_Binary_Type ty
     int len = strlen(name);
 
 // allocation
-    char *dst = pool + allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1);
+    char *dst = pool + allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
     dst += sizeof(int16_t);
@@ -283,14 +344,14 @@ void BW_plugin::registerAttribute(int16_t id,const char *name,XML_Binary_Type ty
 
 void BW_plugin::setRoot(const BW_element_link X)
 {
+// ::Initialize must be called
+    assert(elements != nullptr);
+//    assert(attributes != nullptr); -- this can be nullptr
+
     assert(root == 0);     // it is possible only once
     assert(X.owner == this);
     root = X.offset;
 
-    assert(elements == nullptr);
-    elements = makeTable(max_element_id,elements_offset,attributes_offset);
-    assert(attributes == nullptr);
-    attributes = makeTable(max_attribute_id,attributes_offset,root);
 }
 
 
@@ -304,11 +365,11 @@ int32_t * BW_plugin::makeTable(int max_id,int32_t start,int32_t end)
 
     while (start < end)
     {
-        int32_t id = *reinterpret_cast<int32_t*>(pool + start);
+        int id = *reinterpret_cast<int16_t*>(pool + start);
         assert(id >= 0 && id <= max_id);
         table[id] = start;
         start += 3 + strlen(pool+start+3)+1;
-        start = ((start+3) >> 2) << 2; // round up
+        ROUND32UP(start);
     }
     assert(start == end);
     return table;
@@ -324,7 +385,7 @@ XML_Binary_Type BW_plugin::getTagType(int16_t id)
 
 BW_element_link BW_plugin::tag(int16_t id)
 {
-    assert(getTagType(id) ==  XBT_NULL);
+    assert(getTagType(id) == XBT_NULL);
     BW_element_link result = this->new_element(XBT_NULL,0);
     result.BWE()->identification = id;
     return result;
@@ -332,57 +393,75 @@ BW_element_link BW_plugin::tag(int16_t id)
 
 BW_element_link BW_plugin::tagStr(int16_t id,const char *value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagHexStr(int16_t id,const char *value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagInt32(int16_t id,int32_t value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagInt64(int16_t id,int64_t value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagFloat(int16_t id,float value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagDouble(int16_t id,double value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagGUID(int16_t id,const char *value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagSHA1(int16_t id,const char *value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagTime(int16_t id,time_t value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagIPv4(int16_t id,const char *value)
 {
+// TODO: not implemented
 }
 
 BW_element_link BW_plugin::tagIPv6(int16_t id,const char *value)
 {
+// TODO: not implemented
 }
 
 //-------------------------------------------------------------------------------------------------
 
 bool BW_plugin::Initialize()
 {
-    return Bin_src_plugin::Initialize();
+// It is possible to call this twice - it must be called before creating tags
+    if (elements == nullptr)
+        elements = makeTable(max_element_id,elements_offset,attributes_offset);
+    if (attributes == nullptr)
+        attributes = makeTable(max_attribute_id,attributes_offset,
+            (root == 0 ? allocator : root));
+    return true; // no inherited initialization required, Bin_src_plugin::Initialize would scan file size of "<internal-write>" with error code.
 }
 
 void *BW_plugin::getRoot()
@@ -439,14 +518,51 @@ const char *BW_plugin::getNodeName(void *element)
 
 const char *BW_plugin::getNodeValue(void *element)
 {
+    static char buffer[64];
+    BW_element *E = reinterpret_cast<BW_element*>(element);
+    switch (E->value_type)
+    {
+        case XBT_NULL: return nullptr; // empty value
+        case XBT_STRING: return reinterpret_cast<char *>(element)+sizeof(BW_element); 
+        case XBT_INT32: 
+            sprintf(buffer,"%d",*reinterpret_cast<int32_t*>(reinterpret_cast<char *>(element)+sizeof(BW_element)));
+            return buffer;
+        case XBT_FLOAT:
+            sprintf(buffer,"%f",*reinterpret_cast<float*>(reinterpret_cast<char *>(element)+sizeof(BW_element)));
+            return buffer;
+        default:
+            assert(false);
+            return nullptr;
+    }
+    
 }
 
 void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
 {
+    BW_element *E = reinterpret_cast<BW_element*>(parent);
+    if (E->first_child == 0) return; // no elements
+    BW_element *child = BWE(E->first_child);
+    for(;;)
+    {
+        on_element(child,userdata);
+        if (child->next == E->first_child) break; // finished
+        child = BWE(child->next);
+    }
 }
 
 void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)
 {
+    BW_element *E = reinterpret_cast<BW_element*>(parent);
+    if (E->first_child == 0) return; // no elements
+    BW_element *child = BWE(E->first_child);
+    for(;;)
+    {
+        on_element(child,userdata,deep);
+        if (child->first_child != 0)
+            ForAllChildrenRecursively(on_element,child,userdata,deep+1);
+        if (child->next == E->first_child) break; // finished
+        child = BWE(child->next);
+    }
 }
 
 void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)

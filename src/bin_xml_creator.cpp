@@ -35,14 +35,14 @@ Bin_src_plugin::~Bin_src_plugin()
 
 void Bin_src_plugin::LinkCreator(Bin_xml_creator *bin_xml_creator)
 {
-    assert(this->bin_xml_creator = nullptr);
+    assert(this->bin_xml_creator == nullptr);
     this->bin_xml_creator = bin_xml_creator;
 }
 
 bool Bin_src_plugin::Initialize()
 {
     this->file_size = file_getsize(filename);
-    if (this->file_size == 0)
+    if (this->file_size <= 0)
         fprintf(stderr,ANSI_RED_BRIGHT "Error: file %s is empty!" ANSI_RESET_LF,filename);
     return this->file_size > 0;
 }

@@ -13,6 +13,7 @@
 namespace pklib_xml {
 
 // BW = Bin Write
+#define ROUND32UP(ptr) do { (ptr) = ((start+3) >> 2) << 2; } while(0) // round up
 
 typedef int32_t BW_offset_t;                // pool + this value -> pointer
 
@@ -59,6 +60,20 @@ public:
     char*               BWD(BW_offset_t offset) const;
 
     friend class BW_plugin;
+public:
+// these methods will add attribute to BW_element_link and returns original BW_element_link
+    BW_element_link     attrStr(int16_t id,const char *value);
+    BW_element_link     attrHexStr(int16_t id,const char *value);
+    BW_element_link     attrBLOB(int16_t id,const char *value,int32_t size);
+    BW_element_link     attrInt32(int16_t id,int32_t value);
+    BW_element_link     attrInt64(int16_t id,int64_t value);
+    BW_element_link     attrFloat(int16_t id,float value);
+    BW_element_link     attrDouble(int16_t id,double value);
+    BW_element_link     attrGUID(int16_t id,const char *value);
+    BW_element_link     attrSHA1(int16_t id,const char *value);
+    BW_element_link     attrTime(int16_t id,time_t value);
+    BW_element_link     attrIPv4(int16_t id,const char *value);
+    BW_element_link     attrIPv6(int16_t id,const char *value);
 };
 
 class BW_plugin : public Bin_src_plugin
@@ -95,7 +110,7 @@ protected: // allocation
     BW_offset_t          allocate(int size);
     BW_element_link      new_element(XML_Binary_Type type,int size);
 public: // translation offset to pointer
-//    BW_element*   BWE(BW_offset_t offset) const;
+    BW_element*   BWE(BW_offset_t offset) const;
 
 public: // element registration
     void registerElement(int16_t id,const char *name,XML_Binary_Type type);
