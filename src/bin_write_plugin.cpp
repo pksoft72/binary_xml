@@ -115,6 +115,17 @@ BW_element_link     BW_element_link::attrBLOB(int16_t id,const char *value,int32
 
 BW_element_link     BW_element_link::attrInt32(int16_t id,int32_t value)
 {
+    assert(owner->getAttrType(id) == XBT_INT32 || owner->getAttrType(id) == XBT_VARIANT);
+    BW_element_link adding   = owner->new_element(XBT_INT32,0); // only variable types gives size  --- sizeof(int32_t));
+    BW_element      *element = adding.BWE();
+    element->identification = id;
+    element->flags          = 0;// attribute 
+    element->value_type     = XBT_INT32;
+
+    int32_t *dst            = reinterpret_cast<int32_t*>(element+1); // just after this element
+    *dst                    = value; // store value
+    add(adding);
+    
     return *this;
 }
 
@@ -163,6 +174,7 @@ BW_element_link     BW_element_link::attrIPv6(int16_t id,const char *value)
 BW_plugin::BW_plugin(int initial_pool_size,Bin_xml_creator *bin_xml_creator)
     :Bin_src_plugin("<internal-write>",bin_xml_creator)
 {
+// TODO: pool should be memory mapped file
     pool = new char[initial_pool_size];
     pool_size = initial_pool_size;
     memset(pool,0,pool_size);
@@ -375,10 +387,18 @@ int32_t * BW_plugin::makeTable(int max_id,int32_t start,int32_t end)
     return table;
 }
 
-XML_Binary_Type BW_plugin::getTagType(int16_t id)
+XML_Binary_Type BW_plugin::getTagType(int16_t id) const
 {
     if (id < 0 || id > max_element_id) return XBT_NULL;
     BW_offset_t offset = elements[id];
+    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(pool + offset + 2));  
+}
+
+XML_Binary_Type BW_plugin::getAttrType(int16_t id) const
+{
+    if (id < 0 || id > max_attribute_id) return XBT_NULL;
+    BW_offset_t offset = attributes[id];
+    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(pool + offset + 2));  
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -387,68 +407,90 @@ BW_element_link BW_plugin::tag(int16_t id)
 {
     assert(getTagType(id) == XBT_NULL);
     BW_element_link result = this->new_element(XBT_NULL,0);
-    result.BWE()->identification = id;
+    BW_element      *element = result.BWE();
+    element->identification = id;
+    element->flags          = BIN_WRITE_ELEMENT_FLAG;
+    element->value_type     = XBT_NULL;
     return result;
 }
 
 BW_element_link BW_plugin::tagStr(int16_t id,const char *value)
 {
-// TODO: not implemented
+    assert(getTagType(id) == XBT_STRING || getTagType(id) == XBT_VARIANT);
+    BW_element_link result = this->new_element(XBT_STRING,strlen(value));
+    BW_element      *element = result.BWE();
+    element->identification = id;
+    element->flags          = BIN_WRITE_ELEMENT_FLAG;
+    element->value_type     = XBT_STRING;
+
+    strcpy(reinterpret_cast<char*>(element+1),value);
+    return result;
 }
 
 BW_element_link BW_plugin::tagHexStr(int16_t id,const char *value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagInt32(int16_t id,int32_t value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagInt64(int16_t id,int64_t value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagFloat(int16_t id,float value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagDouble(int16_t id,double value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagGUID(int16_t id,const char *value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagSHA1(int16_t id,const char *value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagTime(int16_t id,time_t value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagIPv4(int16_t id,const char *value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 BW_element_link BW_plugin::tagIPv6(int16_t id,const char *value)
 {
 // TODO: not implemented
+    assert(false);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -461,12 +503,15 @@ bool BW_plugin::Initialize()
     if (attributes == nullptr)
         attributes = makeTable(max_attribute_id,attributes_offset,
             (root == 0 ? allocator : root));
+
+    file_size = allocator; // must provide some info about size of file
+
     return true; // no inherited initialization required, Bin_src_plugin::Initialize would scan file size of "<internal-write>" with error code.
 }
 
 void *BW_plugin::getRoot()
 {
-    assert(root != -1);
+    assert(root != 0);
     return pool + root;
 }
 
@@ -553,13 +598,13 @@ void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdat
 void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)
 {
     BW_element *E = reinterpret_cast<BW_element*>(parent);
+    on_element(E,userdata,deep);
     if (E->first_child == 0) return; // no elements
     BW_element *child = BWE(E->first_child);
     for(;;)
     {
-        on_element(child,userdata,deep);
-        if (child->first_child != 0)
-            ForAllChildrenRecursively(on_element,child,userdata,deep+1);
+        ForAllChildrenRecursively(on_element,child,userdata,deep+1);
+
         if (child->next == E->first_child) break; // finished
         child = BWE(child->next);
     }
@@ -567,6 +612,19 @@ void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent
 
 void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
 {
+    BW_element *E = reinterpret_cast<BW_element*>(element);
+    if (E->first_attribute == 0) return; // no attributes
+    
+    BW_element *child = BWE(E->first_attribute);
+    for(;;)
+    {
+// typedef void (*OnParam_t)(const char *param_name,const char *param_value,void *element,void *userdata);
+        
+        on_param(getNodeName(child),getNodeValue(child),element,userdata);
+
+        if (child->next == E->first_attribute) break; // finished
+        child = BWE(child->next);
+    }
 }
 
 }

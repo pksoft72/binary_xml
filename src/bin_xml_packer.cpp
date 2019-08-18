@@ -12,8 +12,8 @@
 #include "bin_write_plugin.h"
 #include "ANSI.h"
 
-#define DBG(x) 
-#define DBG2(x) 
+#define DBG(x) x
+#define DBG2(x) x
 
 namespace pklib_xml {
 

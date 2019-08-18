@@ -163,7 +163,7 @@ bool Bin_xml_creator::DoAll()
         DBG(std::cout << "\n");
 
         // 3. allocate and fill--------------------------
-        this->data = reinterpret_cast<char *>(malloc(src->getFileSize()*2));
+        this->data = reinterpret_cast<char *>(malloc(1024 + src->getFileSize()*2)); // some reserve
 
         DBG(std::cout << "DBG:Buffer: " << (void *)this->data << "\n");
         if (this->data == nullptr)

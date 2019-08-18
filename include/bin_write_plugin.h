@@ -117,7 +117,8 @@ public: // element registration
     void registerAttribute(int16_t id,const char *name,XML_Binary_Type type);
     void setRoot(const BW_element_link X);
     
-    XML_Binary_Type getTagType(int16_t id);
+    XML_Binary_Type getTagType(int16_t id) const;
+    XML_Binary_Type getAttrType(int16_t id) const;
 
 
 public: // tag creation
