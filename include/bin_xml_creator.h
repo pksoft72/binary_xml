@@ -23,7 +23,7 @@ typedef void (*OnParam_t)(const char *param_name,const char *param_value,void *e
 class Bin_src_plugin // interface for universal tree input format
 {
 protected:
-    const char  *filename;
+    char        *filename;
     off_t       file_size;
     Bin_xml_creator *bin_xml_creator;   // as userdata for all methods
 public:

@@ -24,13 +24,30 @@ namespace pklib_xml
 
 Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_creator)
 {
-    this->filename = filename;
+// test1.xml --> test1.xb, test2 --> test2.xb, test3.doc --> test3.xb, test4.tar.gz --> test4.tar.xb
+    const char *dot = strrchr(filename,'.');
+    if (dot == nullptr) // not found? add .xb to filename
+    {
+        int len = strlen(filename);
+        this->filename = new char[len+1+3];
+        strcpy(this->filename,filename);
+        strcpy(this->filename+len,".xb");
+    }
+    else
+    {
+        int len = dot - filename;
+        this->filename = new char[len+1+3];
+        strncpy(this->filename,filename,len);
+        strcpy(this->filename+len,".xb");
+    }
+
     this->bin_xml_creator = bin_xml_creator;
     this->file_size = 0;
 }
 
 Bin_src_plugin::~Bin_src_plugin()
 {
+    delete [] this->filename;
 }
 
 void Bin_src_plugin::LinkCreator(Bin_xml_creator *bin_xml_creator)
