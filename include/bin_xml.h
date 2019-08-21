@@ -46,7 +46,8 @@ enum XML_Tag_Names
     XTNR_PAYLOAD        = -6,       // payload
     XTNR_REFERENCE      = -7,       // this is reference tag!! - it is exact copy of other tag
     XTNR_PROCESSED      = -8,       // this tag was processed and in .reference field is it's new address
-    XTNR_LAST       = -9        // last
+    XTNR_ET_TECERA      = -9,       // this tag is last tag in file and is placeholder for other tags appended to the file later without modification of core
+    XTNR_LAST       = -10        // last
 };
 
 enum XML_Param_Names

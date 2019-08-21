@@ -619,6 +619,7 @@ const char *Bin_xml_creator::getNodeName(tag_name_id_t name_id)
         case XTNR_PAYLOAD   : return "PAYLOAD";
         case XTNR_REFERENCE : return "REFERENCE";
         case XTNR_PROCESSED : return "PROCESSED";
+        case XTNR_ET_TECERA : return "ET_TECERA";
     }
     return "?";
 }

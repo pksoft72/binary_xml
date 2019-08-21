@@ -64,6 +64,21 @@ int main(int argc,char **argv)
         assert(Bin_xml_packer::Convert(&W,"test2.xb"));
         printf("%d B\n",(int)file_getsize("test2.xb"));
     }
+    {
+        printf("creating test3.xb ... ");
+        BW_plugin W(0x1000,nullptr);
+        MakeDictionary(W);
+        W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+                .add(W.tag(TAG_PERSON).attrInt32(ATTR_ID,1)
+                    .add(W.tagStr(TAG_NAME,"Petr"))
+                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                    )
+                .add(W.tag(XTNR_ET_TECERA))
+        );
+        assert(Bin_xml_packer::Convert(&W,"test3.xb"));
+        printf("%d B\n",(int)file_getsize("test3.xb"));
+    }
+
 
 
 
