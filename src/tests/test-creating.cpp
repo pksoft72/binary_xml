@@ -76,7 +76,23 @@ int main(int argc,char **argv)
                 .add(W.tag(XTNR_ET_TECERA))
         );
         assert(Bin_xml_packer::Convert(&W,"test3.xb"));
+
         printf("%d B\n",(int)file_getsize("test3.xb"));
+       
+        BW_element_link batch = // it is element linked with 
+                W.tag(TAG_PERSON).attrInt32(ATTR_ID,2)
+                    .add(W.tagStr(TAG_NAME,"Jan"))
+                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                .join(W.tag(TAG_PERSON).attrInt32(ATTR_ID,2)
+                    .add(W.tagStr(TAG_NAME,"Jan"))
+                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                )
+                .join(W.tag(TAG_PERSON).attrInt32(ATTR_ID,3)
+                    .add(W.tagStr(TAG_NAME,"Vít"))
+                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                );
+                    
+                    
     }
 
 

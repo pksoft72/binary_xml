@@ -1,3 +1,5 @@
+#include "bin_xml.h"
+#include "bin_xml_types.h"
 #include "bin_write_plugin.h"
 #include "macros.h"
 #include <string.h>
@@ -5,15 +7,15 @@
 
 namespace pklib_xml {
 
-void BW_element::init(int16_t id,int8_t type,int8_t flags)
+void BW_element::init(int16_t id,int8_t type,int8_t flags,BW_offset_t my_offset)
 {
     assert(sizeof(*this) == 20);
     this->identification = id;
     this->value_type = type;
     this->flags = flags;
+    this->prev = my_offset;
+    this->next = my_offset;
 /* This is not necessary, because data are zero filled globally
-    this->prev = 0;
-    this->next = 0;
     this->first_child = 0;
     this->first_attribute = 0;
 */
@@ -30,12 +32,11 @@ BW_element_link::BW_element_link(BW_plugin *owner,BW_offset_t offset)
     this->offset = offset;
 }
 
-BW_element_link  BW_element_link::add(BW_element_link tag)
+BW_element_link  BW_element_link::add(BW_element_link child)
 {
-    assert(owner == tag.owner); // mixing owners is not possible
+    assert(owner == child.owner); // mixing owners is not possible
     BW_element *container = BWE();
-    BW_element *value = tag.BWE();
-    assert(value->next == 0 && value->prev == 0); // unlisted
+    BW_element *value = child.BWE();
 
     BW_offset_t *list;
     if (value->flags & BIN_WRITE_ELEMENT_FLAG)
@@ -45,22 +46,42 @@ BW_element_link  BW_element_link::add(BW_element_link tag)
 
     if (*list == 0) // empty list
     {
-        value->prev = tag.offset;
-        value->next = tag.offset;
-        *list = tag.offset; // assigning the 1st element
+        *list = child.offset; // assigning the 1st element
     }
     else
     {
-        BW_element *first = BWE(*list);
-        BW_element *last = BWE(first->prev);
-    // preparing value
-        value->prev = first->prev;
-        value->next = *list;
-    // linking value
-        first->prev = tag.offset;
-        last->next = tag.offset;
+        BW_element_link first(owner,*list);
+        first.join(child);        
     }
 
+    return *this; // returning container link
+}
+
+BW_element_link  BW_element_link::join(BW_element_link Blink)
+{
+// Must be the same BW_plugin
+    assert(owner = Blink.owner);
+
+// prepare all variables
+    BW_element *A = BWE();
+    BW_element *B = Blink.BWE();
+    
+    BW_offset_t A_prev_off = A->prev;
+    BW_element *A_prev = BWE(A_prev_off);
+
+    BW_offset_t B_prev_off = B->prev;
+    BW_element *B_prev = BWE(B_prev_off);
+
+// B_prev <---> A
+    B_prev->next = offset;
+    A->prev = B_prev_off;
+
+// A_prev <---> B
+    A_prev->next = Blink.offset;
+    B->prev = A_prev_off;
+
+
+// ...... B_prev <---> A ....... A_prev <---> B .......
     return *this; // returning container link
 }
 
@@ -408,9 +429,9 @@ BW_element_link BW_plugin::tag(int16_t id)
     assert(getTagType(id) == XBT_NULL);
     BW_element_link result = this->new_element(XBT_NULL,0);
     BW_element      *element = result.BWE();
-    element->identification = id;
-    element->flags          = BIN_WRITE_ELEMENT_FLAG;
-    element->value_type     = XBT_NULL;
+
+    element->init(id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG,result.offset);
+
     return result;
 }
 
@@ -419,9 +440,8 @@ BW_element_link BW_plugin::tagStr(int16_t id,const char *value)
     assert(getTagType(id) == XBT_STRING || getTagType(id) == XBT_VARIANT);
     BW_element_link result = this->new_element(XBT_STRING,strlen(value));
     BW_element      *element = result.BWE();
-    element->identification = id;
-    element->flags          = BIN_WRITE_ELEMENT_FLAG;
-    element->value_type     = XBT_STRING;
+    
+    element->init(id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG,result.offset);
 
     strcpy(reinterpret_cast<char*>(element+1),value);
     return result;

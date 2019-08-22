@@ -28,15 +28,16 @@ namespace pklib_xml {
 typedef int32_t BW_offset_t;                // pool + this value -> pointer
 
 class BW_element;
-class BW_element_link;
 class BW_plugin;
 
 //-------------------------------------------------------------------------------------------------
 
-class BW_element // 20B
+class BW_element // 24B
 {
 // This is DOM element - main brick of wall
 public:
+    BW_offset_t             offset;             // offset of this element - is used to freely access everything only via pointer
+
     int16_t                 identification; // reference to symbol table for tags/params
     uint8_t                 flags;          // BIN_WRITE_ELEMENT_FLAG | BIN_WRITE_REMOTE_VALUE | ... 
     XML_Binary_Type_Stored  value_type;     // 8-bits: XBT_NULL,...
@@ -50,8 +51,16 @@ public:
 
     // value is placed just after this object
 
-    void init(int16_t id,int8_t type,int8_t flags);
+    void init(int16_t id,int8_t type,int8_t flags,BW_offset_t my_offset);
 };
+
+class BW_pool // this is flat pointer-less structure mapped directly to the first position of memory
+{
+    uint32_t                size;   // useful convention to have size in the first 4 bytes
+    char                    binary_xml_write_type_info[16]; // identification of file
+    uint32_t                allocator;
+    
+}
 
 
 class BW_element_link // 8/12B
@@ -62,6 +71,7 @@ private:
 public:
     BW_element_link(BW_plugin *owner,BW_offset_t offset);
     BW_element_link     add(BW_element_link tag);
+    BW_element_link     join(BW_element_link Blink);    // this will connect two circles
 // returns element
     BW_element*         BWE() const;
     BW_element*         BWE(BW_offset_t offset) const;
