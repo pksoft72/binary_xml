@@ -1,26 +1,21 @@
+#include "bin_write_plugin.h"
+
 #include "bin_xml.h"
 #include "bin_xml_types.h"
-#include "bin_write_plugin.h"
 #include "macros.h"
+
 #include <string.h>
+#include <stdio.h>     // perror
+#include <unistd.h>    // close
+#include <fcntl.h>     
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
 namespace pklib_xml {
 
-void BW_element::init(int16_t id,int8_t type,int8_t flags,BW_offset_t my_offset)
-{
-    assert(sizeof(*this) == 20);
-    this->identification = id;
-    this->value_type = type;
-    this->flags = flags;
-    this->prev = my_offset;
-    this->next = my_offset;
-/* This is not necessary, because data are zero filled globally
-    this->first_child = 0;
-    this->first_attribute = 0;
-*/
-}
-void        BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8_t flags);
+void BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8_t flags)
 {
     assert(sizeof(*this) == 24);
     assert(pool != nullptr);
@@ -34,22 +29,23 @@ void        BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_ty
     this->value_type = value_type;
     this->flags = flags;
 
-    this->next = my_offset;
-    this->prev = my_offset;
+    this->next = offset;
+    this->prev = offset;
     this->first_child = 0;
     this->first_attribute = 0;
 }
 
-BW_pool*    BW_element::getPool() const
+BW_pool* BW_element::getPool()
 {
     return reinterpret_cast<BW_pool*>(reinterpret_cast<char*>(this) - offset);
 }
 
-BW_element* BW_element::BWE(BW_offset_t offset) const
+BW_element* BW_element::BWE(BW_offset_t offset)
 {
     return reinterpret_cast<BW_element*>(reinterpret_cast<char*>(this) - this->offset + offset);
 }
-char*       BW_element::BWD() const
+
+char*       BW_element::BWD()
 {
     return reinterpret_cast<char*>(this+1);
 }
@@ -68,7 +64,7 @@ BW_element* BW_element::join(BW_element *B)    // this will connect two circles
     int A_prev_offset = this->prev;
     int B_prev_offset = B->prev;
 
-    A->prev = B_prev_offset;
+    this->prev = B_prev_offset;
     B->prev = A_prev_offset;
     
     BWE(B_prev_offset)->next = this->offset;
@@ -89,20 +85,67 @@ BW_element* BW_element::add(BW_element *tag)
     return this;
 }
 
-
+//-------------------------------------------------------------------------------------------------
 
 BW2_plugin::BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
     : Bin_src_plugin(filename,bin_xml_creator)
 {
     this->max_pool_size = max_pool_size;
     this->pool = nullptr;
+    this->fd = -1;
+
 }
  
 BW2_plugin::~BW2_plugin()
 {
+    if (fd != -1)
+    {
+        if (close(fd) < 0)
+            ERRNO_SHOW(__FUNCTION__,"close",filename);
+        fd = -1;
+    }
+
+    if (this->pool)
+    {
+        if (munmap(pool,max_pool_size) != 0)
+            ERRNO_SHOW(__FUNCTION__,"munmap",filename);
+        pool = nullptr;
+    }
 }
 
 
+bool BW2_plugin::Initialize()
+{
+// BW2_plugin is owner and the only one (for now) writer of mapped file
+
+// int open(const char *pathname, int flags, mode_t mode);
+    this->fd = open(filename,O_RDWR | O_CREAT | O_NOATIME ,S_IRUSR | S_IWUSR | S_IRGRP);
+    if (fd < 0)
+    {
+        ERRNO_SHOW(__FUNCTION__,"open",filename);
+        return false;
+    }
+
+
+
+//  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+    this->pool = reinterpret_cast<BW_pool*>(mmap(nullptr,max_pool_size,PROT_READ | PROT_WRITE, 
+        MAP_SHARED |  //  Share  this  mapping.   Updates to the mapping are visible to other processes mapping the same region, 
+                      // and (in the case of file-backed mappings) are carried through to the underlying file.  
+                      // (To precisely control when updates are carried through to the underlying file requires the use of msync(2).)
+
+        MAP_NONBLOCK, // (since Linux 2.5.46) This flag is meaningful only in conjunction with MAP_POPULATE.  
+                      // Don't perform read-ahead: create page tables entries only for pages that are already present in RAM.  
+                      // Since Linux 2.6.23, this flag causes MAP_POPULATE to do nothing.  One day, the combination of MAP_POPULATE and MAP_NONBLOCK may be reimplemented.
+        fd, 0));
+    if (pool == nullptr)
+    {
+        ERRNO_SHOW(__FUNCTION__,"mmap",filename);
+        return false;
+    }
+
+    return true;
+}
 
 
 
@@ -153,121 +196,29 @@ BW2_plugin::~BW2_plugin()
 
 //-------------------------------------------------------------------------------------------------
 
-BW_element_link::BW_element_link(BW_plugin *owner,BW_offset_t offset)
+BW_element*     BW_element::attrStr(int16_t id,const char *value)
 {
-    assert(owner != nullptr);
-    assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= owner->pool_size);
-    this->owner = owner;
-    this->offset = offset;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link  BW_element_link::add(BW_element_link child)
+BW_element*     BW_element::attrHexStr(int16_t id,const char *value)
 {
-    assert(owner == child.owner); // mixing owners is not possible
-    BW_element *container = BWE();
-    BW_element *value = child.BWE();
-
-    BW_offset_t *list;
-    if (value->flags & BIN_WRITE_ELEMENT_FLAG)
-        list = &container->first_child;
-    else
-        list = &container->first_attribute;
-
-    if (*list == 0) // empty list
-    {
-        *list = child.offset; // assigning the 1st element
-    }
-    else
-    {
-        BW_element_link first(owner,*list);
-        first.join(child);        
-    }
-
-    return *this; // returning container link
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link  BW_element_link::join(BW_element_link Blink)
+BW_element*     BW_element::attrBLOB(int16_t id,const char *value,int32_t size)
 {
-// Must be the same BW_plugin
-    assert(owner = Blink.owner);
-
-// prepare all variables
-    BW_element *A = BWE();
-    BW_element *B = Blink.BWE();
-    
-    BW_offset_t A_prev_off = A->prev;
-    BW_element *A_prev = BWE(A_prev_off);
-
-    BW_offset_t B_prev_off = B->prev;
-    BW_element *B_prev = BWE(B_prev_off);
-
-// B_prev <---> A
-    B_prev->next = offset;
-    A->prev = B_prev_off;
-
-// A_prev <---> B
-    A_prev->next = Blink.offset;
-    B->prev = A_prev_off;
-
-
-// ...... B_prev <---> A ....... A_prev <---> B .......
-    return *this; // returning container link
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element*      BW_element_link::BWE() const
+BW_element*     BW_element::attrInt32(int16_t id,int32_t value)
 {
-    assert(owner != nullptr);
-    assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= owner->pool_size);
-    return reinterpret_cast<BW_element *>(owner->pool + offset);
-}
-
-BW_element*      BW_element_link::BWE(BW_offset_t offset) const
-{
-    assert(owner != nullptr);
-    assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= owner->pool_size);
-    return reinterpret_cast<BW_element *>(owner->pool + offset);
-}
-
-char*            BW_element_link::BWD() const
-{
-    assert(owner != nullptr);
-    assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= owner->pool_size);
-    return owner->pool + offset + sizeof(BW_element);
-}
-
-char*            BW_element_link::BWD(BW_offset_t offset) const
-{
-    assert(owner != nullptr);
-    assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= owner->pool_size);
-    return owner->pool + offset + sizeof(BW_element);
-}
-
-//-------------------------------------------------------------------------------------------------
-
-BW_element_link     BW_element_link::attrStr(int16_t id,const char *value)
-{
-    return *this;
-}
-
-BW_element_link     BW_element_link::attrHexStr(int16_t id,const char *value)
-{
-    return *this;
-}
-
-BW_element_link     BW_element_link::attrBLOB(int16_t id,const char *value,int32_t size)
-{
-    return *this;
-}
-
-BW_element_link     BW_element_link::attrInt32(int16_t id,int32_t value)
-{
+    if (this == nullptr) return nullptr;
     assert(owner->getAttrType(id) == XBT_INT32 || owner->getAttrType(id) == XBT_VARIANT);
-    BW_element_link adding   = owner->new_element(XBT_INT32,0); // only variable types gives size  --- sizeof(int32_t));
+    BW_element* adding   = owner->new_element(XBT_INT32,0); // only variable types gives size  --- sizeof(int32_t));
     BW_element      *element = adding.BWE();
     element->identification = id;
     element->flags          = 0;// attribute 
@@ -277,47 +228,55 @@ BW_element_link     BW_element_link::attrInt32(int16_t id,int32_t value)
     *dst                    = value; // store value
     add(adding);
     
-    return *this;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrInt64(int16_t id,int64_t value)
+BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrFloat(int16_t id,float value)
+BW_element*     BW_element::attrFloat(int16_t id,float value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrDouble(int16_t id,double value)
+BW_element*     BW_element::attrDouble(int16_t id,double value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrGUID(int16_t id,const char *value)
+BW_element*     BW_element::attrGUID(int16_t id,const char *value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrSHA1(int16_t id,const char *value)
+BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrTime(int16_t id,time_t value)
+BW_element*     BW_element::attrTime(int16_t id,time_t value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrIPv4(int16_t id,const char *value)
+BW_element*     BW_element::attrIPv4(int16_t id,const char *value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
-BW_element_link     BW_element_link::attrIPv6(int16_t id,const char *value)
+BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
 {
-    return *this;
+    if (this == nullptr) return nullptr;
+    return this;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -370,7 +329,7 @@ BW_offset_t BW_plugin::allocate(int size)
 }
 
 
-BW_element_link  BW_plugin::new_element(XML_Binary_Type type,int size)
+BW_element*  BW_plugin::new_element(XML_Binary_Type type,int size)
 {
     switch(type)
     {
@@ -429,7 +388,7 @@ BW_element_link  BW_plugin::new_element(XML_Binary_Type type,int size)
             assert(type != XBT_VARIANT);
             break;
     }
-    BW_element_link result(this,allocate(sizeof(BW_element)+size));
+    BW_element* result(this,allocate(sizeof(BW_element)+size));
     result.BWE()->value_type = type;
     switch(type)
     {
@@ -505,7 +464,7 @@ void BW_plugin::registerAttribute(int16_t id,const char *name,XML_Binary_Type ty
     strcpy(dst,name);
 }
 
-void BW_plugin::setRoot(const BW_element_link X)
+void BW_plugin::setRoot(const BW_element* X)
 {
 // ::Initialize must be called
     assert(elements != nullptr);
@@ -554,10 +513,10 @@ XML_Binary_Type BW_plugin::getAttrType(int16_t id) const
 
 //-------------------------------------------------------------------------------------------------
 
-BW_element_link BW_plugin::tag(int16_t id)
+BW_element* BW_plugin::tag(int16_t id)
 {
     assert(getTagType(id) == XBT_NULL);
-    BW_element_link result = this->new_element(XBT_NULL,0);
+    BW_element* result = this->new_element(XBT_NULL,0);
     BW_element      *element = result.BWE();
 
     element->init(id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG,result.offset);
@@ -565,10 +524,10 @@ BW_element_link BW_plugin::tag(int16_t id)
     return result;
 }
 
-BW_element_link BW_plugin::tagStr(int16_t id,const char *value)
+BW_element* BW_plugin::tagStr(int16_t id,const char *value)
 {
     assert(getTagType(id) == XBT_STRING || getTagType(id) == XBT_VARIANT);
-    BW_element_link result = this->new_element(XBT_STRING,strlen(value));
+    BW_element* result = this->new_element(XBT_STRING,strlen(value));
     BW_element      *element = result.BWE();
     
     element->init(id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG,result.offset);
@@ -577,67 +536,67 @@ BW_element_link BW_plugin::tagStr(int16_t id,const char *value)
     return result;
 }
 
-BW_element_link BW_plugin::tagHexStr(int16_t id,const char *value)
+BW_element* BW_plugin::tagHexStr(int16_t id,const char *value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
+BW_element* BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagInt32(int16_t id,int32_t value)
+BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagInt64(int16_t id,int64_t value)
+BW_element* BW_plugin::tagInt64(int16_t id,int64_t value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagFloat(int16_t id,float value)
+BW_element* BW_plugin::tagFloat(int16_t id,float value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagDouble(int16_t id,double value)
+BW_element* BW_plugin::tagDouble(int16_t id,double value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagGUID(int16_t id,const char *value)
+BW_element* BW_plugin::tagGUID(int16_t id,const char *value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagSHA1(int16_t id,const char *value)
+BW_element* BW_plugin::tagSHA1(int16_t id,const char *value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagTime(int16_t id,time_t value)
+BW_element* BW_plugin::tagTime(int16_t id,time_t value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagIPv4(int16_t id,const char *value)
+BW_element* BW_plugin::tagIPv4(int16_t id,const char *value)
 {
 // TODO: not implemented
     assert(false);
 }
 
-BW_element_link BW_plugin::tagIPv6(int16_t id,const char *value)
+BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
 {
 // TODO: not implemented
     assert(false);

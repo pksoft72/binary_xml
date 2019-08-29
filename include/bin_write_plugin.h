@@ -55,16 +55,31 @@ public:
 
     void        init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8_t flags);
 
-    BW_pool*    getPool() const;
-    BW_element* BWE(BW_offset_t offset) const;
-    char*       BWD() const;
+    BW_pool*    getPool();
+    BW_element* BWE(BW_offset_t offset);
+    char*       BWD();
 
     BW_element* join(BW_element *B);    // this will connect two circles
     BW_element* add(BW_element *tag);
+
+
+    BW_element  *attrStr(int16_t id,const char *value);
+    BW_element  *attrHexStr(int16_t id,const char *value);
+    BW_element  *attrBLOB(int16_t id,const char *value,int32_t size);
+    BW_element  *attrInt32(int16_t id,int32_t value);
+    BW_element  *attrInt64(int16_t id,int64_t value);
+    BW_element  *attrFloat(int16_t id,float value);
+    BW_element  *attrDouble(int16_t id,double value);
+    BW_element  *attrGUID(int16_t id,const char *value);
+    BW_element  *attrSHA1(int16_t id,const char *value);
+    BW_element  *attrTime(int16_t id,time_t value);
+    BW_element  *attrIPv4(int16_t id,const char *value);
+    BW_element  *attrIPv6(int16_t id,const char *value);
 };
 
 class BW_pool // this is flat pointer-less structure mapped directly to the first position of shared memory
 {
+public:
     uint32_t                size;   // useful convention to have size in the first 4 bytes
     char                    binary_xml_write_type_info[16]; // identification of file
     BW_offset_t             allocator;
@@ -77,7 +92,7 @@ class BW2_plugin : public Bin_src_plugin
 protected:
     int         size;           // current pool allocated
     int         max_pool_size;  // never exceeed size
-
+    int         fd;             // file handle
     BW_pool     *pool;
 public:
     BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
@@ -87,30 +102,16 @@ public:
 };
 
 
+
+
+
+
+
+
+
 //*************************************************************************************************
+// TODO -- this should be refactored
 
-
-class BW_element_link // 8/12B
-{
-public:
-    char*               BWD(BW_offset_t offset) const;
-
-    friend class BW_plugin;
-public:
-// these methods will add attribute to BW_element_link and returns original BW_element_link
-    BW_element_link     attrStr(int16_t id,const char *value);
-    BW_element_link     attrHexStr(int16_t id,const char *value);
-    BW_element_link     attrBLOB(int16_t id,const char *value,int32_t size);
-    BW_element_link     attrInt32(int16_t id,int32_t value);
-    BW_element_link     attrInt64(int16_t id,int64_t value);
-    BW_element_link     attrFloat(int16_t id,float value);
-    BW_element_link     attrDouble(int16_t id,double value);
-    BW_element_link     attrGUID(int16_t id,const char *value);
-    BW_element_link     attrSHA1(int16_t id,const char *value);
-    BW_element_link     attrTime(int16_t id,time_t value);
-    BW_element_link     attrIPv4(int16_t id,const char *value);
-    BW_element_link     attrIPv6(int16_t id,const char *value);
-};
 
 class BW_plugin : public Bin_src_plugin
 {
@@ -144,33 +145,33 @@ public:
 
 protected: // allocation 
     BW_offset_t          allocate(int size);
-    BW_element_link      new_element(XML_Binary_Type type,int size);
+    //BW_element*      new_element(XML_Binary_Type type,int size);
 public: // translation offset to pointer
     BW_element*   BWE(BW_offset_t offset) const;
 
 public: // element registration
     void registerElement(int16_t id,const char *name,XML_Binary_Type type);
     void registerAttribute(int16_t id,const char *name,XML_Binary_Type type);
-    void setRoot(const BW_element_link X);
+//    void setRoot(const BW_element* X);
     
     XML_Binary_Type getTagType(int16_t id) const;
     XML_Binary_Type getAttrType(int16_t id) const;
 
 
 public: // tag creation
-    BW_element_link     tag(int16_t id);
-    BW_element_link     tagStr(int16_t id,const char *value);
-    BW_element_link     tagHexStr(int16_t id,const char *value);
-    BW_element_link     tagBLOB(int16_t id,const char *value,int32_t size);
-    BW_element_link     tagInt32(int16_t id,int32_t value);
-    BW_element_link     tagInt64(int16_t id,int64_t value);
-    BW_element_link     tagFloat(int16_t id,float value);
-    BW_element_link     tagDouble(int16_t id,double value);
-    BW_element_link     tagGUID(int16_t id,const char *value);
-    BW_element_link     tagSHA1(int16_t id,const char *value);
-    BW_element_link     tagTime(int16_t id,time_t value);
-    BW_element_link     tagIPv4(int16_t id,const char *value);
-    BW_element_link     tagIPv6(int16_t id,const char *value);
+    BW_element*     tag(int16_t id);
+    BW_element*     tagStr(int16_t id,const char *value);
+    BW_element*     tagHexStr(int16_t id,const char *value);
+    BW_element*     tagBLOB(int16_t id,const char *value,int32_t size);
+    BW_element*     tagInt32(int16_t id,int32_t value);
+    BW_element*     tagInt64(int16_t id,int64_t value);
+    BW_element*     tagFloat(int16_t id,float value);
+    BW_element*     tagDouble(int16_t id,double value);
+    BW_element*     tagGUID(int16_t id,const char *value);
+    BW_element*     tagSHA1(int16_t id,const char *value);
+    BW_element*     tagTime(int16_t id,time_t value);
+    BW_element*     tagIPv4(int16_t id,const char *value);
+    BW_element*     tagIPv6(int16_t id,const char *value);
 public: // Bin_src_plugin
     virtual bool Initialize();
     virtual void *getRoot();
@@ -179,9 +180,6 @@ public: // Bin_src_plugin
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata);
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep);
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);
-
-//-------------------------------
-    friend class BW_element_link; 
 };
 
 } // namespace pklib_xml

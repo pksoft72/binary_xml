@@ -12,7 +12,7 @@
 #endif
 #define INT_NULL_VALUE -0x80000000
 
-#define ERRNO_SHOW(code,command,params) {int __e = errno;std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;}
+#define ERRNO_SHOW(code,command,params) do {int __e = errno;std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
 
 
 
@@ -32,7 +32,7 @@
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
 
 
-#define STRCPY(dst,src) {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';}
+#define STRCPY(dst,src) do {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';} while(0)
 
 #define LOG_ERROR(fmt,...) fprintf(stderr,ANSI_RED_BRIGHT "Error:" fmt ANSI_RESET_LF,__VA_ARGS__)
 #define LOG(fmt,...) fprintf(stderr,fmt ANSI_RESET_LF,__VA_ARGS__)
