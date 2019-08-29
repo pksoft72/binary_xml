@@ -27,8 +27,9 @@ namespace pklib_xml {
 
 typedef int32_t BW_offset_t;                // pool + this value -> pointer
 
-class BW_element;
-class BW_plugin;
+class BW_element;   // basic element - tag or parameter
+class BW_pool;      // header of whole allocated memory
+class BW_plugin;    // service object
 
 //-------------------------------------------------------------------------------------------------
 
@@ -58,9 +59,29 @@ class BW_pool // this is flat pointer-less structure mapped directly to the firs
 {
     uint32_t                size;   // useful convention to have size in the first 4 bytes
     char                    binary_xml_write_type_info[16]; // identification of file
-    uint32_t                allocator;
+    BW_offset_t             allocator;
+    BW_offset_t             buffers[2]; // double buffer - only 1 is growing - other is read-only
     
-}
+    
+    
+};
+
+class BW2_plugin : public Bin_src_plugin
+{
+protected:
+    int         size;           // current pool allocated
+    int         max_pool_size;  // never exceeed size
+
+    BW_pool     *pool;
+public:
+    BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
+    virtual ~BW2_plugin();
+    
+    virtual bool Initialize();
+};
+
+
+//*************************************************************************************************
 
 
 class BW_element_link // 8/12B

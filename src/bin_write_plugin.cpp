@@ -21,6 +21,68 @@ void BW_element::init(int16_t id,int8_t type,int8_t flags,BW_offset_t my_offset)
 */
 }
 
+
+
+BW2_plugin::BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
+    : Bin_src_plugin(filename,bin_xml_creator)
+{
+    this->max_pool_size = max_pool_size;
+    this->pool = nullptr;
+}
+ 
+BW2_plugin::~BW2_plugin()
+{
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //-------------------------------------------------------------------------------------------------
 
 BW_element_link::BW_element_link(BW_plugin *owner,BW_offset_t offset)
