@@ -20,6 +20,74 @@ void BW_element::init(int16_t id,int8_t type,int8_t flags,BW_offset_t my_offset)
     this->first_attribute = 0;
 */
 }
+void        BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8_t flags);
+{
+    assert(sizeof(*this) == 24);
+    assert(pool != nullptr);
+
+    int offset = reinterpret_cast<char*>(this) - reinterpret_cast<char*>(pool);
+    assert(offset > 0);
+    assert(offset+sizeof(BW_element) <= pool->size); 
+    this->offset = offset;
+
+    this->identification = identification;
+    this->value_type = value_type;
+    this->flags = flags;
+
+    this->next = my_offset;
+    this->prev = my_offset;
+    this->first_child = 0;
+    this->first_attribute = 0;
+}
+
+BW_pool*    BW_element::getPool() const
+{
+    return reinterpret_cast<BW_pool*>(reinterpret_cast<char*>(this) - offset);
+}
+
+BW_element* BW_element::BWE(BW_offset_t offset) const
+{
+    return reinterpret_cast<BW_element*>(reinterpret_cast<char*>(this) - this->offset + offset);
+}
+char*       BW_element::BWD() const
+{
+    return reinterpret_cast<char*>(this+1);
+}
+
+BW_element* BW_element::join(BW_element *B)    // this will connect two circles
+// Input:
+// A0-A1-A2-A3-A4-A5...An-A0
+// B0-B1-B2-B3-B4-B5...Bn-B0
+// Output:
+// A0-A1-A2-A3-A4-A5...An-B0-B1-B2-B3-B4-B5...Bn-A0
+
+{
+    assert(this != nullptr);
+    assert(B != nullptr);
+
+    int A_prev_offset = this->prev;
+    int B_prev_offset = B->prev;
+
+    A->prev = B_prev_offset;
+    B->prev = A_prev_offset;
+    
+    BWE(B_prev_offset)->next = this->offset;
+    BWE(A_prev_offset)->next = B->offset;
+    return this;
+}
+
+BW_element* BW_element::add(BW_element *tag)
+{
+    if (this == nullptr) return this; // no where to add
+    if (tag == nullptr) return this; // adding no elements
+
+    BW_offset_t *list = (tag->flags & BIN_WRITE_ELEMENT_FLAG) ? &first_child : &first_attribute;
+    if (*list == 0)
+        *list = tag->offset; // direct link to new element
+    else
+       BWE(*list)->join(tag); // join elements
+    return this;
+}
 
 
 
