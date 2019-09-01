@@ -17,13 +17,17 @@
 // All data written just into temporary part will be visible for all other processes.
 // 
 
-#define BIN_WRITE_ELEMENT_FLAG  1  // element (1) or attribute (0)
-#define BIN_WRITE_REMOTE_VALUE  2  // for sharing big values with stable pointers ouf of pool
+#define BIN_WRITE_POOL_FORMAT_VERSION   0
+#define BW2_INITIAL_FILE_SIZE       0x4000      // 16kB
+
+#define BIN_WRITE_ATTR_FLAG         0  // element (1) or attribute (0)
+#define BIN_WRITE_ELEMENT_FLAG      1  // element (1) or attribute (0)
+#define BIN_WRITE_REMOTE_VALUE      2  // for sharing big values with stable pointers ouf of pool
 
 namespace pklib_xml {
 
 // BW = Bin Write
-#define ROUND32UP(ptr) do { (ptr) = ((start+3) >> 2) << 2; } while(0) // round up
+#define ROUND32UP(ptr) do { (ptr) = (((ptr)+3) >> 2) << 2; } while(0) // round up
 
 typedef int32_t BW_offset_t;                // pool + this value -> pointer
 
@@ -77,20 +81,52 @@ public:
     BW_element  *attrIPv6(int16_t id,const char *value);
 };
 
+class BW_symbol_table_12B
+{
+public:
+    int32_t                 max_id;                 // maximum defines sizes of indexes
+    BW_offset_t             names_offset;           // elements table link
+    BW_offset_t             index;                  // BW_offset_t[id]
+};
+
 class BW_pool // this is flat pointer-less structure mapped directly to the first position of shared memory
 {
 public:
-    uint32_t                size;   // useful convention to have size in the first 4 bytes
-    char                    binary_xml_write_type_info[16]; // identification of file
+    uint32_t                commited_size;                  // useful convention to have size in the first 4 bytes
+    char                    binary_xml_write_type_info[24]; // identification of file
+    uint32_t                pool_format_version;            // don't misinterpret data!
+    uint32_t                file_size;                      // should not allocate beyond file_size!!
+    uint32_t                mmap_size;                      // this is whole allocation limit - memory is mapped to this size
+
+    BW_offset_t             roots[2];                       // double buffer - only 1 is growing - other is read-only
+    uint32_t                current_root;                   // 0/1 - which root is used
+
     BW_offset_t             allocator;
-    BW_offset_t             buffers[2]; // double buffer - only 1 is growing - other is read-only
+    BW_offset_t             allocator_limit;                // end of space in which allocation is possible
+   
+    BW_symbol_table_12B     tags;
+    BW_symbol_table_12B     attrs;
+
+public: // index tables (indexed by id) - allocated on pool
+    XML_Binary_Type getTagType(int16_t id);
+    const char*     getTagName(int16_t id);
+
+    XML_Binary_Type getAttrType(int16_t id);
+    const char*     getAttrName(int16_t id);
     
+    bool            makeTable(BW_symbol_table_12B &table);
+public:
+    char*           allocate(int size);
+    BW_element*     new_element(XML_Binary_Type type,int size = 0);
 };
 
 class BW2_plugin : public Bin_src_plugin
 {
+// This object organize complete DOM tree built on the fly.
+// Can be used to produce xb file via several passes.
+// This can be also used to produce open-end xb on incremental base.
+// This object creates shared memory which can be read by some other process and data can be ready to publish immediately after write and link.
 protected:
-    int         size;           // current pool allocated
     int         max_pool_size;  // never exceeed size
     int         fd;             // file handle
     BW_pool     *pool;
@@ -99,6 +135,11 @@ public:
     virtual ~BW2_plugin();
     
     virtual bool Initialize();
+        bool InitEmptyFile();
+        bool CheckExistingFile(int file_size);
+
+    void registerTag(int16_t id,const char *name,XML_Binary_Type type);
+    void registerAttr(int16_t id,const char *name,XML_Binary_Type type);
 };
 
 
@@ -115,27 +156,7 @@ public:
 
 class BW_plugin : public Bin_src_plugin
 {
-// This object organize complete DOM tree built on the fly.
-// Can be used to produce xb file via several passes.
-// This can be also used to produce open-end xb on incremental base.
-private:
-    int32_t     pool_size;
-    char        *pool;        // preallocated memory pool - all data in pool are referenced relatively (with exception BIN_WRITE_REMOTE_VALUE)
-    BW_offset_t allocator;    // pointer to the first empty space
-
-private: // beginning of parts
-    BW_offset_t elements_offset;        // elements table link
-    BW_offset_t attributes_offset;      // attributes table link
-private: // maximum defines sizes of indexes
-    int32_t max_element_id;
-    int32_t max_attribute_id;
-private: // index tables (indexed by id) - allocated out of pool
-    BW_offset_t *elements;
-    BW_offset_t *attributes;
 protected:    
-    int32_t *makeTable(int max_id,int32_t start,int32_t end);
-private:
-    BW_offset_t root;                   // root document link
 
 // construction
 public:
@@ -145,7 +166,6 @@ public:
 
 protected: // allocation 
     BW_offset_t          allocate(int size);
-    //BW_element*      new_element(XML_Binary_Type type,int size);
 public: // translation offset to pointer
     BW_element*   BWE(BW_offset_t offset) const;
 
@@ -154,8 +174,6 @@ public: // element registration
     void registerAttribute(int16_t id,const char *name,XML_Binary_Type type);
 //    void setRoot(const BW_element* X);
     
-    XML_Binary_Type getTagType(int16_t id) const;
-    XML_Binary_Type getAttrType(int16_t id) const;
 
 
 public: // tag creation
