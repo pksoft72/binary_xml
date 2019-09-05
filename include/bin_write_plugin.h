@@ -92,14 +92,15 @@ public:
 class BW_pool // this is flat pointer-less structure mapped directly to the first position of shared memory
 {
 public:
-    uint32_t                commited_size;                  // useful convention to have size in the first 4 bytes
+    uint32_t                size;                  // useful convention to have size in the first 4 bytes
     char                    binary_xml_write_type_info[24]; // identification of file
     uint32_t                pool_format_version;            // don't misinterpret data!
     uint32_t                file_size;                      // should not allocate beyond file_size!!
     uint32_t                mmap_size;                      // this is whole allocation limit - memory is mapped to this size
 
-    BW_offset_t             roots[2];                       // double buffer - only 1 is growing - other is read-only
-    uint32_t                current_root;                   // 0/1 - which root is used
+    BW_offset_t             payload;                        // here begins data
+    BW_offset_t             root;                           // pointer to the first element - it is not always the same, as payload
+    uint32_t                master_xb_size;                 // how big master .xb file is finished
 
     BW_offset_t             allocator;
     BW_offset_t             allocator_limit;                // end of space in which allocation is possible
@@ -120,6 +121,8 @@ public:
     BW_element*     new_element(XML_Binary_Type type,int size = 0);
 };
 
+//-------------------------------------------------------------------------------------------------
+
 class BW2_plugin : public Bin_src_plugin
 {
 // This object organize complete DOM tree built on the fly.
@@ -138,8 +141,27 @@ public:
         bool InitEmptyFile();
         bool CheckExistingFile(int file_size);
 
-    void registerTag(int16_t id,const char *name,XML_Binary_Type type);
-    void registerAttr(int16_t id,const char *name,XML_Binary_Type type);
+    bool makeSpace(int size);
+
+    bool registerTag(int16_t id,const char *name,XML_Binary_Type type);
+    bool registerAttr(int16_t id,const char *name,XML_Binary_Type type);
+    bool allRegistered();
+
+    void setRoot(const BW_element* X);
+public: // tag creation
+    BW_element*     tag(int16_t id);
+    BW_element*     tagStr(int16_t id,const char *value);
+    BW_element*     tagHexStr(int16_t id,const char *value);
+    BW_element*     tagBLOB(int16_t id,const char *value,int32_t size);
+    BW_element*     tagInt32(int16_t id,int32_t value);
+    BW_element*     tagInt64(int16_t id,int64_t value);
+    BW_element*     tagFloat(int16_t id,float value);
+    BW_element*     tagDouble(int16_t id,double value);
+    BW_element*     tagGUID(int16_t id,const char *value);
+    BW_element*     tagSHA1(int16_t id,const char *value);
+    BW_element*     tagTime(int16_t id,time_t value);
+    BW_element*     tagIPv4(int16_t id,const char *value);
+    BW_element*     tagIPv6(int16_t id,const char *value);
 };
 
 
@@ -156,40 +178,6 @@ public:
 
 class BW_plugin : public Bin_src_plugin
 {
-protected:    
-
-// construction
-public:
-    BW_plugin(int initial_pool_size,Bin_xml_creator *bin_xml_creator); 
-// TODO: add memory mapped file variant for parallel access
-    virtual ~BW_plugin();
-
-protected: // allocation 
-    BW_offset_t          allocate(int size);
-public: // translation offset to pointer
-    BW_element*   BWE(BW_offset_t offset) const;
-
-public: // element registration
-    void registerElement(int16_t id,const char *name,XML_Binary_Type type);
-    void registerAttribute(int16_t id,const char *name,XML_Binary_Type type);
-//    void setRoot(const BW_element* X);
-    
-
-
-public: // tag creation
-    BW_element*     tag(int16_t id);
-    BW_element*     tagStr(int16_t id,const char *value);
-    BW_element*     tagHexStr(int16_t id,const char *value);
-    BW_element*     tagBLOB(int16_t id,const char *value,int32_t size);
-    BW_element*     tagInt32(int16_t id,int32_t value);
-    BW_element*     tagInt64(int16_t id,int64_t value);
-    BW_element*     tagFloat(int16_t id,float value);
-    BW_element*     tagDouble(int16_t id,double value);
-    BW_element*     tagGUID(int16_t id,const char *value);
-    BW_element*     tagSHA1(int16_t id,const char *value);
-    BW_element*     tagTime(int16_t id,time_t value);
-    BW_element*     tagIPv4(int16_t id,const char *value);
-    BW_element*     tagIPv6(int16_t id,const char *value);
 public: // Bin_src_plugin
     virtual bool Initialize();
     virtual void *getRoot();

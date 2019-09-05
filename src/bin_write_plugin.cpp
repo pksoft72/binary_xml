@@ -15,6 +15,7 @@
 #include <sys/mman.h>
 
 #define NOT_IMPLEMENTED false // used in assert
+#define THIS reinterpret_cast<char*>(this)
 
 namespace pklib_xml {
 
@@ -23,9 +24,9 @@ void BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8
     assert(sizeof(*this) == 24);
     assert(pool != nullptr);
 
-    int offset = reinterpret_cast<char*>(this) - reinterpret_cast<char*>(pool);
+    int offset = THIS - reinterpret_cast<char*>(pool);
     assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= pool->commited_size); 
+    assert(offset+sizeof(BW_element) <= pool->size); 
     this->offset = offset;
 
     this->identification = identification;
@@ -40,12 +41,12 @@ void BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8
 
 BW_pool* BW_element::getPool()
 {
-    return reinterpret_cast<BW_pool*>(reinterpret_cast<char*>(this) - offset);
+    return reinterpret_cast<BW_pool*>(THIS - offset);
 }
 
 BW_element* BW_element::BWE(BW_offset_t offset)
 {
-    return reinterpret_cast<BW_element*>(reinterpret_cast<char*>(this) - this->offset + offset);
+    return reinterpret_cast<BW_element*>(THIS - this->offset + offset);
 }
 
 char*       BW_element::BWD()
@@ -249,10 +250,10 @@ XML_Binary_Type BW_pool::getTagType(int16_t id)
     ASSERT_NO_(1063,this != nullptr,return XBT_UNKNOWN);
     ASSERT_NO_(1051,tags.index != 0,return XBT_UNKNOWN);                // index not initialized 
     ASSERT_NO_(1052,id >=0 && id <= tags.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(reinterpret_cast<char *>(this)+tags.index);
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
     BW_offset_t offset = elements[id];
     ASSERT_NO_(1053,offset != 0,return XBT_UNKNOWN);                                       // tag id should be correctly registered!
-    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(reinterpret_cast<char *>(this) + offset + 2));  
+    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(THIS + offset + 2));  
 }
 
 const char*     BW_pool::getTagName(int16_t id)
@@ -260,10 +261,10 @@ const char*     BW_pool::getTagName(int16_t id)
     ASSERT_NO_RET_NULL(1064,this != nullptr);
     ASSERT_NO_RET_NULL(1054,tags.index != 0);                // index not initialized 
     ASSERT_NO_RET_NULL(1055,id >=0 && id <= tags.max_id);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(reinterpret_cast<char *>(this)+tags.index);
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
     BW_offset_t offset = elements[id];
     ASSERT_NO_RET_NULL(1056,offset != 0);                                       // tag id should be correctly registered!
-    return reinterpret_cast<const char *>(reinterpret_cast<char *>(this) + offset + 3);  
+    return reinterpret_cast<const char *>(THIS+ offset + 3);  
 }
 
 XML_Binary_Type BW_pool::getAttrType(int16_t id)
@@ -271,10 +272,10 @@ XML_Binary_Type BW_pool::getAttrType(int16_t id)
     ASSERT_NO_(1065,this != nullptr,return XBT_UNKNOWN);
     ASSERT_NO_(1057,attrs.index != 0,return XBT_UNKNOWN);                // index not initialized 
     ASSERT_NO_(1058,id >=0 && id <= attrs.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(reinterpret_cast<char *>(this)+attrs.index);
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
     BW_offset_t offset = elements[id];
     ASSERT_NO_(1059,offset != 0,return XBT_UNKNOWN);                                       // tag id should be correctly registered!
-    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(reinterpret_cast<char *>(this) + offset + 2));  
+    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(THIS+ offset + 2));  
 }
 
 const char*     BW_pool::getAttrName(int16_t id)
@@ -282,44 +283,55 @@ const char*     BW_pool::getAttrName(int16_t id)
     ASSERT_NO_RET_NULL(1066,this != nullptr);
     ASSERT_NO_RET_NULL(1060,attrs.index != 0);                // index not initialized 
     ASSERT_NO_RET_NULL(1061,id >=0 && id <= attrs.max_id);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(reinterpret_cast<char *>(this)+attrs.index);
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
     BW_offset_t offset = elements[id];
     ASSERT_NO_RET_NULL(1062,offset != 0);                                       // tag id should be correctly registered!
-    return reinterpret_cast<const char *>(reinterpret_cast<char *>(this) + offset + 3);  
+    return reinterpret_cast<const char *>(THIS+ offset + 3);  
 }
 
 bool   BW_pool::makeTable(BW_symbol_table_12B &table)
+// This is called after registration of symbols to table - see registerTag & registerAttr
 {
-TODO!!!!!!!!
-    assert(max_id == -1 || start != -1);
-    if (max_id < 0) return nullptr; // empty array
+    table.index = 0;
+    if (table.max_id < 0) return true; // ok, empty array
+
+    ASSERT_NO_RET_FALSE(1111,table.names_offset != 0);
     
-    int32_t *table = new int32_t[max_id+1];
-    memset(table,0xff,sizeof(int32_t)*(max_id+1)); // 0xffffffff = -1
+    int32_t *index = reinterpret_cast<int32_t*>(allocate(sizeof(int32_t) * (table.max_id+1)));
+    ASSERT_NO_RET_FALSE(1118,index != nullptr); // out of memory?
+    table.index = reinterpret_cast<char*>(index) - THIS;
+
+    memset(index,0,sizeof(int32_t)*(table.max_id+1)); // 0 means empty
+
+    BW_offset_t start = table.names_offset;
+    BW_offset_t end = reinterpret_cast<char*>(index) - THIS;
 
     while (start < end)
     {
-        int id = *reinterpret_cast<int16_t*>(pool + start);
-        assert(id >= 0 && id <= max_id);
-        table[id] = start;
-        start += 3 + strlen(pool+start+3)+1;
+        int id = *reinterpret_cast<int16_t*>(THIS + start);
+        ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
+        index[id] = start;
+        start += 3 + strlen(THIS+start+3)+1;
         ROUND32UP(start);
     }
-    assert(start == end);
-    return table;
+    ASSERT_NO_RET_FALSE(1113,start == end);
+    return true;
 }
 
 
 char*  BW_pool::allocate(int size)
 {
     if (size <= 0) return 0;
+// memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
     ASSERT_NO_RET_0(1080,allocator + size <= allocator_limit);
 
     BW_offset_t offset = allocator;
     allocator += size;
     ROUND32UP(allocator);
 
-    return reinterpret_cast<char*>(this)+offset;
+    MAXIMIZE(size,allocator);
+
+    return THIS+offset;
 }
 
 
@@ -499,7 +511,8 @@ bool BW2_plugin::InitEmptyFile()
     pool->tags.max_id = -1;
     pool->attrs.max_id = -1;
     
-    pool->commited_size = sizeof(*pool);
+    pool->size = pool->allocator;
+
     return true;
 }
 
@@ -508,25 +521,41 @@ bool BW2_plugin::CheckExistingFile(int file_size)
     ASSERT_NO_RET_FALSE(1103,NOT_IMPLEMENTED);
 }
 
-void BW2_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
+bool BW2_plugin::makeSpace(int size)
+{
+    int new_size = ((pool->allocator+4095) >> 12 << 12) + size;
+    ASSERT_NO_RET_FALSE(1143,new_size <= pool->mmap_size);
+    if (new_size < pool->file_size) return true; // no grow - ok
+    if (ftruncate(fd,new_size) < 0)
+    {
+        ERRNO_SHOW(1144,"ftruncate",filename);
+        return false;
+    }
+    pool->file_size = new_size;
+    pool->allocator_limit = new_size;
+    return true;
+}
+
+bool BW2_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with element names    
 // element names starts at offset pool->tags.names_offset and ends at pool->attrs.offset
 {
-    assert(name != nullptr);
+    ASSERT_NO_RET_FALSE(1107,name != nullptr);
+    ASSERT_NO_RET_FALSE(1119,type >= XBT_NULL && type < XBT_LAST);
 // elements must be defined first
-    if (pool->tags.names_offset == -1)
-    {
+    ASSERT_NO_RET_FALSE(1108,pool->attrs.names_offset == 0);
+// root must be later
+    ASSERT_NO_RET_FALSE(1109,pool->root == 0);
+//-----------------------------------------------
+    if (pool->tags.names_offset == 0) // empty
         pool->tags.names_offset = pool->allocator;
-    }
-    assert(pool->attrs.names_offset == -1);
-    assert(pool->roots[0] == 0);
-    assert(pool->roots[1] == 0);
 
     MAXIMIZE(pool->tags.max_id,id);
     int len = strlen(name);
 
 // allocation
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
+    ASSERT_NO_RET_FALSE(1121,dst != 0);
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
     dst += sizeof(int16_t);
@@ -535,28 +564,28 @@ void BW2_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     dst += sizeof(XML_Binary_Type_Stored);
 // name
     strcpy(dst,name);
+    return true;
 }
 
-void BW2_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
+bool BW2_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with attribute names    
 {
-    assert(name != nullptr);
-// elements must be defined first
-    assert(pool->tags.names_offset != -1);
+    ASSERT_NO_RET_FALSE(1114,name != nullptr);
+    ASSERT_NO_RET_FALSE(1120,type >= XBT_NULL && type < XBT_LAST);
+// elements must be defined first, empty element are not allowed!
+    ASSERT_NO_RET_FALSE(1115,pool->tags.names_offset != 0);
 // root must be later
-    assert(pool->roots[0] == 0);
-    assert(pool->roots[1] == 0);
-
-    if (pool->attrs.names_offset == -1)
-    {
+    ASSERT_NO_RET_FALSE(1116,pool->root == 0);
+//-----------------------------------------------
+    if (pool->attrs.names_offset == 0)
         pool->attrs.names_offset = pool->allocator;
-    }
 
     MAXIMIZE(pool->attrs.max_id,id);
     int len = strlen(name);
 
 // allocation
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
+    ASSERT_NO_RET_FALSE(1122,dst != 0);
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
     dst += sizeof(int16_t);
@@ -565,168 +594,162 @@ void BW2_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
     dst += sizeof(XML_Binary_Type_Stored);
 // name
     strcpy(dst,name);
+    return true;
+}
+
+bool BW2_plugin::allRegistered()
+{
+    ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
+
+    ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
+    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags));
+    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->attrs));
+    pool->payload = pool->allocator;
+    return true;
+}
+
+void BW2_plugin::setRoot(const BW_element* X)
+// I want to have system of two root elements
+// It is doublebuffer concept, which enables to safely read data from one frozen buffer half while other half is active and is prepared
+// I am not sure, whether this concept is useful enough, because cost of this is double memory footprint.
+
+// Situation:
+// I have standard xb file:
+// |<--------base.xb------------->|
+// I am writing to BW plugin
+// |<pool|completed_size|tags|attrs|root ----------------------------->|
+// Once upon a time I will take data from BW plugin and write them transcoded to the end of base.xb
+// |<--------base.xb------------->|root ----------------------------->|
+// and shring pool to it's initial empty size
+// |<pool|tags|attrs|00000000000000000000000000000000000|
+// From point of view of writing process is this easy and simple.
+// But from readers point of view is this very confusing.
+// Problem is, that reader should not break his reading when it is in BW plugin part.
+// So reading plugin part and commiting and cleaning plugin part should be exclusive 
+{
+    ASSERT_NO_RET(1125,X != nullptr);
+    ASSERT_NO_RET(1126,pool->root == 0);    // set root is possibly only once till flush
+    ASSERT_NO_RET(1140,pool->payload != 0); // allRegistered must be called first
+    ASSERT_NO_RET(1141,X->offset >= pool->payload);
+    pool->root = X->offset;
 }
 
 //-------------------------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void BW_plugin::setRoot(const BW_element* X)
+BW_element* BW2_plugin::tag(int16_t id)
 {
-// ::Initialize must be called
-    assert(elements != nullptr);
-//    assert(attributes != nullptr); -- this can be nullptr
+    assert(pool->getTagType(id) == XBT_NULL);
 
-    assert(root == 0);     // it is possible only once
-    assert(X.owner == this);
-    root = X.names_offset;
+    ASSERT_NO_RET_NULL(1145,makeSpace(BW2_INITIAL_FILE_SIZE));
 
-}
+    BW_element* result = pool->new_element(XBT_NULL);
 
-
-int32_t * BW_plugin::makeTable(int max_id,int32_t start,int32_t end)
-{
-}
-
-XML_Binary_Type BW_plugin::getTagType(int16_t id) const
-{
-    if (id < 0 || id > pool->tags.max_id) return XBT_NULL;
-    BW_offset_t offset = elements[id];
-    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(pool + offset + 2));  
-}
-
-XML_Binary_Type BW_plugin::getAttrType(int16_t id) const
-{
-    if (id < 0 || id > pool->attrs.max_id) return XBT_NULL;
-    BW_offset_t offset = attributes[id];
-    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(pool + offset + 2));  
-}
-
-//-------------------------------------------------------------------------------------------------
-
-BW_element* BW_plugin::tag(int16_t id)
-{
-    assert(getTagType(id) == XBT_NULL);
-    BW_element* result = this->new_element(XBT_NULL);
-    BW_element      *element = result.BWE();
-
-    element->init(id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG,result.offset);
+    result->init(pool,id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG);
 
     return result;
 }
 
-BW_element* BW_plugin::tagStr(int16_t id,const char *value)
+BW_element* BW2_plugin::tagStr(int16_t id,const char *value)
 {
-    assert(getTagType(id) == XBT_STRING || getTagType(id) == XBT_VARIANT);
-    BW_element* result = this->new_element(XBT_STRING,strlen(value));
-    BW_element      *element = result.BWE();
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(1127,tag_type == XBT_STRING || tag_type == XBT_VARIANT);
+
+    ASSERT_NO_RET_NULL(1146,makeSpace(BW2_INITIAL_FILE_SIZE));
+
+    BW_element* result = pool->new_element(XBT_STRING,strlen(value));
     
-    element->init(id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG,result.offset);
+    result->init(pool,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
 
-    strcpy(reinterpret_cast<char*>(element+1),value);
+    strcpy(reinterpret_cast<char*>(result+1),value);
     return result;
 }
 
-BW_element* BW_plugin::tagHexStr(int16_t id,const char *value)
+BW_element* BW2_plugin::tagHexStr(int16_t id,const char *value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1128,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
+BW_element* BW2_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1129,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
+BW_element* BW2_plugin::tagInt32(int16_t id,int32_t value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1130,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagInt64(int16_t id,int64_t value)
+BW_element* BW2_plugin::tagInt64(int16_t id,int64_t value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1131,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagFloat(int16_t id,float value)
+BW_element* BW2_plugin::tagFloat(int16_t id,float value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1132,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagDouble(int16_t id,double value)
+BW_element* BW2_plugin::tagDouble(int16_t id,double value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1133,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagGUID(int16_t id,const char *value)
+BW_element* BW2_plugin::tagGUID(int16_t id,const char *value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1134,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagSHA1(int16_t id,const char *value)
+BW_element* BW2_plugin::tagSHA1(int16_t id,const char *value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1135,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagTime(int16_t id,time_t value)
+BW_element* BW2_plugin::tagTime(int16_t id,time_t value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1136,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagIPv4(int16_t id,const char *value)
+BW_element* BW2_plugin::tagIPv4(int16_t id,const char *value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1137,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
+BW_element* BW2_plugin::tagIPv6(int16_t id,const char *value)
 {
 // TODO: not implemented
-    assert(false);
+    ASSERT_NO_RET_NULL(1138,NOT_IMPLEMENTED);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //-------------------------------------------------------------------------------------------------
 
-bool BW_plugin::Initialize()
-{
-// It is possible to call this twice - it must be called before creating tags
-    if (elements == nullptr)
-        elements = makeTable(pool->tags.max_id,pool->tags.names_offset,pool->attrs.offset);
-    if (attributes == nullptr)
-        attributes = makeTable(pool->attrs.max_id,pool->attrs.offset,
-            (root == 0 ? allocator : root));
-
-    file_size = allocator; // must provide some info about size of file
-
-    return true; // no inherited initialization required, Bin_src_plugin::Initialize would scan file size of "<internal-write>" with error code.
-}
-
-void *BW_plugin::getRoot()
-{
-    assert(root != 0);
-    return pool + root;
-}
+//-------------------------------------------------------------------------------------------------
 
 const char *BW_plugin::getNodeName(void *element)
 {
