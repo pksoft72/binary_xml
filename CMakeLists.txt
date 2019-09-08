@@ -12,6 +12,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fPIC")
 #find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
+
+set(BIN_WRITE_PLUGIN OFF CACHE BOOL "unfinished building xb files on the fly")
+if(BIN_WRITE_PLUGIN)
+    add_compile_options(-DBIN_WRITE_PLUGIN)
+endif()
+
 #--------------------------------------------------------------------------------------------------
 
 
@@ -71,9 +77,11 @@ add_executable(test-json src/tests/test-json.cpp)
     target_include_directories(test-json PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/jsmn)
     target_link_libraries(test-json binary_xml)
 
-add_executable(test-creating src/tests/test-creating.cpp)
-    target_include_directories(test-creating PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    target_link_libraries(test-creating binary_xml)
+if (BIN_WRITE_PLUGIN)
+    add_executable(test-creating src/tests/test-creating.cpp)
+        target_include_directories(test-creating PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        target_link_libraries(test-creating binary_xml)
+endif()
     
 
 #--------------------------------------------------------------------------------------------------

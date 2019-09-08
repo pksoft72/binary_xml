@@ -1,3 +1,4 @@
+#ifdef BIN_WRITE_PLUGIN
 #include "bin_write_plugin.h"
 
 #include "bin_xml.h"
@@ -260,6 +261,21 @@ const char*     BW_pool::getTagName(int16_t id)
 {
     ASSERT_NO_RET_NULL(1064,this != nullptr);
     ASSERT_NO_RET_NULL(1054,tags.index != 0);                // index not initialized 
+    if (id < 0)
+    {
+        switch(id)
+        {
+            case XTNR_NULL: return "NULL";
+            case XTNR_META_ROOT: return "meta_root";
+            case XTNR_TAG_SYMBOLS: return "tag_symbols";
+            case XTNR_PARAM_SYMBOLS: return "param_symbols";
+            case XTNR_HASH_INDEX: return "hash_index";
+            case XTNR_PAYLOAD: return "payload";
+            case XTNR_REFERENCE: return "reference";
+            case XTNR_PROCESSED: return "processed";
+            case XTNR_ET_TECERA: return "et-tecera";
+        }
+    }
     ASSERT_NO_RET_NULL(1055,id >=0 && id <= tags.max_id);    // id out of range - should be in range, because range is defined by writing application
     BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
     BW_offset_t offset = elements[id];
@@ -755,7 +771,7 @@ const char *BW_plugin::getNodeName(void *element)
 {
     if (element == nullptr) return "?";
     BW_element *E = reinterpret_cast<BW_element*>(element);
-    assert(reinterpret_cast<char*>(E) - pool > 0);
+    ASSERT_NO_RET_NULL(reinterpret_cast<char*>(E) - pool > 0);
     assert(pool + pool_size  - reinterpret_cast<char*>(E) >= sizeof(BW_element));
 
     if (E->flags & BIN_WRITE_ELEMENT_FLAG) // TAG
@@ -864,3 +880,4 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
 }
 
 }
+#endif // BIN_WRITE_PLUGIN

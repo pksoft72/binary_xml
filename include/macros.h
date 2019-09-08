@@ -1,11 +1,13 @@
 #pragma once
 
-#include <iostream>
+#ifdef __cplusplus
+    #include <iostream>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "ANSI.h"
+#include <binary_xml/ANSI.h>
 
 #ifndef nullptr
     #define nullptr NULL
@@ -16,10 +18,12 @@
 
 
 
-#ifndef NDEBUG
-    #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "]" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
-#else
-    #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "]" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
+#ifdef __cplusplus
+    #ifndef NDEBUG
+        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "]" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
+    #else
+        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "]" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
+    #endif
 #endif
 
 #define ASSERT_NO_RET_FALSE(code,condition) ASSERT_NO_(code,condition,return false)
@@ -40,5 +44,13 @@
 
 #define MINIMIZE(x,y) do{if ((y) < (x)) (x) = (y);}while(0)
 #define MAXIMIZE(x,y) do{if ((y) > (x)) (x) = (y);}while(0)
+
+#ifdef __cplusplus
+    #define BEGIN_EXTERN_C extern "C" {
+    #define END_EXTERN_C }
+#else
+    #define BEGIN_EXTERN_C
+    #define END_EXTERN_C
+#endif
 
 //#define exit _exit

@@ -12,8 +12,8 @@
 #include "bin_write_plugin.h"
 #include "ANSI.h"
 
-#define DBG(x) x
-#define DBG2(x) x
+#define DBG(x) //x
+#define DBG2(x) //x
 
 namespace pklib_xml {
 
@@ -63,8 +63,10 @@ Bin_src_plugin *Bin_src_plugin_selector(const char *filename,Bin_xml_creator *bi
         return new Bin_xml_plugin(filename,bin_xml_creator);
     if (strcmp(dot,".json") == 0)
         return new Bin_json_plugin(filename,bin_xml_creator);
+#ifdef BIN_WRITE_PLUGIN
     if (strncmp(filename,"<internal-write>",16) == 0)
         return new BW_plugin(atoi(dot+1),bin_xml_creator);
+#endif
     return nullptr;
 }
 
