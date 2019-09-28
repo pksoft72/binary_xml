@@ -298,11 +298,26 @@ const char*     BW_pool::getAttrName(int16_t id)
 {
     ASSERT_NO_RET_NULL(1066,this != nullptr);
     ASSERT_NO_RET_NULL(1060,attrs.index != 0);                // index not initialized 
-    ASSERT_NO_RET_NULL(1061,id >=0 && id <= attrs.max_id);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
-    BW_offset_t offset = elements[id];
-    ASSERT_NO_RET_NULL(1062,offset != 0);                                       // tag id should be correctly registered!
-    return reinterpret_cast<const char *>(THIS+ offset + 3);  
+
+    switch (id)
+    {
+        case XPNR_NULL : return "NULL";
+        case XPNR_NAME : return "name";
+        case XPNR_HASH : return "hash";
+        case XPNR_MODIFIED : return "modified";
+        case XPNR_COUNT : return "count";
+        case XPNR_FORMAT_VERSION : return "version";
+        case XPNR_TYPE_COUNT : return "type_count";
+
+        default:
+        {
+           ASSERT_NO_RET_NULL(1061,id >=0 && id <= attrs.max_id);    // id out of range - should be in range, because range is defined by writing application
+           BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
+           BW_offset_t offset = elements[id];
+           ASSERT_NO_RET_NULL(1062,offset != 0);                                       // tag id should be correctly registered!
+           return reinterpret_cast<const char *>(THIS+ offset + 3);  
+        }
+    }
 }
 
 bool   BW_pool::makeTable(BW_symbol_table_12B &table)
@@ -427,7 +442,7 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 
 //-------------------------------------------------------------------------------------------------
 
-BW2_plugin::BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
+BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
     : Bin_src_plugin(filename,bin_xml_creator)
 {
     this->max_pool_size = max_pool_size;
@@ -436,7 +451,7 @@ BW2_plugin::BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int
 
 }
  
-BW2_plugin::~BW2_plugin()
+BW_plugin::~BW_plugin()
 {
     if (fd != -1)
     {
@@ -454,9 +469,9 @@ BW2_plugin::~BW2_plugin()
 }
 
 
-bool BW2_plugin::Initialize()
+bool BW_plugin::Initialize()
 {
-// BW2_plugin is owner and the only one (for now) writer of mapped file
+// BW_plugin is owner and the only one (for now) writer of mapped file
 
 // int open(const char *pathname, int flags, mode_t mode);
     this->fd = open(filename,O_RDWR | O_CREAT | O_NOATIME ,S_IRUSR | S_IWUSR | S_IRGRP);
@@ -504,7 +519,7 @@ bool BW2_plugin::Initialize()
     return true;
 }
 
-bool BW2_plugin::InitEmptyFile()
+bool BW_plugin::InitEmptyFile()
 {
 // setFileSize?? --> this function can be called at differrent situations
     ASSERT_NO_RET_FALSE(1104,fd >= 0);
@@ -532,12 +547,12 @@ bool BW2_plugin::InitEmptyFile()
     return true;
 }
 
-bool BW2_plugin::CheckExistingFile(int file_size)
+bool BW_plugin::CheckExistingFile(int file_size)
 {
     ASSERT_NO_RET_FALSE(1103,NOT_IMPLEMENTED);
 }
 
-bool BW2_plugin::makeSpace(int size)
+bool BW_plugin::makeSpace(int size)
 {
     int new_size = ((pool->allocator+4095) >> 12 << 12) + size;
     ASSERT_NO_RET_FALSE(1143,new_size <= pool->mmap_size);
@@ -552,7 +567,7 @@ bool BW2_plugin::makeSpace(int size)
     return true;
 }
 
-bool BW2_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
+bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with element names    
 // element names starts at offset pool->tags.names_offset and ends at pool->attrs.offset
 {
@@ -583,7 +598,7 @@ bool BW2_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     return true;
 }
 
-bool BW2_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
+bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with attribute names    
 {
     ASSERT_NO_RET_FALSE(1114,name != nullptr);
@@ -613,7 +628,7 @@ bool BW2_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
     return true;
 }
 
-bool BW2_plugin::allRegistered()
+bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
 
@@ -624,7 +639,7 @@ bool BW2_plugin::allRegistered()
     return true;
 }
 
-void BW2_plugin::setRoot(const BW_element* X)
+void BW_plugin::setRoot(const BW_element* X)
 // I want to have system of two root elements
 // It is doublebuffer concept, which enables to safely read data from one frozen buffer half while other half is active and is prepared
 // I am not sure, whether this concept is useful enough, because cost of this is double memory footprint.
@@ -650,9 +665,16 @@ void BW2_plugin::setRoot(const BW_element* X)
     pool->root = X->offset;
 }
 
+void *BW_plugin::getRoot()
+{
+    ASSERT_NO_RET_NULL(1147,this != nullptr);
+    ASSERT_NO_RET_NULL(1148,pool != nullptr);
+    return reinterpret_cast<char*>(pool) + pool->root; 
+}
+
 //-------------------------------------------------------------------------------------------------
 
-BW_element* BW2_plugin::tag(int16_t id)
+BW_element* BW_plugin::tag(int16_t id)
 {
     assert(pool->getTagType(id) == XBT_NULL);
 
@@ -665,7 +687,7 @@ BW_element* BW2_plugin::tag(int16_t id)
     return result;
 }
 
-BW_element* BW2_plugin::tagStr(int16_t id,const char *value)
+BW_element* BW_plugin::tagStr(int16_t id,const char *value)
 {
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1127,tag_type == XBT_STRING || tag_type == XBT_VARIANT);
@@ -680,138 +702,84 @@ BW_element* BW2_plugin::tagStr(int16_t id,const char *value)
     return result;
 }
 
-BW_element* BW2_plugin::tagHexStr(int16_t id,const char *value)
+BW_element* BW_plugin::tagHexStr(int16_t id,const char *value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1128,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
+BW_element* BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1129,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagInt32(int16_t id,int32_t value)
+BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1130,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagInt64(int16_t id,int64_t value)
+BW_element* BW_plugin::tagInt64(int16_t id,int64_t value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1131,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagFloat(int16_t id,float value)
+BW_element* BW_plugin::tagFloat(int16_t id,float value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1132,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagDouble(int16_t id,double value)
+BW_element* BW_plugin::tagDouble(int16_t id,double value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1133,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagGUID(int16_t id,const char *value)
+BW_element* BW_plugin::tagGUID(int16_t id,const char *value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1134,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagSHA1(int16_t id,const char *value)
+BW_element* BW_plugin::tagSHA1(int16_t id,const char *value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1135,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagTime(int16_t id,time_t value)
+BW_element* BW_plugin::tagTime(int16_t id,time_t value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1136,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagIPv4(int16_t id,const char *value)
+BW_element* BW_plugin::tagIPv4(int16_t id,const char *value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1137,NOT_IMPLEMENTED);
 }
 
-BW_element* BW2_plugin::tagIPv6(int16_t id,const char *value)
+BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
 {
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1138,NOT_IMPLEMENTED);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//-------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------
-
 const char *BW_plugin::getNodeName(void *element)
 {
     if (element == nullptr) return "?";
     BW_element *E = reinterpret_cast<BW_element*>(element);
-    ASSERT_NO_RET_NULL(reinterpret_cast<char*>(E) - pool > 0);
-    assert(pool + pool_size  - reinterpret_cast<char*>(E) >= sizeof(BW_element));
+    ASSERT_NO_RET_NULL(1149,reinterpret_cast<char*>(E) - reinterpret_cast<char*>(pool) > 0);
+    ASSERT_NO_RET_NULL(1150,reinterpret_cast<char*>(E) - reinterpret_cast<char*>(pool) + sizeof(BW_element) <= pool->size);
 
     if (E->flags & BIN_WRITE_ELEMENT_FLAG) // TAG
-    {
-        assert(elements != nullptr);
-        switch (E->identification)
-        {
-            case XTNR_NULL: return "NULL";
-            case XTNR_META_ROOT: return "meta_root";
-            case XTNR_TAG_SYMBOLS: return "tag_symbols";
-            case XTNR_PARAM_SYMBOLS: return "param_symbols";
-            case XTNR_HASH_INDEX: return "hash_index";
-            case XTNR_PAYLOAD: return "payload";
-            default:
-                assert(E->identification >= 0);
-                assert(E->identification <= pool->tags.max_id);
-                return pool + elements[E->identification] + 3; // +ID-2B,TYPE-1B
-        }
-    }
+        return pool->getTagName(E->identification);
     else    // PARAM
-    {
-        assert(attributes != nullptr);
-        switch (E->identification)
-        {
-            case XPNR_NULL : return "NULL";
-            case XPNR_NAME : return "name";
-            case XPNR_HASH : return "hash";
-            case XPNR_MODIFIED : return "modified";
-            case XPNR_COUNT : return "count";
-            case XPNR_FORMAT_VERSION : return "version";
-            case XPNR_TYPE_COUNT : return "type_count";
-
-            default:
-                assert(E->identification >= 0);
-                assert(E->identification <= pool->attrs.max_id);
-                return pool + attributes[E->identification] + 3; // +ID-2B,TYPE-1B
-        }
-    }
+        return pool->getAttrName(E->identification);
 }
-// CHECKED----
 
 const char *BW_plugin::getNodeValue(void *element)
 {
@@ -820,18 +788,26 @@ const char *BW_plugin::getNodeValue(void *element)
     switch (E->value_type)
     {
         case XBT_NULL: return nullptr; // empty value
-        case XBT_STRING: return reinterpret_cast<char *>(element)+sizeof(BW_element); 
+        case XBT_STRING: return reinterpret_cast<char *>(E+1); 
         case XBT_INT32: 
-            sprintf(buffer,"%d",*reinterpret_cast<int32_t*>(reinterpret_cast<char *>(element)+sizeof(BW_element)));
+            sprintf(buffer,"%d",*reinterpret_cast<int32_t*>(E+1));
             return buffer;
         case XBT_FLOAT:
-            sprintf(buffer,"%f",*reinterpret_cast<float*>(reinterpret_cast<char *>(element)+sizeof(BW_element)));
+            sprintf(buffer,"%f",*reinterpret_cast<float*>(E+1));
             return buffer;
         default:
             assert(false);
             return nullptr;
     }
     
+}
+
+BW_element* BW_plugin::BWE(BW_offset_t offset)
+{
+    ASSERT_NO_RET_NULL(1151,offset >= 0);
+    ASSERT_NO_RET_NULL(1152,offset+sizeof(BW_element) <= pool->size);
+    
+    return reinterpret_cast<BW_element*>(reinterpret_cast<char*>(pool)+offset);
 }
 
 void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
@@ -843,7 +819,7 @@ void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdat
     {
         on_element(child,userdata);
         if (child->next == E->first_child) break; // finished
-        child = BWE(child->next);
+        child = E->BWE(child->next);
     }
 }
 
@@ -872,7 +848,7 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
     {
 // typedef void (*OnParam_t)(const char *param_name,const char *param_value,void *element,void *userdata);
         
-        on_param(getNodeName(child),getNodeValue(child),element,userdata);
+        on_param(pool->getAttrName(child->identification),getNodeValue(child),element,userdata);
 
         if (child->next == E->first_attribute) break; // finished
         child = BWE(child->next);

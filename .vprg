@@ -1,3 +1,4 @@
 <vprg>
-	<assert_no>1146</assert_no>
+	<assert_no>1150</assert_no>
+	<pragma_once_removing>0</pragma_once_removing>
 </vprg>

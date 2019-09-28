@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include "macros.h"
 #include "bin_xml.h"
 #include "bin_xml_creator.h"
 #include "bin_xml_packer.h"
@@ -20,12 +21,12 @@ using namespace pklib_xml;
 
 void MakeDictionary(BW_plugin &W)
 {
-    W.registerElement(TAG_MAIN,"main",XBT_NULL);
-    W.registerElement(TAG_PERSON,"person",XBT_NULL);
-    W.registerElement(TAG_NAME,"name",XBT_STRING);
-    W.registerElement(TAG_SURNAME,"surname",XBT_STRING);
+    W.registerTag(TAG_MAIN,"main",XBT_NULL);
+    W.registerTag(TAG_PERSON,"person",XBT_NULL);
+    W.registerTag(TAG_NAME,"name",XBT_STRING);
+    W.registerTag(TAG_SURNAME,"surname",XBT_STRING);
 
-    W.registerAttribute(ATTR_ID,"ID",XBT_INT32);
+    W.registerAttr(ATTR_ID,"ID",XBT_INT32);
     assert(W.Initialize()); // prepare symbol tables
 }
 
@@ -35,7 +36,8 @@ int main(int argc,char **argv)
     // Bin_xml_creator is standard way of converting xml or json to xb
     {
         printf("creating test0.xb ... ");
-        BW_plugin W(0x1000,nullptr);
+        BW_plugin W("test0.wxb",nullptr,0x1000);
+        ASSERT_NO_RET_1(1147,W.Initialize());
         MakeDictionary(W);
         W.setRoot(W.tag(TAG_MAIN)); // <main></main>
         assert(Bin_xml_packer::Convert(&W,"test0.xb"));
@@ -43,53 +45,56 @@ int main(int argc,char **argv)
     }   
     {
         printf("creating test1.xb ... ");
-        BW_plugin W(0x1000,nullptr);
+        BW_plugin W("test1.wxb",nullptr,0x1000);
+        ASSERT_NO_RET_1(1148,W.Initialize());
         MakeDictionary(W);
         W.setRoot(                  // <main ID="1"></main>
                 W.tag(TAG_MAIN)
-                .attrInt32(ATTR_ID,1)
+                    ->attrInt32(ATTR_ID,1)
                 );
         assert(Bin_xml_packer::Convert(&W,"test1.xb"));
         printf("%d B\n",(int)file_getsize("test1.xb"));
     }
     {
-        printf("creating test1.xb ... ");
-        BW_plugin W(0x1000,nullptr);
+        printf("creating test2.xb ... ");
+        BW_plugin W("test2.wxb",nullptr,0x1000);
+        ASSERT_NO_RET_1(1149,W.Initialize());
         MakeDictionary(W);
         W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
-                .add(W.tag(TAG_PERSON).attrInt32(ATTR_ID,1)
-                    .add(W.tagStr(TAG_NAME,"Petr"))
-                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
+                    ->add(W.tagStr(TAG_NAME,"Petr"))
+                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                     ));
         assert(Bin_xml_packer::Convert(&W,"test2.xb"));
         printf("%d B\n",(int)file_getsize("test2.xb"));
     }
     {
         printf("creating test3.xb ... ");
-        BW_plugin W(0x1000,nullptr);
+        BW_plugin W("test3.wxb",nullptr,0x1000);
+        ASSERT_NO_RET_1(1150,W.Initialize());
         MakeDictionary(W);
         W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
-                .add(W.tag(TAG_PERSON).attrInt32(ATTR_ID,1)
-                    .add(W.tagStr(TAG_NAME,"Petr"))
-                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
+                    ->add(W.tagStr(TAG_NAME,"Petr"))
+                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                     )
-                .add(W.tag(XTNR_ET_TECERA))
+                ->add(W.tag(XTNR_ET_TECERA))
         );
         assert(Bin_xml_packer::Convert(&W,"test3.xb"));
 
         printf("%d B\n",(int)file_getsize("test3.xb"));
        
-        BW_element_link batch = // it is element linked with 
-                W.tag(TAG_PERSON).attrInt32(ATTR_ID,2)
-                    .add(W.tagStr(TAG_NAME,"Jan"))
-                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
-                .join(W.tag(TAG_PERSON).attrInt32(ATTR_ID,2)
-                    .add(W.tagStr(TAG_NAME,"Jan"))
-                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+        BW_element *batch = // it is element linked with 
+                W.tag(TAG_PERSON)->attrInt32(ATTR_ID,2)
+                    ->add(W.tagStr(TAG_NAME,"Jan"))
+                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,2)
+                    ->add(W.tagStr(TAG_NAME,"Jan"))
+                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                 )
-                .join(W.tag(TAG_PERSON).attrInt32(ATTR_ID,3)
-                    .add(W.tagStr(TAG_NAME,"Vít"))
-                    .add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,3)
+                    ->add(W.tagStr(TAG_NAME,"Vít"))
+                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                 );
                     
                     

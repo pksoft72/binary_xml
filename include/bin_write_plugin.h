@@ -126,7 +126,7 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-class BW2_plugin : public Bin_src_plugin
+class BW_plugin : public Bin_src_plugin
 {
 // This object organize complete DOM tree built on the fly.
 // Can be used to produce xb file via several passes.
@@ -136,9 +136,10 @@ protected:
     int         max_pool_size;  // never exceeed size
     int         fd;             // file handle
     BW_pool     *pool;
+    BW_element* BWE(BW_offset_t offset);
 public:
-    BW2_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
-    virtual ~BW2_plugin();
+    BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
+    virtual ~BW_plugin();
     
     virtual bool Initialize();
         bool InitEmptyFile();
@@ -165,24 +166,7 @@ public: // tag creation
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagIPv4(int16_t id,const char *value);
     BW_element*     tagIPv6(int16_t id,const char *value);
-};
-
-
-
-
-
-
-
-
-
-//*************************************************************************************************
-// TODO -- this should be refactored
-
-
-class BW_plugin : public Bin_src_plugin
-{
 public: // Bin_src_plugin
-    virtual bool Initialize();
     virtual void *getRoot();
     virtual const char *getNodeName(void *element);
     virtual const char *getNodeValue(void *element);
