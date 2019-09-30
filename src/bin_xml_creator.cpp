@@ -82,6 +82,7 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
     this->src = BIN_SRC_PLUGIN_SELECTOR(src,this);
     this->src_allocated = true;
     this->dst = dst;
+    this->dst_file = -1; 
     
     this->data = nullptr;
 
@@ -102,6 +103,7 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
     this->src_allocated = false;
     this->dst = dst;
     this->data = nullptr;
+    this->dst_file = -1; 
 
     for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
     {
@@ -130,6 +132,11 @@ Bin_xml_creator::~Bin_xml_creator()
         symbol_table[t] = nullptr;
         symbol_table_types[t] = nullptr;
         symbol_count[t] = 0;
+    }
+    if (dst_file != -1)
+    { // dst_file can be closed in destructor
+        close(dst_file);
+        dst_file = -1; 
     }
     
 }
@@ -226,6 +233,31 @@ bool Bin_xml_creator::DoAll()
 
 
         return true;
+}
+
+bool Bin_xml_creator::Append(void *element)
+{
+    if (dst_file == -1)
+    {
+        dst_file = open(dst,O_WRONLY | O_APPEND); // file must already exist
+        if (dst_file < 0)
+        {
+            std::cerr << "error: " << strerror(errno) << " while appending " << dst << "\n";
+            return false;
+        }
+    }
+    char *wp = data;
+    this->WriteNode(&wp,element);
+    
+    int size = wp - data;
+    int written = write(dst_file,data,size);
+    if (written != size)
+    {
+            std::cerr << "error: " << strerror(errno) << " cannot append " << size << "B\n";
+            return false;
+    }
+    
+    return true;
 }
 
 void Bin_xml_creator::FirstPassEvent(void *element,void *userdata,int deep)

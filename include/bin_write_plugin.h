@@ -26,6 +26,7 @@
 #define BIN_WRITE_ATTR_FLAG         0  // element (1) or attribute (0)
 #define BIN_WRITE_ELEMENT_FLAG      1  // element (1) or attribute (0)
 #define BIN_WRITE_REMOTE_VALUE      2  // for sharing big values with stable pointers ouf of pool
+#define BIN_WRITTEN                 4  // this element and all of it's children is written
 
 namespace pklib_xml {
 
@@ -152,6 +153,7 @@ public:
     bool allRegistered();
 
     void setRoot(const BW_element* X);
+    bool Write(BW_element* list);
 public: // tag creation
     BW_element*     tag(int16_t id);
     BW_element*     tagStr(int16_t id,const char *value);

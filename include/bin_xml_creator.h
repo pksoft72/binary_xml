@@ -64,6 +64,8 @@ protected:
     const char              **symbol_table[SYMBOL_TABLES_COUNT];
     XML_Binary_Type_Stored  *symbol_table_types[SYMBOL_TABLES_COUNT];
     int                     symbol_count[SYMBOL_TABLES_COUNT];
+// incremental addition
+    int     dst_file;
 public:
     Bin_xml_creator(const char *src,const char *dst);
     Bin_xml_creator(Bin_src_plugin *src,const char *dst);
@@ -71,6 +73,7 @@ public:
 
     bool DoAll();
 //        bool PrepareDestination();  
+    bool Append(void *element);
 protected:
         static void FirstPassEvent(void *element,void *userdata,int deep);
         static void FirstPassParamEvent(const char *param_name,const char *param_value,void *element,void *userdata);

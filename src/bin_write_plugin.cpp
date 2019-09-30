@@ -544,6 +544,8 @@ bool BW_plugin::InitEmptyFile()
     
     pool->size = pool->allocator;
 
+    this->file_size = pool->file_size;
+
     return true;
 }
 
@@ -564,6 +566,8 @@ bool BW_plugin::makeSpace(int size)
     }
     pool->file_size = new_size;
     pool->allocator_limit = new_size;
+
+    this->file_size = new_size;
     return true;
 }
 
@@ -672,6 +676,24 @@ void *BW_plugin::getRoot()
     return reinterpret_cast<char*>(pool) + pool->root; 
 }
 
+bool BW_plugin::Write(BW_element* list)
+// This function will write all elements in list
+{
+// Check correct initial state
+    ASSERT_NO_RET_FALSE(1151,bin_xml_creator != nullptr);
+// For all siblings in list
+    for(BW_element *element = list;;)
+    {
+        ASSERT_NO_RET_FALSE(1152,bin_xml_creator->Append(element));
+// mark as written
+        element->flags |= BIN_WRITTEN;
+
+        element = BWE(element->next);
+        ASSERT_NO_RET_FALSE(1153,element != nullptr);
+        if (element == list) break;
+    }
+// free empty place in BW
+}
 //-------------------------------------------------------------------------------------------------
 
 BW_element* BW_plugin::tag(int16_t id)

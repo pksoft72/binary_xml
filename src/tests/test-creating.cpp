@@ -80,24 +80,28 @@ int main(int argc,char **argv)
                     )
                 ->add(W.tag(XTNR_ET_TECERA))
         );
-        assert(Bin_xml_packer::Convert(&W,"test3.xb"));
+//        assert(Bin_xml_packer::Convert(&W,"test3.xb"));
+        Bin_xml_creator XC(&W,"test3.xb");
+        assert(XC.DoAll());
 
         printf("%d B\n",(int)file_getsize("test3.xb"));
-       
-        BW_element *batch = // it is element linked with 
+      
+        for(int i = 0;i < 1000;i++)
+        { 
+            BW_element *batch = // it is element linked with 
                 W.tag(TAG_PERSON)->attrInt32(ATTR_ID,2)
-                    ->add(W.tagStr(TAG_NAME,"Jan"))
-                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                ->add(W.tagStr(TAG_NAME,"Jan"))
+                ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                 ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,2)
-                    ->add(W.tagStr(TAG_NAME,"Jan"))
-                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
-                )
+                        ->add(W.tagStr(TAG_NAME,"Jan"))
+                        ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                      )
                 ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,3)
-                    ->add(W.tagStr(TAG_NAME,"Vít"))
-                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
-                );
-                    
-                    
+                        ->add(W.tagStr(TAG_NAME,"Vít"))
+                        ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                      );
+            W.Write(batch);                    
+        }
     }
 
 
