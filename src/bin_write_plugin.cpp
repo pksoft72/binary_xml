@@ -551,7 +551,9 @@ bool BW_plugin::InitEmptyFile()
 
 bool BW_plugin::CheckExistingFile(int file_size)
 {
-    ASSERT_NO_RET_FALSE(1103,NOT_IMPLEMENTED);
+// TODO: I would like enable some cooperation of multiple writers, but it neets exactly the same symbol tables and some locking
+    return InitEmptyFile();
+//    ASSERT_NO_RET_FALSE(1103,NOT_IMPLEMENTED);
 }
 
 bool BW_plugin::makeSpace(int size)

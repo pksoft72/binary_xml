@@ -8,7 +8,7 @@ set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
 set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
 
 set(CMAKE_CXX_COMPILER g++)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fPIC")
+add_compile_options(-g -fPIC)
 #find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})

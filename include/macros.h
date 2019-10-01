@@ -20,9 +20,9 @@
 
 #ifdef __cplusplus
     #ifndef NDEBUG
-        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "]" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
+        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
     #else
-        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "]" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
+        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] "  << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
     #endif
 #endif
 
@@ -31,6 +31,7 @@
 #define ASSERT_NO_RET_0(x,condition)        ASSERT_NO_(x,condition,return 0)
 #define ASSERT_NO_RET_1(x,condition)        ASSERT_NO_(x,condition,return 1)
 #define ASSERT_NO_RET_N1(x,condition)        ASSERT_NO_(x,condition,return -1)
+#define ASSERT_NO_RET_(x,condition,retvalue)        ASSERT_NO_((x),(condition),return (retvalue))
 #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
 #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})

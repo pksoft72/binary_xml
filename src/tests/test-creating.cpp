@@ -19,7 +19,7 @@ using namespace pklib_xml;
 
 #define ATTR_ID         0
 
-void MakeDictionary(BW_plugin &W)
+bool MakeDictionary(BW_plugin &W)
 {
     W.registerTag(TAG_MAIN,"main",XBT_NULL);
     W.registerTag(TAG_PERSON,"person",XBT_NULL);
@@ -27,7 +27,8 @@ void MakeDictionary(BW_plugin &W)
     W.registerTag(TAG_SURNAME,"surname",XBT_STRING);
 
     W.registerAttr(ATTR_ID,"ID",XBT_INT32);
-    assert(W.Initialize()); // prepare symbol tables
+    ASSERT_NO_RET_FALSE(1151,W.allRegistered());
+    return true;
 }
 
 
@@ -36,43 +37,43 @@ int main(int argc,char **argv)
     // Bin_xml_creator is standard way of converting xml or json to xb
     {
         printf("creating test0.xb ... ");
-        BW_plugin W("test0.wxb",nullptr,0x1000);
-        ASSERT_NO_RET_1(1147,W.Initialize());
-        MakeDictionary(W);
+        BW_plugin W("test0.wxb",nullptr,0x40000);
+        ASSERT_NO_RET_(1147,W.Initialize(),1); // opens file & prepares pool
+        ASSERT_NO_RET_(1152,MakeDictionary(W),2);
         W.setRoot(W.tag(TAG_MAIN)); // <main></main>
-        assert(Bin_xml_packer::Convert(&W,"test0.xb"));
+        ASSERT_NO_RET_(1153,Bin_xml_packer::Convert(&W,"test0.xb"),3);
         printf("%d B\n",(int)file_getsize("test0.xb"));
     }   
     {
         printf("creating test1.xb ... ");
-        BW_plugin W("test1.wxb",nullptr,0x1000);
-        ASSERT_NO_RET_1(1148,W.Initialize());
-        MakeDictionary(W);
+        BW_plugin W("test1.wxb",nullptr,0x40000);
+        ASSERT_NO_RET_(1148,W.Initialize(),1);
+        ASSERT_NO_RET_(1154,MakeDictionary(W),2);
         W.setRoot(                  // <main ID="1"></main>
                 W.tag(TAG_MAIN)
                     ->attrInt32(ATTR_ID,1)
                 );
-        assert(Bin_xml_packer::Convert(&W,"test1.xb"));
+        ASSERT_NO_RET_(1155,Bin_xml_packer::Convert(&W,"test1.xb"),3);
         printf("%d B\n",(int)file_getsize("test1.xb"));
     }
     {
         printf("creating test2.xb ... ");
-        BW_plugin W("test2.wxb",nullptr,0x1000);
-        ASSERT_NO_RET_1(1149,W.Initialize());
-        MakeDictionary(W);
+        BW_plugin W("test2.wxb",nullptr,0x40000);
+        ASSERT_NO_RET_(1149,W.Initialize(),1);
+        ASSERT_NO_RET_(1156,MakeDictionary(W),2);
         W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
                 ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
                     ->add(W.tagStr(TAG_NAME,"Petr"))
                     ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                     ));
-        assert(Bin_xml_packer::Convert(&W,"test2.xb"));
+        ASSERT_NO_RET_(1157,Bin_xml_packer::Convert(&W,"test2.xb"),3);
         printf("%d B\n",(int)file_getsize("test2.xb"));
     }
     {
         printf("creating test3.xb ... ");
-        BW_plugin W("test3.wxb",nullptr,0x1000);
-        ASSERT_NO_RET_1(1150,W.Initialize());
-        MakeDictionary(W);
+        BW_plugin W("test3.wxb",nullptr,0x40000);
+        ASSERT_NO_RET_(1150,W.Initialize(),1);
+        ASSERT_NO_RET_(1158,MakeDictionary(W),2);
         W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
                 ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
                     ->add(W.tagStr(TAG_NAME,"Petr"))
@@ -80,9 +81,10 @@ int main(int argc,char **argv)
                     )
                 ->add(W.tag(XTNR_ET_TECERA))
         );
-//        assert(Bin_xml_packer::Convert(&W,"test3.xb"));
+
         Bin_xml_creator XC(&W,"test3.xb");
-        assert(XC.DoAll());
+        ASSERT_NO_RET_(1159,Bin_xml_packer::Convert(&W,"test3.xb"),3);
+        ASSERT_NO_RET_(1160,XC.DoAll(),4);
 
         printf("%d B\n",(int)file_getsize("test3.xb"));
       
@@ -100,7 +102,7 @@ int main(int argc,char **argv)
                         ->add(W.tagStr(TAG_NAME,"Vít"))
                         ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                       );
-            W.Write(batch);                    
+            ASSERT_NO_RET_(1161,W.Write(batch),5);                    
         }
     }
 
