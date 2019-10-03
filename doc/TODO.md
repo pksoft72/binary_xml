@@ -23,3 +23,15 @@ I need some standardized format of type of file. Examples are too easy to break 
 ### JSON schema support
 
 For JSON it would be nice to process JSON schema.
+
+### XML database
+
+#### Addressing
+
+I am thinking of something like GUID, but with variable length.
+
+I will have FILE/object/field hierarchy.
+
+Object can have unique ID, but it's fields may live with sequence numbers? What about history?
+
+
