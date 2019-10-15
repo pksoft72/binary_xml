@@ -114,6 +114,16 @@ bool SkipLine(const char *&p)
     return true;
 }
 
+bool EatEnd(char *p,const char *end)
+{
+    int len0 = strlen(p);
+    int len1 = strlen(end);
+    if (len1 > len0) return false; // too short
+    if (strcmp(p + len0 - len1,end) != 0) return false; // not exactly end
+    *(p + len0 - len1) = '\0'; // truncate
+    return true;
+}
+
 bool Scan(const char *&p,const char *beg)
 {
     while (isspace(*p)) p++;

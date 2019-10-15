@@ -46,6 +46,9 @@
 #define MINIMIZE(x,y) do{if ((y) < (x)) (x) = (y);}while(0)
 #define MAXIMIZE(x,y) do{if ((y) > (x)) (x) = (y);}while(0)
 
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
+
 #ifdef __cplusplus
     #define BEGIN_EXTERN_C extern "C" {
     #define END_EXTERN_C }
