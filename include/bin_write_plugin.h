@@ -119,7 +119,7 @@ public: // index tables (indexed by id) - allocated on pool
     XML_Binary_Type getAttrType(int16_t id);
     const char*     getAttrName(int16_t id);
     
-    bool            makeTable(BW_symbol_table_12B &table);
+    bool            makeTable(BW_symbol_table_12B &table,BW_offset_t limit);
 public:
     char*           allocate(int size);
     BW_element*     new_element(XML_Binary_Type type,int size = 0);

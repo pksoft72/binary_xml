@@ -27,7 +27,7 @@ void BW_element::init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8
 
     int offset = THIS - reinterpret_cast<char*>(pool);
     assert(offset > 0);
-    assert(offset+sizeof(BW_element) <= pool->size); 
+    assert(offset+sizeof(BW_element) <= pool->file_size); //  pool->size); pool->size will be moved after commiting
     this->offset = offset;
 
     this->identification = identification;
@@ -226,7 +226,27 @@ BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
 BW_element*     BW_element::attrTime(int16_t id,time_t value)
 {
     if (this == nullptr) return nullptr;
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(0,attr_type == XBT_UNIX_TIME || attr_type == XBT_VARIANT);
+
+    if (attr_type == XBT_UNIX_TIME)
+    {
+        BW_element* attr      = pool->new_element(XBT_UNIX_TIME); // only variable types gives size  --- sizeof(int32_t));
+        ASSERT_NO_RET_NULL(0,attr != nullptr);
+        attr->init(pool,id,XBT_UNIX_TIME,BIN_WRITE_ATTR_FLAG);
+
+        uint32_t *dst         = reinterpret_cast<uint32_t*>(attr+1); // just after this element
+        *dst                  = (uint32_t)value; // store value
+        
+        add(attr);
+    }
+    else
+    {
         ASSERT_NO_RET_NULL(1096,NOT_IMPLEMENTED); // TODO: variant
+    }
+
     return this;
 }
 
@@ -320,7 +340,7 @@ const char*     BW_pool::getAttrName(int16_t id)
     }
 }
 
-bool   BW_pool::makeTable(BW_symbol_table_12B &table)
+bool   BW_pool::makeTable(BW_symbol_table_12B &table,BW_offset_t limit)
 // This is called after registration of symbols to table - see registerTag & registerAttr
 {
     table.index = 0;
@@ -335,9 +355,9 @@ bool   BW_pool::makeTable(BW_symbol_table_12B &table)
     memset(index,0,sizeof(int32_t)*(table.max_id+1)); // 0 means empty
 
     BW_offset_t start = table.names_offset;
-    BW_offset_t end = reinterpret_cast<char*>(index) - THIS;
+//    BW_offset_t end = reinterpret_cast<char*>(index) - THIS;
 
-    while (start < end)
+    while (start < limit)
     {
         int id = *reinterpret_cast<int16_t*>(THIS + start);
         ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
@@ -345,7 +365,7 @@ bool   BW_pool::makeTable(BW_symbol_table_12B &table)
         start += 3 + strlen(THIS+start+3)+1;
         ROUND32UP(start);
     }
-    ASSERT_NO_RET_FALSE(1113,start == end);
+    ASSERT_NO_RET_FALSE(1113,start == limit);
     return true;
 }
 
@@ -412,7 +432,7 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
             break;
         case XBT_UNIX_TIME:
             ASSERT_NO_RET_NULL(1076,size == 0);
-            size = sizeof(int32_t);
+            size = sizeof(uint32_t);
             break;
         case XBT_IPv4:
             ASSERT_NO_RET_NULL(1077,size == 0);
@@ -638,9 +658,10 @@ bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
 
+    BW_offset_t names_limit = pool->allocator;
     ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
-    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags));
-    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->attrs));
+    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags,pool->attrs.names_offset));
+    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->attrs,names_limit));
     pool->payload = pool->allocator;
     return true;
 }

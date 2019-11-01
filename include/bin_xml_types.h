@@ -27,7 +27,8 @@ enum XML_Binary_Type
     XBT_IPv6    = 13,   // TODO: not implemented yet
     XBT_VARIANT = 14,   // mixing many types
     XBT_UNKNOWN = 15,   // type detection failed
-    XBT_LAST    = 16
+    XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
+    XBT_LAST    = 17
 };
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes
