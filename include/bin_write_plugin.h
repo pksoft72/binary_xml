@@ -61,7 +61,7 @@ public:
 
     // value is placed just after this object
 
-    void        init(BW_pool *pool,int16_t identificaton,int8_t value_type,int8_t flags);
+    void        init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags);
 
     BW_pool*    getPool();
     BW_element* BWE(BW_offset_t offset);
@@ -76,6 +76,7 @@ public:
     BW_element  *attrBLOB(int16_t id,const char *value,int32_t size);
     BW_element  *attrInt32(int16_t id,int32_t value);
     BW_element  *attrInt64(int16_t id,int64_t value);
+    BW_element  *attrUInt64(int16_t id,uint64_t value);
     BW_element  *attrFloat(int16_t id,float value);
     BW_element  *attrDouble(int16_t id,double value);
     BW_element  *attrGUID(int16_t id,const char *value);

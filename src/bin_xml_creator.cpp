@@ -483,7 +483,7 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
     const char *value = src->getNodeValue(element);
     if (value != nullptr)
     {
-        XML_Binary_Type type = DetectValueTypeOnly(value);
+        XML_Binary_Type type = XBT_Detect(value);
         if (type == XBT_INT32)
         {
             *((*_wp)++) = type;
@@ -567,7 +567,7 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
         int cmp = strcmp(symbol,symbol_table[t][M]);
         if (cmp == 0) 
         {
-            symbol_table_types[t][M] = static_cast<XML_Binary_Type_Stored>(DetectValueType(
+            symbol_table_types[t][M] = static_cast<XML_Binary_Type_Stored>(XBT_Detect2(
                     value,
                     static_cast<XML_Binary_Type>(symbol_table_types[t][M])));
             return M;   // found
@@ -595,7 +595,7 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
     char *symbol_copy = reinterpret_cast<char *>(malloc(strlen(symbol)+1));
     strcpy(symbol_copy,symbol);
     symbol_table[t][P] = symbol_copy;
-    symbol_table_types[t][P] = static_cast<XML_Binary_Type_Stored>(DetectValueTypeOnly(value));
+    symbol_table_types[t][P] = static_cast<XML_Binary_Type_Stored>(XBT_Detect(value));
 
 #ifndef NDEBUG
 // check ordered
@@ -670,109 +670,6 @@ const char *Bin_xml_creator::getNodeInfo(const XML_Item *X)
     return node_info;
 }
 
-XML_Binary_Type Bin_xml_creator::JoinValueTypes(XML_Binary_Type A,XML_Binary_Type B)
-{
-    if (A == XBT_VARIANT) return A; // non compatible types
-    if (A == XBT_NULL) return B;
-    if (A == XBT_LAST) return B; // not used yet
-    
-    if (B == XBT_VARIANT) return B; // non compatible types
-    if (B == XBT_NULL) return A;
-    if (B == XBT_LAST) return A; // not used yet
-
-    if (B == A) return B;
-
-    if ((B == XBT_INT32 || B == XBT_INT64 || B == XBT_FLOAT || B == XBT_DOUBLE) &&
-        (A == XBT_INT32 || A == XBT_INT64 || A == XBT_FLOAT || A == XBT_DOUBLE))
-    {
-        unsigned det_mask = ((B == XBT_FLOAT || B == XBT_DOUBLE) ? 1 : 0) |   // je to floating point?
-                            ((B == XBT_INT64 || B == XBT_DOUBLE) ? 2 : 0);    // je to velký typ?
-        unsigned exp_mask = ((A == XBT_FLOAT || A == XBT_DOUBLE) ? 1 : 0) |   // je to floating point?
-                            ((A == XBT_INT64 || A == XBT_DOUBLE) ? 2 : 0);    // je to velký typ?
-        const XML_Binary_Type number_types[] = {XBT_INT32,XBT_FLOAT,XBT_INT64,XBT_DOUBLE};
-        return number_types[det_mask | exp_mask];
-    }
-
-    return XBT_VARIANT;
-    
-}
-
-XML_Binary_Type Bin_xml_creator::DetectValueType(const char *value,XML_Binary_Type expected)
-{
-    if (expected == XBT_VARIANT) return expected; // non compatible types
-    XML_Binary_Type detected = DetectValueTypeOnly(value);
-    return JoinValueTypes(detected,expected);
-}
-
-XML_Binary_Type Bin_xml_creator::DetectValueTypeOnly(const char *value)
-{
-    if (value == nullptr) return XBT_NULL;
-    if (*value == '\0') return XBT_NULL;
-    int digits = 0;
-    int hexadigits = 0;
-    int negative = 0;
-    int dots = 0;
-    int dashes = 0;
-    int colons = 0;
-    int others = 0;
-    int exponent = 0;
-    int exponent_pos = -1;
-    bool overflow64 = false;
-    
-    int len = 0;
-    uint64_t X = 0,X0 = 0,EX = 0;
-    for(const char *p = value;*p != '\0';p++)
-    {
-        if (*p == '-')
-            if (len == exponent_pos+1) negative++;
-            else dashes++;
-        else if (*p >= '0' && *p <= '9')
-        {
-            X = X*10 + (*p-'0');
-            if (X < X0) overflow64 = true;
-            X0 = X;
-            EX = EX*10 + (*p-'0');
-            digits++;
-        }
-        else if (*p >= 'a' && *p <= 'f')
-            hexadigits++;
-        else if (*p >= 'A' && *p <= 'F')
-        {
-            hexadigits++;
-            if (*p == 'E')
-            {
-                exponent_pos = len;
-                EX = 0;
-                exponent++;
-            }
-        }
-        else if (*p == '.')
-            dots++;
-        else if (*p == ':')
-            colons++;
-        else
-            others++;
-    }
-    if (digits > 0 && digits <= 19 && hexadigits == 0 && negative <= 1 
-        && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
-    {
-        if (negative == 0 && X <= 0x7fffffff) return XBT_INT32;
-        if (negative == 1 && X <= 0x80000000) return XBT_INT32;
-        return XBT_INT64;
-    }
-    if (digits > 0 && hexadigits-exponent == 0 && negative <= 2
-        && dots <= 1 && dashes == 0 && colons == 0 && others == 0 && exponent <= 1)
-    {
-        if (EX > 38 || digits >= 8) return XBT_DOUBLE;  
-        else return XBT_FLOAT;
-    }
-    if (digits+hexadigits == 40 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
-        return XBT_SHA1;
-    if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
-        return XBT_HEX;
-
-    return XBT_STRING;
-}
 
 //-------------------------------------------------------------------------------------------------
 bool Bin_xml_creator::Convert(const char *src,const char *dst)

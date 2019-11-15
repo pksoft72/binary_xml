@@ -101,19 +101,6 @@ off_t FileGetSizeByFd(int fd)
     return file_info.st_size;
 }
 
-void SkipSpaces(const char *&p)
-{
-    while (isspace(*p)) p++;
-}
-
-bool SkipLine(const char *&p)
-{
-    while (*p != '\0' && *p != '\n') p++;
-    if (*p == '\0') return false; // end of file
-    p++;    // skip \n
-    return true;
-}
-
 bool EatEnd(char *p,const char *end)
 {
     int len0 = strlen(p);
@@ -123,6 +110,8 @@ bool EatEnd(char *p,const char *end)
     *(p + len0 - len1) = '\0'; // truncate
     return true;
 }
+
+//-------------------------------------------------------------------------------------------------
 
 bool Scan(const char *&p,const char *beg)
 {
@@ -157,23 +146,57 @@ bool ScanInt(const char *&p,int &value)
     return true;
 }
 
-int  GetInt(const char *p)
+bool ScanInt64(const char *&p,int64_t &value)
 {
     while (isspace(*p)) p++;
-    
-    bool neg = (*p == '-');
-    if (neg) p++;
-    if (!isdigit(*p)) return INT_NULL_VALUE;
 
-    int x = 0;
-    while (isdigit(*p))
-        x = x *10 + (*(p++) - '0');
+    const char *p1 = p;
+    bool neg = (*p1 == '-');
+    if (neg) p1++;
+    if (!isdigit(*p1)) return false;
+
+    int64_t x = 0;
+    while (isdigit(*p1))
+        x = x *10 + (*(p1++) - '0');
     
-    return neg ? -x : x;
-    
+    p = p1;
+    value = (neg ? -x : x);
+    return true;
 }
 
+bool ScanUInt64(const char *&p,uint64_t &value)
+{
+    while (isspace(*p)) p++;
 
+    uint64_t x = 0;
+    const char *p1 = p;
+    if (*p1 == '0' && *(p1+1) == 'x') // HEXADECIMAL !
+    {
+        p1 += 2;
+        if (!isxdigit(*p1)) return false;
+        while (*p1 != '\0')
+        {
+            if (*p1 >= '0' && *p1 <= '9')
+                x = x << 4 + (*(p1++) - '0');
+            else if (*p1 >= 'A' && *p1 <= 'F')
+                x = x << 4 + (*(p1++) - 'A' + 10);
+            else if (*p1 >= 'a' && *p1 <= 'f')
+                x = x << 4 + (*(p1++) - 'a' + 10);
+            else break;
+        }
+    }
+    else
+    {
+        if (!isdigit(*p1)) return false;
+
+        while (isdigit(*p1))
+            x = x *10 + (*(p1++) - '0');
+    }
+    
+    p = p1;
+    value = x;
+    return true;
+}
 
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size)
 {
@@ -209,6 +232,173 @@ bool ScanStr(const char *&p,char separator,char *value,unsigned value_size)
     *d = '\0';
     return *value != '\0'; // string is not empty
 }
+
+void SkipSpaces(const char *&p)
+{
+    while (isspace(*p)) p++;
+}
+
+bool SkipLine(const char *&p)
+{
+    while (*p != '\0' && *p != '\n') p++;
+    if (*p == '\0') return false; // end of file
+    p++;    // skip \n
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+bool ScanW(char *&p,const char *beg)
+{
+    while (isspace(*p)) p++;
+
+    char *p1 = p;
+    while (*p1 == *beg && *beg != 0)
+    {
+        p1++;
+        beg++;
+    }
+    if (*beg != 0) return false; // not equal
+    p = p1;
+    return true;
+}
+
+bool ScanIntW(char *&p,int &value)
+{
+    while (isspace(*p)) p++;
+
+    char *p1 = p;
+    bool neg = (*p1 == '-');
+    if (neg) p1++;
+    if (!isdigit(*p1)) return false;
+
+    int x = 0;
+    while (isdigit(*p1))
+        x = x *10 + (*(p1++) - '0');
+    
+    p = p1;
+    value = (neg ? -x : x);
+    return true;
+}
+
+bool ScanInt64W(char *&p,int64_t &value)
+{
+    while (isspace(*p)) p++;
+
+    char *p1 = p;
+    bool neg = (*p1 == '-');
+    if (neg) p1++;
+    if (!isdigit(*p1)) return false;
+
+    int64_t x = 0;
+    while (isdigit(*p1))
+        x = x *10 + (*(p1++) - '0');
+    
+    p = p1;
+    value = (neg ? -x : x);
+    return true;
+}
+
+bool ScanUInt64W(char *&p,uint64_t &value)
+{
+    while (isspace(*p)) p++;
+
+    uint64_t x = 0;
+    char *p1 = p;
+    if (*p1 == '0' && *(p1+1) == 'x') // HEXADECIMAL !
+    {
+        p1 += 2;
+        if (!isxdigit(*p1)) return false;
+        while (*p1 != '\0')
+        {
+            if (*p1 >= '0' && *p1 <= '9')
+                x = x << 4 + (*(p1++) - '0');
+            else if (*p1 >= 'A' && *p1 <= 'F')
+                x = x << 4 + (*(p1++) - 'A' + 10);
+            else if (*p1 >= 'a' && *p1 <= 'f')
+                x = x << 4 + (*(p1++) - 'a' + 10);
+            else break;
+        }
+    }
+    else
+    {
+        if (!isdigit(*p1)) return false;
+
+        while (isdigit(*p1))
+            x = x *10 + (*(p1++) - '0');
+    }
+    
+    p = p1;
+    value = x;
+    return true;
+}
+
+bool ScanStrW(char *&p,char separator,char *value,unsigned value_size)
+{
+    while (isspace(*p)) p++;
+
+    char *d = value;
+    if (separator == ' ') // bere cokoliv, co je isspace
+    {
+        while (*p != '\0' && !isspace(*p))
+        {
+            if (value_size > 1)
+            {
+                *(d++) = *p;
+                value_size--;
+            }
+            p++;
+        }
+    }
+    else
+    {
+        while (*p != '\0' && *p != separator)
+        {
+            if (value_size > 1)
+            {
+                *(d++) = *p;
+                value_size--;
+            }
+            p++;
+        }
+    }
+    if (*p != '\0') p++; // sezere oddelovac!
+    *d = '\0';
+    return *value != '\0'; // string is not empty
+}
+
+void SkipSpacesW(char *&p)
+{
+    while (isspace(*p)) p++;
+}
+
+bool SkipLineW(char *&p)
+{
+    while (*p != '\0' && *p != '\n') p++;
+    if (*p == '\0') return false; // end of file
+    p++;    // skip \n
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+int  GetInt(const char *p)
+{
+    while (isspace(*p)) p++;
+    
+    bool neg = (*p == '-');
+    if (neg) p++;
+    if (!isdigit(*p)) return INT_NULL_VALUE;
+
+    int x = 0;
+    while (isdigit(*p))
+        x = x *10 + (*(p++) - '0');
+    
+    return neg ? -x : x;
+    
+}
+
+
 
 bool StrWrite(char *&dest,const char *dest_limit,const char *&src,const char *src_limit)
 {

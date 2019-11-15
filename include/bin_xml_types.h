@@ -27,10 +27,22 @@ enum XML_Binary_Type
     XBT_IPv6    = 13,   // TODO: not implemented yet
     XBT_VARIANT = 14,   // mixing many types
     XBT_UNKNOWN = 15,   // type detection failed
-    XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
-    XBT_LAST    = 17
+    XBT_UINT64  = 16,    // stores as binary int64_t
+    XBT_UNIX_TIME64_MSEC = 17,   // time_t*1000 - 64bit
+    XBT_LAST    = 18
 };
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes
 extern const char *XML_BINARY_TYPE_NAMES[XBT_LAST];
+
+XML_Binary_Type XBT_Detect(const char *value);
+XML_Binary_Type XBT_Detect2(const char *value,XML_Binary_Type expected);
+XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B);
+
+
+int             XBT_Size    (XML_Binary_Type type,int size);
+const char     *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst_size);
+
+
+
 } // pklib_xml::

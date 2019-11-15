@@ -91,6 +91,12 @@ bool XML_Item::Check(XB_reader *R,bool recursive) const
                 }
             case XBT_INT64:
                 return PD->data+sizeof(int64_t) <= (unsigned)this->length;
+            case XBT_UINT64:
+                return PD->data+sizeof(uint64_t) <= (unsigned)this->length;
+//            case XBT_UNIX_TIME:
+//                return PD->data+sizeof(uint32_t) <= (unsigned)this->length;
+            case XBT_UNIX_TIME64_MSEC:
+                return PD->data+sizeof(uint64_t) <= (unsigned)this->length;
             case XBT_DOUBLE:
                 return PD->data+sizeof(double) <= (unsigned)this->length;
             case XBT_SHA1:
@@ -260,22 +266,12 @@ const char *XML_Item::getString() const
         +paramcount * sizeof(XML_Param_Description)
         +childcount * sizeof(relative_ptr_t);
     XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
+    
+    static char output[32];
 
-    if (t == XBT_NULL) return nullptr;
     if (t == XBT_STRING) return p;
-    if (t == XBT_INT32)
-    {
-        const char *p0 = p;
-        AA(p);
-        static char output[32];
-//        std::cout << " Dbg: XBT_INT32 value: " << *reinterpret_cast<const int32_t*>(p) << " <--- OFFSET: +" << (p - reinterpret_cast<const char*>(this)) 
-//                << "was " << (p0 - reinterpret_cast<const char*>(this))
-//                << " / " << (void*)this << "\n";
-        snprintf(output,sizeof(output)-1,"%d",*reinterpret_cast<const int32_t*>(p));
-        return output;
-    }
-    // TODO: conversions needed
-    return nullptr;
+    AA(p);
+    return XBT_ToString(t,p,output,sizeof(output));
 }
 
 

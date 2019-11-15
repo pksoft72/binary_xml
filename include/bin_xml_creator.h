@@ -96,10 +96,6 @@ protected:
     void ShowSymbols(const int t);
     const char *getNodeName(tag_name_id_t name_id);
     const char *getNodeInfo(const XML_Item *X);
-public:
-    static XML_Binary_Type JoinValueTypes(XML_Binary_Type A,XML_Binary_Type B);
-    static XML_Binary_Type DetectValueType(const char *value,XML_Binary_Type expected = XBT_LAST);
-    static XML_Binary_Type DetectValueTypeOnly(const char *value);
 public: //---------------------------------------
     static bool Convert(const char *src,const char *dst);
 };
