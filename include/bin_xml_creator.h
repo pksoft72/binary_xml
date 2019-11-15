@@ -13,6 +13,7 @@ enum SymbolTableTypes
 };
 
 const int MAX_SYMBOL_COUNT = 32768; // symbols are stored into 16bit words, negative values are reserved
+const int TAB_SIZE = 4;
 
 class Bin_xml_creator;
 
@@ -42,6 +43,12 @@ public:
     off_t   getFileSize() {return file_size;}
     const char *getFilename() {return filename;}
 
+    void print();
+private:
+    int print_deep;
+    int print_node_counter;
+    static void s_PrintElement(void *element,void *userdata);
+    static void s_PrintParam(const char *param_name,const char *param_value,void *element,void *userdata);
 };
 
 typedef Bin_src_plugin* (*Bin_src_plugin_selector_t)(const char *filename,Bin_xml_creator *bin_xml_creator);

@@ -139,6 +139,7 @@ protected:
     int         fd;             // file handle
     BW_pool     *pool;
     BW_element* BWE(BW_offset_t offset);
+    bool        initialized;
 public:
     BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
     virtual ~BW_plugin();

@@ -450,7 +450,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     this->max_pool_size = max_pool_size;
     this->pool = nullptr;
     this->fd = -1;
-
+    this->initialized = false;
 }
  
 BW_plugin::~BW_plugin()
@@ -473,6 +473,7 @@ BW_plugin::~BW_plugin()
 
 bool BW_plugin::Initialize()
 {
+    if (initialized) return true; // no double initialize!!
 // BW_plugin is owner and the only one (for now) writer of mapped file
 
 // int open(const char *pathname, int flags, mode_t mode);
@@ -518,6 +519,7 @@ bool BW_plugin::Initialize()
     else
         ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
 
+    initialized = true;
     return true;
 }
 

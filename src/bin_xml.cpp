@@ -364,7 +364,7 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
         const XML_Param_Description *param = getParamByIndex(p);
         os << " " << R.getParamName(param->name) << "=\"";
         const char *param_value = param->getString(this);
-        if (param_value != nullptr)
+        if (param_value != nullptr) // TODO: escape param_value!
             os << param_value;
         os << "\"";
     }
@@ -380,7 +380,7 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
         const char *value = getString();
         if (value != nullptr && *value != 0)
         {
-            TAB;os << value << "\n";
+            TAB;os << value << "\n";    // TODO: escape value!
         }
         TAB;os << "</" << R.getNodeName(name) << ">\n";
     }

@@ -73,6 +73,45 @@ void *Bin_src_plugin::getRoot()
     return nullptr;
 }
 
+void Bin_src_plugin::print()
+{
+    print_deep = 0;
+    print_node_counter = 0;
+    s_PrintElement(getRoot(),this);
+    printf("\n");
+}
+
+void Bin_src_plugin::s_PrintElement(void *element,void *userdata)
+{
+    Bin_src_plugin *_this = reinterpret_cast<Bin_src_plugin*>(userdata);
+
+    printf("\n%*s<%s",_this->print_deep*TAB_SIZE,"",_this->getNodeName(element));
+    _this->ForAllParams(s_PrintParam,element,userdata);
+    printf(">");
+
+    int current_counter = _this->print_node_counter;
+    _this->print_deep++;
+    _this->ForAllChildren(s_PrintElement,element,_this);
+    _this->print_deep--;
+    if (current_counter < _this->print_node_counter)
+        printf("\n%*s",_this->print_deep*TAB_SIZE,"");
+
+    const char *value = _this->getNodeValue(element);
+    if (value != nullptr)
+    {
+        printf("%s",value);
+        if (current_counter < _this->print_node_counter)
+            printf("\n%*s",_this->print_deep*TAB_SIZE,"");
+    }
+    printf("</%s>",_this->getNodeName(element));
+    _this->print_node_counter++;
+}
+
+void Bin_src_plugin::s_PrintParam(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+    printf(" %s=\"%s\"",param_name,param_value);
+}
+
 //-------------------------------------------------------------------------------------------------
 
 Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
@@ -153,6 +192,7 @@ bool Bin_xml_creator::DoAll()
         this->total_value_count = 0;
 
         src->ForAllChildrenRecursively(FirstPassEvent,src->getRoot(),(void*)this,0);
+
 
         // I don't know final size of array yet, I will allocate more
         for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
