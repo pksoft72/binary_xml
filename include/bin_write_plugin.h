@@ -84,6 +84,9 @@ public:
     BW_element  *attrTime(int16_t id,time_t value);
     BW_element  *attrIPv4(int16_t id,const char *value);
     BW_element  *attrIPv6(int16_t id,const char *value);
+
+    BW_element  *attrGet(int16_t id);
+    int32_t     *getInt32();
 };
 
 class BW_symbol_table_12B
@@ -138,7 +141,6 @@ protected:
     int         max_pool_size;  // never exceeed size
     int         fd;             // file handle
     BW_pool     *pool;
-    BW_element* BWE(BW_offset_t offset);
     bool        initialized;
 public:
     BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
@@ -156,6 +158,8 @@ public:
 
     void setRoot(const BW_element* X);
     bool Write(BW_element* list);
+    
+    BW_element* BWE(BW_offset_t offset);
 public: // tag creation
     BW_element*     tag(int16_t id);
     BW_element*     tagStr(int16_t id,const char *value);

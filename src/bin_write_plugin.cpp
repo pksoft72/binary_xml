@@ -44,12 +44,12 @@ void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int
     this->first_attribute = 0;
 }
 
-BW_pool* BW_element::getPool()
+BW_pool* BW_element::getPool() // const cannot be here
 {
     return reinterpret_cast<BW_pool*>(THIS - offset);
 }
 
-BW_element* BW_element::BWE(BW_offset_t offset)
+BW_element* BW_element::BWE(BW_offset_t offset) //const cannot be here!
 {
     return reinterpret_cast<BW_element*>(THIS - this->offset + offset);
 }
@@ -299,6 +299,33 @@ BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
     if (this == nullptr) return nullptr;
         ASSERT_NO_RET_NULL(1098,NOT_IMPLEMENTED); // TODO: variant
     return this;
+}
+
+BW_element  *BW_element::attrGet(int16_t id)
+{
+    if (this == nullptr) return nullptr;
+    if (first_attribute == 0) return nullptr;
+
+    BW_element *A = BWE(first_attribute);
+    for(;;)
+    {
+        if (A->identification == id)
+            return A;
+        if (A->next == first_attribute) break; // not found
+        A = BWE(A->next);
+    }
+    return nullptr;
+}
+
+int32_t *BW_element::getInt32()
+{
+    if (this == nullptr) return NULL;
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(identification);
+    ASSERT_NO_RET_NULL(1173,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
+
+    return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
 
 //-------------------------------------------------------------------------------------------------
