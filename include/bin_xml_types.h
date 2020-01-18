@@ -39,6 +39,9 @@ XML_Binary_Type XBT_Detect(const char *value);
 XML_Binary_Type XBT_Detect2(const char *value,XML_Binary_Type expected);
 XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B);
 
+int             XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,
+                            XML_Binary_Type B_type,const void *B_value,int B_size);
+
 
 int             XBT_Size    (XML_Binary_Type type,int size);
 const char     *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst_size);

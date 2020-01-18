@@ -319,7 +319,7 @@ BW_element  *BW_element::attrGet(int16_t id)
 
 int32_t *BW_element::getInt32()
 {
-    if (this == nullptr) return NULL;
+    if (this == nullptr) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(identification);
@@ -328,6 +328,40 @@ int32_t *BW_element::getInt32()
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
 
+BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size)
+{
+    if (this == nullptr) return nullptr;
+    // for all children
+    
+    if (first_child == 0) return nullptr; // no children
+
+    BW_element *child = BWE(first_child);
+    for(;;)
+    {
+        if (child->identification == tag_id) // child has requested tag_id
+        {
+            if (child->first_attribute != 0) // has attributes!
+            {
+                BW_element *attr = BWE(child->first_attribute);
+                for(;;)
+                {
+                    if (attr->identification == attr_id) // ok, now I will know!
+                    {
+                    // I have value_type, data & data_size to compare with ...
+                    // attr->
+                    }
+                    
+                    if (attr->next == child->first_attribute) break; // finished
+                    attr = BWE(attr->next);
+                }
+            }
+        }
+
+        if (child->next == first_child) break; // finished
+        child = BWE(child->next);
+    }
+
+}
 //-------------------------------------------------------------------------------------------------
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 

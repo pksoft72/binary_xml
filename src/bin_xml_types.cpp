@@ -110,6 +110,43 @@ XML_Binary_Type XBT_Detect2(const char *value,XML_Binary_Type expected)
     return XBT_JoinTypes(detected,expected);
 }
 
+int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary_Type B_type,const void *B_value,int B_size)
+{
+#define RETURN_COMPARE_OF_TYPE(_T) \
+                if (A_size != sizeof(_T) || B_size != sizeof(_T)) return INT_NULL_VALUE;\
+                if (*reinterpret_cast<const _T *>(A_value) < *reinterpret_cast<const _T *>(B_value)) return -1;\
+                if (*reinterpret_cast<const _T *>(A_value) > *reinterpret_cast<const _T *>(B_value)) return 1;\
+                return 0;
+
+    if (A_type == B_type) // the same type
+        switch (A_type)
+        {
+            case XBT_INT32:     RETURN_COMPARE_OF_TYPE(int32_t);
+            case XBT_UNIX_TIME: RETURN_COMPARE_OF_TYPE(uint32_t);
+            case XBT_INT64:     RETURN_COMPARE_OF_TYPE(int64_t);
+            case XBT_UINT64:    RETURN_COMPARE_OF_TYPE(uint64_t);
+            case XBT_FLOAT:     RETURN_COMPARE_OF_TYPE(float);
+            case XBT_DOUBLE:    RETURN_COMPARE_OF_TYPE(double);
+
+            case XBT_STRING:
+                return strcmp(reinterpret_cast<const char *>(A_value),reinterpret_cast<const char *>(B_value));
+            case XBT_HEX:
+            case XBT_GUID:
+            case XBT_SHA1:
+            case XBT_IPv4:
+            case XBT_IPv6:
+                if (A_size == B_size) // the same size
+                    return memcmp(A_value,B_value,A_size);
+            default:
+                return INT_NULL_VALUE;
+        }
+        if (A_size == B_size) // the same size
+            return memcmp(A_value,B_value,A_size);
+// TODO: some conversions could be done here, but it is too much of code - matrix of types and their conversions
+    return INT_NULL_VALUE; // uncomparable
+#undef RETURN_COMPARE_OF_TYPE
+}
+
 int XBT_Size(XML_Binary_Type type,int size)
 {
     switch(type)
