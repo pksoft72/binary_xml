@@ -348,7 +348,11 @@ BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Bin
                     if (attr->identification == attr_id) // ok, now I will know!
                     {
                     // I have value_type, data & data_size to compare with ...
-                    // attr->
+                        int cmp = XBT_Compare(static_cast<XML_Binary_Type>(attr->value_type),reinterpret_cast<void*>(attr+1),
+                                                XBT_Size(static_cast<XML_Binary_Type>(attr->value_type),0),
+                                              value_type,data,data_size);
+                        if (cmp == 0)
+                            return child;
                     }
                     
                     if (attr->next == child->first_attribute) break; // finished
@@ -360,7 +364,7 @@ BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Bin
         if (child->next == first_child) break; // finished
         child = BWE(child->next);
     }
-
+    return nullptr;
 }
 //-------------------------------------------------------------------------------------------------
 
