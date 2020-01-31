@@ -26,6 +26,12 @@ It will best fit situations, when file is saved once and loaded many time. Savin
 
 Loading is done via memory mapping file. After checking all internal references is file ready to use.  
 
+# Compare with [EXI format](https://www.w3.org/TR/exi/)
+
+EXI format has much better compression, but it must be read sequentially and while access is slower (due decompression) - must be either transformed to some memory wasting DOM representation or processed on the fly in one or more passes.
+
+binary_xml, while memory mapped, can use direct access to any node and memory footprint for random accessing file is almost equal to file size.
+
 # Structure
 
 File contains nodes in this format:
