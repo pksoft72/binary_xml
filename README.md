@@ -30,7 +30,7 @@ Loading is done via memory mapping file. After checking all internal references 
 
 EXI format has much better compression, but it must be read sequentially and while access is slower (due decompression) - must be either transformed to some memory wasting DOM representation or processed on the fly in one or more passes.
 
-binary_xml, while memory mapped, can use direct access to any node and memory footprint for random accessing file is almost equal to file size.
+binary\_xml, while memory mapped, can use direct access to any node and memory footprint for random accessing file is almost equal to file size.
 
 # Structure
 
@@ -55,7 +55,7 @@ File contains nodes in this format:
 |∑         | 12      |XML\_Item|total header size                                |
 |param[0].name|2|int16\_t|identification of param|
 |param[0].type|2|int16\_t|code of type of parameter|
-|param[0].data|4|int32\_t|relative (```c++ ((char*)XML\_Item)+data```) pointer to data of parameter or data when small enough to fit in 4 bytes|
+|param[0].data|4|int32\_t|relative (`((char*)XML_Item)+data`) pointer to data of parameter or data when small enough to fit in 4 bytes|
 |param[1].name|2|int16\_t|
 |param[1].type|2|int16\_t|
 |param[1].data|4|int32\_t|
@@ -66,14 +66,20 @@ File contains nodes in this format:
 |param0.value|?|......|type dependent binary representation of param0.value
 |param1.value|?|......|type dependent binary representation of param0.value
 |...|
-|child[0]|?|XML_Item +|child tag with all it's data|
-|child[1]|?|XML_Item +|child tag with all it's data|
+|child[0]|12+?|XML\_Item with all data|child tag with all it's data|
+|child[1]|12+?|XML\_Item with all data|child tag with all it's data|
 |...|
-|child[childcount-1]|?|XML_Item +|child tag with all it's data|
+|child[childcount-1]|12+?|XML\_Item with all data|child tag with all it's data|
 |∑         | length   ||whole size of tag is written to it's length field          |
 
-All XML_Item values are aligned to 4 byte boundary.
+All XML\_Item values are aligned to 4 byte boundary.
 Strings are not aligned, they are 0 terminated.
+
+While converting xml to xb, there is also optimization, where all tags are checksummed and where checksum is equal to some other tag's checksum, only reference to other tag is written and not duplicite data is stored. This optimization means, that data are not stored strongly hierarchical - as copying XML\_Item+it's length cannot contain all children. There is also impossible to add `parent` link because tag can have multiple parents.
+
+It would be possible to do this trick with params too, but it is not implemented.
+
+---
 
 
 name signed 16 bit number which can be translated via symbol table info name of tag.
