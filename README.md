@@ -52,8 +52,28 @@ File contains nodes in this format:
 |paramcount| 2       |uint16\_t|number of parameters                             |
 |childcount| 4       |int32\_t |number of tag's children                         |
 |length    | 4       |int32\_t |total size of element in bytes including children|
-|----------|---------|---------|-------------------------------------------------|
-|          | 12      |XML\_Item|total header size                                |
+|∑         | 12      |XML\_Item|total header size                                |
+|param[0].name|2|int16\_t|identification of param|
+|param[0].type|2|int16\_t|code of type of parameter|
+|param[0].data|4|int32\_t|relative (```c++ ((char*)XML\_Item)+data```) pointer to data of parameter or data when small enough to fit in 4 bytes|
+|param[1].name|2|int16\_t|
+|param[1].type|2|int16\_t|
+|param[1].data|4|int32\_t|
+|...|
+|param[paramcount-1].data|4|int32\_t|
+|data.type|1|uint8\_t|type of tag's data|
+|data.value|?|.......|type dependent binary representation of data|
+|param0.value|?|......|type dependent binary representation of param0.value
+|param1.value|?|......|type dependent binary representation of param0.value
+|...|
+|child[0]|?|XML_Item +|child tag with all it's data|
+|child[1]|?|XML_Item +|child tag with all it's data|
+|...|
+|child[childcount-1]|?|XML_Item +|child tag with all it's data|
+|∑         | length   ||whole size of tag is written to it's length field          |
+
+All XML_Item values are aligned to 4 byte boundary.
+Strings are not aligned, they are 0 terminated.
 
 
 name signed 16 bit number which can be translated via symbol table info name of tag.
