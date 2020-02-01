@@ -36,6 +36,7 @@ binary_xml, while memory mapped, can use direct access to any node and memory fo
 
 File contains nodes in this format:
 
+```c++
     class XML_Item 
     {
     ...
@@ -43,6 +44,17 @@ File contains nodes in this format:
         int16_t     paramcount; // XML_Param_Description[]
         int32_t     childcount; // relative_ptr_t[]
         int32_t     length;     // =0 will signalize infinite object
+```
+
+|Field name|Byte size|Type     |Description                                      |
+|----------|:-------:|:-------:|-------------------------------------------------|
+|name      | 2       |int16\_t |identification of tag                            |
+|paramcount| 2       |uint16\_t|number of parameters                             |
+|childcount| 4       |int32\_t |number of tag's children                         |
+|length    | 4       |int32\_t |total size of element in bytes including children|
+|----------|---------|---------|-------------------------------------------------|
+|          | 12      |XML\_Item|total header size                                |
+
 
 name signed 16 bit number which can be translated via symbol table info name of tag.
 
