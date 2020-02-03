@@ -177,6 +177,8 @@ public:
     XB_reader(char *filename);
     virtual ~XB_reader();
 
+    bool SetFilename(char *filename);  // can set filename later
+
     bool Initialize();
     bool Finalize();
 

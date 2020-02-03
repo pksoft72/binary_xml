@@ -240,7 +240,7 @@ void  XML_Item::ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userd
 void  XML_Item::ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,const XML_Item **root) const
 {
     if (this == nullptr) return;
-    ASSERT_NO_EXIT_1(1032,on_item != nullptr);
+    ASSERT_NO_EXIT_1(1175,on_item != nullptr);
 
     if (root != nullptr && deep < XML_MAX_DEEP)
         *(root+deep) = this;
@@ -522,6 +522,13 @@ XB_reader::~XB_reader()
 #ifndef NDEBUG
 //    printf("~XB_reader(%s)\n",this->filename);
 #endif
+}
+
+bool XB_reader::SetFilename(char *filename)  // can set filename later
+{
+    ASSERT_NO_RET_FALSE(1176,this->filename == nullptr);
+    this->filename = filename;
+    return true;
 }
 
 bool XB_reader::Initialize()
