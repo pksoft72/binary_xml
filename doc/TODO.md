@@ -34,4 +34,19 @@ I will have FILE/object/field hierarchy.
 
 Object can have unique ID, but it's fields may live with sequence numbers? What about history?
 
+#### History
 
+I am thinking about objects with long live and with content history.
+
+Such an object will have GUID as identification and in index file there will be some GUID-FileNo-Offset = 16+4+4 = 24 bytes per object. There will be versioning with greater FileNo-Offset-> later instance.
+
+What about distributed environment with multiple instances? I would have to be able to merge objects! I would need previous fileno, previous offset and I cannot guarantee unique fileno :-(
+
+    <Person ID="ecb6ad2b-d9c8-42c1-8506-8d8e0a01e29a" PrevInstance="1.1214" PrevInstance="2.315"/>
+
+To avoid conflicts during merging - there would be nice to use file hash as it's name.
+But I want to use files as growing and they cannot change their names so fast!.
+
+But File can have a GUID and when sealed, it can have a hash. Both of them is enough to identify a file. But when file is not sealed, it's pointers can change! when compacting - otherwise no compacting would be possible.
+
+There can be some conflicts while merging.
