@@ -405,21 +405,7 @@ const char*     BW_pool::getTagName(int16_t id)
 {
     ASSERT_NO_RET_NULL(1064,this != nullptr);
     ASSERT_NO_RET_NULL(1054,tags.index != 0);                // index not initialized 
-    if (id < 0)
-    {
-        switch(id)
-        {
-            case XTNR_NULL: return "NULL";
-            case XTNR_META_ROOT: return "meta_root";
-            case XTNR_TAG_SYMBOLS: return "tag_symbols";
-            case XTNR_PARAM_SYMBOLS: return "param_symbols";
-            case XTNR_HASH_INDEX: return "hash_index";
-            case XTNR_PAYLOAD: return "payload";
-            case XTNR_REFERENCE: return "reference";
-            case XTNR_PROCESSED: return "processed";
-            case XTNR_ET_TECERA: return "et-tecera";
-        }
-    }
+    if (id < 0) return XTNR2str(id);
     ASSERT_NO_RET_NULL(1055,id >=0 && id <= tags.max_id);    // id out of range - should be in range, because range is defined by writing application
     BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
     BW_offset_t offset = elements[id];

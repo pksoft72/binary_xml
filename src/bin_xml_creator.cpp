@@ -250,6 +250,7 @@ bool Bin_xml_creator::DoAll()
             std::cerr << "error: " << strerror(errno) << " while creat(" << dst << ")\n";
             return false;
         }
+        AA(dst_file_size);
         int written = write(dst_file,data,dst_file_size);
         assert(written == dst_file_size);
 
@@ -267,6 +268,7 @@ bool Bin_xml_creator::DoAll()
         std::cerr << "error: " << strerror(errno) << " while creat(" << dst << ")\n";
         return false;
     }
+    AA(dst_file_size);
     int written = write(dst_file,data,dst_file_size);
     assert(written == dst_file_size);
 
@@ -291,6 +293,7 @@ bool Bin_xml_creator::Append(void *element)
     this->WriteNode(&wp,element);
     
     int size = wp - data;
+    AA(size);
     int written = write(dst_file,data,size);
     if (written != size)
     {
@@ -649,6 +652,8 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
 int Bin_xml_creator::Find(const char *symbol,const int t)
 {
     if (symbol == nullptr) return -1;
+    if (strcmp(symbol,"et-tecera") == 0) return XTNR_ET_TECERA;
+
 // binary search
     int B = 0;
     int E = symbol_count[t]-1;

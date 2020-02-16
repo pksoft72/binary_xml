@@ -204,6 +204,34 @@ const XML_Item *XML_Item::getChildByName(XML_Tag_Names code) const
     return nullptr;
 }
 
+const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this method can show even extented xb elements
+// this method can show even extented xb elements
+{
+    if (this == nullptr) return nullptr;
+    if (i >= 0 && i < childcount)
+    {
+        const XML_Item *X = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+getChildren()[i++]);
+    
+        if (X->name != XTNR_ET_TECERA) // OK, standard child
+            return X;
+    // this is ET_TECERA special tag and will be replaced with jump to next element
+        i = -R.doc->length; // negative value means direct offset
+    }
+    
+    int offset = -i;
+    AA(offset);
+    
+    if (offset + sizeof(XML_Item) > R.size) return nullptr; // end of data -> no more can fit
+    const XML_Item *X = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(R.doc) + offset);
+    if (offset + X->length > R.size) return nullptr; // something is strange - no whole XML_Item is stored in file        
+    // must find the first extended record
+    offset += X->length;
+    AA(offset); // align!
+    
+    i = -offset;
+    return X;
+}
+
 void XML_Item::ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep) const
 {
     if (this == nullptr) return;
@@ -371,12 +399,20 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
     if (childcount > 0)
     {
         os << ">\n";
-        const relative_ptr_t *children = getChildren();
+        int idx = 0;
+        for(;;)
+        {
+            const XML_Item *child = this->getNextChild(R,idx);
+            if (child == nullptr) break;
+            child->write(os,R,deep+1);
+            
+        }
+/*        const relative_ptr_t *children = getChildren();
         for(int ch = 0;ch < childcount;ch++)
         {
             const XML_Item *child = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+children[ch]);
             child->write(os,R,deep+1);
-        }
+        }*/
         const char *value = getString();
         if (value != nullptr && *value != 0)
         {
@@ -478,7 +514,7 @@ bool _XB_symbol_table::Load(const XML_Item *container)
 
 const char *_XB_symbol_table::getSymbol(tag_name_id_t name_id) const
 {
-    if (name_id < 0) return "__reserved__";
+    if (name_id < 0) return XTNR2str(name_id);
     if (name_id >= count) return "__out_of_range__";
     return reinterpret_cast<const char *>(item_container)+reference_array[name_id];
 }
@@ -649,6 +685,23 @@ std::ostream& operator<<(std::ostream& os, const hash192_t& h)
         os << std::setfill('0') << std::setw(2) << ((unsigned)h[x] & 0xff);
     os << std::dec;
     return os;
+}
+
+const char *XTNR2str(int16_t name)
+{
+    switch(name)
+    {
+        case XTNR_NULL: return "NULL";
+        case XTNR_META_ROOT: return "meta_root";
+        case XTNR_TAG_SYMBOLS: return "tag_symbols";
+        case XTNR_PARAM_SYMBOLS: return "param_symbols";
+        case XTNR_HASH_INDEX: return "hash_index";
+        case XTNR_PAYLOAD: return "payload";
+        case XTNR_REFERENCE: return "reference";
+        case XTNR_PROCESSED: return "processed";
+        case XTNR_ET_TECERA: return "et-tecera";
+        default:            return "__reserved__";
+    }
 }
 
 } // pklib_xml::

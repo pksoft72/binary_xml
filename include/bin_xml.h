@@ -98,6 +98,9 @@ public:
     const relative_ptr_t        *getChildren() const;
     const XML_Item          *getChildByIndex(int i) const;
     const XML_Item          *getChildByName(XML_Tag_Names code) const;
+
+    const XML_Item          *getNextChild(XB_reader &R,int &i) const;    // this method can show even extented xb elements
+
     void  ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep) const;
     void  ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep) const;
     void  ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,const XML_Item **root) const;
@@ -193,5 +196,6 @@ public:
 
 std::ostream& operator<<(std::ostream& os, const hash192_t& h);
 
+const char *XTNR2str(int16_t name);
 
 } // pklib_xml::
