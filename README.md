@@ -75,7 +75,7 @@ File contains nodes in this format:
 All XML\_Item values are aligned to 4 byte boundary.
 Strings are not aligned, they are 0 terminated.
 
-While converting xml to xb, there is also optimization, where all tags are checksummed and where checksum is equal to some other tag's checksum, only reference to other tag is written and not duplicite data is stored. This optimization means, that data are not stored strongly hierarchical - as copying XML\_Item+it's length cannot contain all children. There is also impossible to add `parent` link because tag can have multiple parents.
+While converting xml to xb, there is also optimization, where all tags are checksummed and where checksum is equal to some other tag's checksum, only reference to other tag is written and no duplicite data is stored. This optimization means, that data are not stored strongly hierarchical - as copying XML\_Item+it's length cannot contain all children. There is also impossible to add `parent` link because tag can have multiple parents.
 
 It would be possible to do this trick with params too, but it is not implemented.
 

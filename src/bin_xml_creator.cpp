@@ -290,6 +290,7 @@ bool Bin_xml_creator::Append(void *element)
         }
     }
     char *wp = data;
+    AA(wp);
     this->WriteNode(&wp,element);
     
     int size = wp - data;
