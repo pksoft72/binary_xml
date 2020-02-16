@@ -19,6 +19,11 @@ using namespace pklib_xml;
 
 #define ATTR_ID         0
 
+#define ERROR_0OK       0
+#define ERROR_1INIT     1
+#define ERROR_2DICT     2
+#define ERROR_3CONVERT  3
+
 bool MakeDictionary(BW_plugin &W)
 {
     W.registerTag(TAG_MAIN,"main",XBT_NULL);
@@ -83,7 +88,7 @@ int main(int argc,char **argv)
         );
 
         Bin_xml_creator XC(&W,"test3.xb");
-        ASSERT_NO_RET_(1159,Bin_xml_packer::Convert(&W,"test3.xb"),3);
+//        ASSERT_NO_RET_(1159,Bin_xml_packer::Convert(&W,"test3.xb"),3);
         ASSERT_NO_RET_(1160,XC.DoAll(),4);
 
         printf("%d B\n",(int)file_getsize("test3.xb"));
@@ -102,7 +107,8 @@ int main(int argc,char **argv)
                         ->add(W.tagStr(TAG_NAME,"Vít"))
                         ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                       );
-            ASSERT_NO_RET_(1161,W.Write(batch),5);                    
+            ASSERT_NO_RET_(1161,W.Write(batch),5);
+            ASSERT_NO_RET_(1180,W.Clear(),6); // clear all except dictionary
         }
     }
 

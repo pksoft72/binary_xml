@@ -55,8 +55,9 @@ typedef Bin_src_plugin* (*Bin_src_plugin_selector_t)(const char *filename,Bin_xm
 
 class Bin_xml_creator
 {
-protected:
+public:
     Bin_src_plugin  *src;
+protected:
     bool        src_allocated;
     const char  *dst;
 

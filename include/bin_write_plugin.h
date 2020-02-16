@@ -160,6 +160,8 @@ public:
 
     void setRoot(const BW_element* X);
     bool Write(BW_element* list);
+
+    bool Clear();
     
     BW_element* BWE(BW_offset_t offset);
 public: // tag creation

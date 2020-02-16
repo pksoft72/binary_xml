@@ -56,7 +56,8 @@ Bin_src_plugin::~Bin_src_plugin()
 
 void Bin_src_plugin::LinkCreator(Bin_xml_creator *bin_xml_creator)
 {
-    assert(this->bin_xml_creator == nullptr);
+//    assert(this->bin_xml_creator == nullptr);
+// it simple redirect creator to some other beast
     this->bin_xml_creator = bin_xml_creator;
 }
 
@@ -184,95 +185,95 @@ Bin_xml_creator::~Bin_xml_creator()
 
 bool Bin_xml_creator::DoAll()
 {
-        if (!src->Initialize()) return false;
+    if (!src->Initialize()) return false;
 
-        // 1. filling symbol tables----------------------
-        this->total_node_count = 4; // service elements!
-        this->total_param_count = 0;
-        this->total_value_count = 0;
+    // 1. filling symbol tables----------------------
+    this->total_node_count = 4; // service elements!
+    this->total_param_count = 0;
+    this->total_value_count = 0;
 
-        src->ForAllChildrenRecursively(FirstPassEvent,src->getRoot(),(void*)this,0);
+    src->ForAllChildrenRecursively(FirstPassEvent,src->getRoot(),(void*)this,0);
 
 
-        // I don't know final size of array yet, I will allocate more
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-                int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
-                this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
-                this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
-                memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
-                
-                this->symbol_count[t] = 0;
-        }
+    // I don't know final size of array yet, I will allocate more
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
+        this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
+        memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
 
-        src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
+        this->symbol_count[t] = 0;
+    }
 
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-                const char **table_backup = this->symbol_table[t];
-                XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
+    src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
 
-                int size1 = sizeof(char*)*symbol_count[t];
-                int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
-                this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
-                memcpy(this->symbol_table[t],table_backup,size1);
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        const char **table_backup = this->symbol_table[t];
+        XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
 
-                this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
-                memcpy(this->symbol_table_types[t],table_types_backup,size2);
-        }
-        // 2. show stats---------------------------------
+        int size1 = sizeof(char*)*symbol_count[t];
+        int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
+        this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
+        memcpy(this->symbol_table[t],table_backup,size1);
 
-        DBG(std::cout << "total elements: " << total_node_count << "\n");
-        DBG(std::cout << "total params: " << total_param_count << "\n");
-        DBG(std::cout << "node names");
-        DBG(ShowSymbols(SYMBOL_TABLE_NODES));
-        DBG(std::cout << "\nparam names");
-        DBG(ShowSymbols(SYMBOL_TABLE_PARAMS));
-        DBG(std::cout << "\n");
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
+        memcpy(this->symbol_table_types[t],table_types_backup,size2);
+    }
+    // 2. show stats---------------------------------
 
-        // 3. allocate and fill--------------------------
-        this->data = reinterpret_cast<char *>(malloc(1024 + src->getFileSize()*2)); // some reserve
+    DBG(std::cout << "total elements: " << total_node_count << "\n");
+    DBG(std::cout << "total params: " << total_param_count << "\n");
+    DBG(std::cout << "node names");
+    DBG(ShowSymbols(SYMBOL_TABLE_NODES));
+    DBG(std::cout << "\nparam names");
+    DBG(ShowSymbols(SYMBOL_TABLE_PARAMS));
+    DBG(std::cout << "\n");
 
-        DBG(std::cout << "DBG:Buffer: " << (void *)this->data << "\n");
-        if (this->data == nullptr)
-        {
-                std::cerr << "error: " << strerror(errno) << " while malloc(" << src->getFileSize()*2 << ")\n";
-                return false;
-        }
-        this->dst_file_size = FillData();
+    // 3. allocate and fill--------------------------
+    this->data = reinterpret_cast<char *>(malloc(1024 + src->getFileSize()*2)); // some reserve
+
+    DBG(std::cout << "DBG:Buffer: " << (void *)this->data << "\n");
+    if (this->data == nullptr)
+    {
+        std::cerr << "error: " << strerror(errno) << " while malloc(" << src->getFileSize()*2 << ")\n";
+        return false;
+    }
+    this->dst_file_size = FillData();
 #ifndef NDEBUG
-        // 4. write intermediate uncompressed results to file------
-        {
-                int dst_file = creat(dst,0644);
-                if (dst_file == -1)
-                {
-                        std::cerr << "error: " << strerror(errno) << " while creat(" << dst << ")\n";
-                        return false;
-                }
-                int written = write(dst_file,data,dst_file_size);
-                assert(written == dst_file_size);
-
-                close(dst_file);
-        }
-#endif
-
-        this->dst_file_size = Pack();
-
-
-        // 5. write to file------------------------------
+    // 4. write intermediate uncompressed results to file------
+    {
         int dst_file = creat(dst,0644);
         if (dst_file == -1)
         {
-                std::cerr << "error: " << strerror(errno) << " while creat(" << dst << ")\n";
-                return false;
+            std::cerr << "error: " << strerror(errno) << " while creat(" << dst << ")\n";
+            return false;
         }
         int written = write(dst_file,data,dst_file_size);
         assert(written == dst_file_size);
 
         close(dst_file);
+    }
+#endif
+
+    this->dst_file_size = Pack();
 
 
-        return true;
+    // 5. write to file------------------------------
+    int dst_file = creat(dst,0644);
+    if (dst_file == -1)
+    {
+        std::cerr << "error: " << strerror(errno) << " while creat(" << dst << ")\n";
+        return false;
+    }
+    int written = write(dst_file,data,dst_file_size);
+    assert(written == dst_file_size);
+
+    close(dst_file);
+
+
+    return true;
 }
 
 bool Bin_xml_creator::Append(void *element)

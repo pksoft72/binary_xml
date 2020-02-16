@@ -372,11 +372,33 @@ XML_Binary_Type BW_pool::getTagType(int16_t id)
 {
     ASSERT_NO_(1063,this != nullptr,return XBT_UNKNOWN);
     ASSERT_NO_(1051,tags.index != 0,return XBT_UNKNOWN);                // index not initialized 
-    ASSERT_NO_(1052,id >=0 && id <= tags.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
-    BW_offset_t offset = elements[id];
-    ASSERT_NO_(1053,offset != 0,return XBT_UNKNOWN);                                       // tag id should be correctly registered!
-    return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(THIS + offset + 2));  
+
+    if (id >=0 && id <= tags.max_id)    // id in range
+    {
+        BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
+        BW_offset_t offset = elements[id];
+        ASSERT_NO_(1053,offset != 0,return XBT_UNKNOWN);                                       // tag id should be correctly registered!
+        return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(THIS + offset + 2));  
+    }
+
+    if (id < 0 && id > XTNR_LAST) // some default tags
+        switch (id)
+        {
+            case XTNR_NULL: return XBT_UNKNOWN;                     // undefined
+            case XTNR_META_ROOT: return XBT_NULL;                   // meta_root    
+            case XTNR_TAG_SYMBOLS: return XBT_BINARY;               // tag_symbols
+            case XTNR_PARAM_SYMBOLS: return XBT_BINARY;             // param_symbols
+            case XTNR_HASH_INDEX: return XBT_UNKNOWN;               // hash_index -- not implemented yet
+            case XTNR_PAYLOAD: return XBT_NULL;                     // payload = content of XML file
+            case XTNR_REFERENCE: return XBT_UNKNOWN;                // this is reference tag!! - it is exact copy of other tag
+            case XTNR_PROCESSED: return XBT_UNKNOWN;                // this tag was processed and in .reference field is it's new address
+            case XTNR_ET_TECERA: return XBT_NULL;                   // this tag is last tag in file and is placeholder for other tags appended to the file later without modification of core
+            default:
+                break;
+        }
+
+    std::cerr << ANSI_RED_BRIGHT "[1052] " << __FUNCTION__ << ":" ANSI_RED_DARK " Unknown tag type " << id << "!" ANSI_RESET_LF;
+    return XBT_UNKNOWN;    // id out of range - should be in range, because range is defined by writing application
 }
 
 const char*     BW_pool::getTagName(int16_t id)
@@ -753,6 +775,7 @@ bool BW_plugin::Write(BW_element* list)
 {
 // Check correct initial state
     ASSERT_NO_RET_FALSE(1151,bin_xml_creator != nullptr);
+    ASSERT_NO_RET_FALSE(1177,bin_xml_creator->src == this);
 // For all siblings in list
     for(BW_element *element = list;;)
     {
@@ -765,6 +788,19 @@ bool BW_plugin::Write(BW_element* list)
         if (element == list) break;
     }
 // free empty place in BW
+    return true;
+}
+
+bool BW_plugin::Clear()
+// I will clear all data - only symbol table will remain
+{
+    ASSERT_NO_RET_FALSE(1178,pool != nullptr);
+    ASSERT_NO_RET_FALSE(1179,pool->payload != 0);
+    int size2clear = pool->allocator - pool->payload;
+    pool->root = 0;
+    pool->allocator = pool->payload;
+    memset(BWE(pool->allocator),0,size2clear);
+    return true; 
 }
 //-------------------------------------------------------------------------------------------------
 
