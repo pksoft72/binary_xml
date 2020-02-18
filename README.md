@@ -105,6 +105,63 @@ After Data are stored values of params and on the end are stored all chidlren.
 # Building binary xml on the fly
 
 The is working conversion of standard xml and JSON into binary xml, but when we need a xml file creation, it is better to store it binary instead of text representation with later conversion.
+```c++
+    bool MakeDictionary(BW_plugin &W)
+    {
+        W.registerTag(TAG_MAIN,"main",XBT_NULL);
+        W.registerTag(TAG_PERSON,"person",XBT_NULL);
+        W.registerTag(TAG_NAME,"name",XBT_STRING);
+        W.registerTag(TAG_SURNAME,"surname",XBT_STRING);
+
+        W.registerAttr(ATTR_ID,"ID",XBT_INT32);
+        ASSERT_NO_RET_FALSE(1151,W.allRegistered());
+        return true;
+    }
+
+    ...
+        -- Bin write plugin is object for authoring binary xml on the fly
+        -- wxb is different format than xb, it is position independent linked tree of objects
+        -- It is good for hanging new objects to tree.
+        BW_plugin W("test3.wxb",nullptr,0x40000);
+        ASSERT_NO_RET_(1150,W.Initialize(),1);
+        ASSERT_NO_RET_(1158,MakeDictionary(W),2);
+        W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+                ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+                    ->add(W.tagStr(TAG_NAME,"Petr"))
+                    ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                    )
+                ->add(W.tag(XTNR_ET_TECERA))        -- special tag, which enables open end growing of file
+        );
+
+        // Here is conversion to xb - relatively slow, because it is processed as XML and JSON convertors.
+        // It can be much faster, when symbol tables will be shared.
+        // This slow way has also problem in uncomplete symbol table transfer.
+        Bin_xml_creator XC(&W,"test3.xb");
+        ASSERT_NO_RET_(1160,XC.DoAll(),4);
+        // Now there is result xb file
+
+        for(int i = 0;i < 1000;i++)
+        { 
+            BW_element *batch = // it is element linked with 
+                W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+                ->add(W.tagStr(TAG_NAME,"Petr"))
+                ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+                        ->add(W.tagStr(TAG_NAME,"Jan"))
+                        ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                      )
+                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+                        ->add(W.tagStr(TAG_NAME,"Vít"))
+                        ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                      );
+        // here is appending new nodes to original xb
+            ASSERT_NO_RET_(1161,W.Write(batch),5);
+        // and here is cleaning BW_plugin for new content
+            ASSERT_NO_RET_(1180,W.Clear(),6); // clear all except dictionary
+        }
+    }
+
+```
 
 
 
