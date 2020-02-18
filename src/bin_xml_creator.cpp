@@ -24,7 +24,6 @@ namespace pklib_xml
 
 Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_creator)
 {
-    int len = strlen(filename);
     /*
     // test1.xml --> test1.xb, test2 --> test2.xb, test3.doc --> test3.xb, test4.tar.gz --> test4.tar.xb
     const char *dot = strrchr(filename,'.');
@@ -48,10 +47,27 @@ Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_cre
     assert(sizeof(XML_Symbol_Info) == 8);
     assert(sizeof(XML_Param_Description) == 8);
 
-    this->filename = new char[len+1];
-    strcpy(this->filename,filename);
+
+    this->filename = nullptr;
     this->bin_xml_creator = bin_xml_creator;
     this->file_size = 0;
+    
+    setFilename(filename);
+}
+
+void Bin_src_plugin::setFilename(const char *filename)
+{
+    if (this->filename)
+        delete [] this->filename;
+    this->filename = nullptr;
+    if (filename != nullptr)
+    {
+        int len = strlen(filename);
+        this->filename = new char[len+1];
+        strcpy(this->filename,filename);
+    }
+    else
+        this->filename = nullptr;
 }
 
 Bin_src_plugin::~Bin_src_plugin()

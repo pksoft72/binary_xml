@@ -11,6 +11,7 @@
 #include "assert.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 #include <fcntl.h>
 
 #include <sys/mman.h>
@@ -518,12 +519,25 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 //-------------------------------------------------------------------------------------------------
 
 BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
-    : Bin_src_plugin(filename,bin_xml_creator)
+    : Bin_src_plugin(nullptr,bin_xml_creator)
+// automatic change of extension
 {
     this->max_pool_size = max_pool_size;
     this->pool = nullptr;
     this->fd = -1;
     this->initialized = false;
+    
+
+    char filename2[PATH_MAX+4]; // automatically converted to .wxb suffix
+    STRCPY(filename2,filename);
+    char *dot = strrchr(filename2,'.');
+// here is potentional buffer overflow when too long filename is used
+    if (dot != nullptr)
+        strcpy(dot,".wxb");
+    else
+        strcat(filename2,".wxb"); // 
+
+    Bin_src_plugin::setFilename(filename2); // will allocate copy of filename
 }
  
 BW_plugin::~BW_plugin()
