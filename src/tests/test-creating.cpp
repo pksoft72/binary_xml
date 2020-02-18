@@ -75,12 +75,13 @@ int main(int argc,char **argv)
         printf("%d B\n",(int)file_getsize("test2.xb"));
     }
     {
+        int ID = 0;
         printf("creating test3.xb ... ");
         BW_plugin W("test3.wxb",nullptr,0x40000);
         ASSERT_NO_RET_(1150,W.Initialize(),1);
         ASSERT_NO_RET_(1158,MakeDictionary(W),2);
         W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
-                ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
+                ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
                     ->add(W.tagStr(TAG_NAME,"Petr"))
                     ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                     )
@@ -96,14 +97,14 @@ int main(int argc,char **argv)
         for(int i = 0;i < 1000;i++)
         { 
             BW_element *batch = // it is element linked with 
-                W.tag(TAG_PERSON)->attrInt32(ATTR_ID,2)
-                ->add(W.tagStr(TAG_NAME,"Jan"))
+                W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+                ->add(W.tagStr(TAG_NAME,"Petr"))
                 ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
-                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,2)
+                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
                         ->add(W.tagStr(TAG_NAME,"Jan"))
                         ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                       )
-                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,3)
+                ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
                         ->add(W.tagStr(TAG_NAME,"Vít"))
                         ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                       );
@@ -111,8 +112,4 @@ int main(int argc,char **argv)
             ASSERT_NO_RET_(1180,W.Clear(),6); // clear all except dictionary
         }
     }
-
-
-
-
 }

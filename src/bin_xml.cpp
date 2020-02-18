@@ -208,7 +208,10 @@ const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this met
 // this method can show even extented xb elements
 {
     if (this == nullptr) return nullptr;
-    if (i >= 0 && i < childcount)
+    
+    if (i >= childcount) return nullptr; // natural end of file
+
+    if (i >= 0)
     {
         const XML_Item *X = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+getChildren()[i++]);
     
@@ -385,6 +388,12 @@ const int32_t *XML_Item::getIntPtr() const
 const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
 {
     if (this == nullptr) return;
+    if (R.verbosity > 0)
+    {
+        for(int t = 0;t < deep;t++) std::cerr << "\t";
+        std::cerr << ANSI_BLACK_BRIGHT "#" << ((char*)this - (char*)R.doc) << "+" << this->length << " " << R.getNodeName(name) << "[" << paramcount << "][" << childcount << "]" ANSI_RESET_LF;
+    }
+
 #define TAB for(int t = 0;t < deep;t++) os << "\t"
     TAB;os << "<" << R.getNodeName(name);
     for(int p = 0;p < paramcount;p++)
@@ -560,11 +569,16 @@ XB_reader::~XB_reader()
 #endif
 }
 
-bool XB_reader::SetFilename(char *filename)  // can set filename later
+bool XB_reader::setFilename(char *filename)  // can set filename later
 {
     ASSERT_NO_RET_FALSE(1176,this->filename == nullptr);
     this->filename = filename;
     return true;
+}
+
+void XB_reader::setVerbosity(int verbosity)
+{
+    this->verbosity = verbosity;
 }
 
 bool XB_reader::Initialize()

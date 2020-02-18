@@ -117,9 +117,8 @@ public:
 
 class XML_Symbol_Info   // element of symbol table contains name and type of value
 {
-    relative_ptr_t  name;   // null terminated string
-    XML_Binary_Type type;   // default type of value associated with symbol
-    
+    relative_ptr_t          name;   // null terminated string
+    XML_Binary_Type         type;   // default type of value associated with symbol
 };
 
 class XML_ParamName_Info    // element of symbol table for paramnames
@@ -131,7 +130,8 @@ class XML_Param_Description
 {
 public:
     param_name_id_t name;   // name o parameter as index to symbol table
-    XML_Binary_Type type;   // here is a nice place for type storing
+    XML_Binary_Type_Stored type;   // here is a nice place for type storing
+    uint8_t         reserved;
     relative_ptr_t  data;
 
     int32_t getInt(const XML_Item *X) const {
@@ -176,11 +176,13 @@ public:
 
     _XB_symbol_table    tag_symbols;
     _XB_symbol_table    param_symbols;
+    int                 verbosity; // this >0 can enable debug messages
 public:
     XB_reader(char *filename);
     virtual ~XB_reader();
 
-    bool SetFilename(char *filename);  // can set filename later
+    bool setFilename(char *filename);  // can set filename later
+    void setVerbosity(int verbosity);
 
     bool Initialize();
     bool Finalize();

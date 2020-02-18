@@ -43,6 +43,11 @@ Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_cre
     }
      */
     // I need original filename!!! - I cannot convert xml->xb without source filename!
+
+    assert(sizeof(XML_Item) == 12);
+    assert(sizeof(XML_Symbol_Info) == 8);
+    assert(sizeof(XML_Param_Description) == 8);
+
     this->filename = new char[len+1];
     strcpy(this->filename,filename);
     this->bin_xml_creator = bin_xml_creator;
@@ -724,5 +729,6 @@ bool Bin_xml_creator::Convert(const char *src,const char *dst)
     Bin_xml_creator XC(src,dst);
     return XC.DoAll();
 }
+
 
 } // pklib_xml::
