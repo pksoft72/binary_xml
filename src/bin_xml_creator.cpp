@@ -1,6 +1,7 @@
 #include "bin_xml_creator.h"
 #include "bin_xml.h"
 #include "files.h"
+#include "utils.h"
 #include "ANSI.h"
 
 #include <alloca.h>
@@ -24,25 +25,7 @@ namespace pklib_xml
 
 Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_creator)
 {
-    /*
-    // test1.xml --> test1.xb, test2 --> test2.xb, test3.doc --> test3.xb, test4.tar.gz --> test4.tar.xb
-    const char *dot = strrchr(filename,'.');
-    if (dot == nullptr) // not found? add .xb to filename
-    {
-    this->filename = new char[len+1+3];
-    strcpy(this->filename,filename);
-    strcpy(this->filename+len,".xb");
-    }
-    else
-    {
-    int len = dot - filename;
-    this->filename = new char[len+1+3];
-    strncpy(this->filename,filename,len);
-    strcpy(this->filename+len,".xb");
-    }
-     */
     // I need original filename!!! - I cannot convert xml->xb without source filename!
-
     assert(sizeof(XML_Item) == 12);
     assert(sizeof(XML_Symbol_Info) == 8);
     assert(sizeof(XML_Param_Description) == 8);
@@ -142,7 +125,7 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
 
     this->src = BIN_SRC_PLUGIN_SELECTOR(src,this);
     this->src_allocated = true;
-    this->dst = dst;
+    this->dst = AllocFilenameChangeExt(dst,".xb");
     this->dst_file = -1; 
     
     this->data = nullptr;
@@ -162,7 +145,7 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
-    this->dst = dst;
+    this->dst = AllocFilenameChangeExt(dst,".xb");
     this->data = nullptr;
     this->dst_file = -1; 
 
@@ -199,7 +182,8 @@ Bin_xml_creator::~Bin_xml_creator()
         close(dst_file);
         dst_file = -1; 
     }
-    
+    if (dst != nullptr)
+        delete [] dst; 
 }
 
 //-------------------------------------------------------------------------------------------------

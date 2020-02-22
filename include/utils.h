@@ -25,7 +25,7 @@ bool ScanStrW(char *&p,char separator,char *value,unsigned value_size);
 void SkipSpacesW(char *&p);
 bool SkipLineW(char *&p);
 
-
+const char *AllocFilenameChangeExt(const char *filename,const char *extension);
 
 bool EatEnd(char *p,const char *end);
 int  GetInt(const char *p);

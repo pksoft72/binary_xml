@@ -528,8 +528,10 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     this->initialized = false;
     
 
-    char filename2[PATH_MAX+4]; // automatically converted to .wxb suffix
-    STRCPY(filename2,filename);
+    char filename2[PATH_MAX]; // automatically converted to .wxb suffix
+    strncpy(filename2,filename,PATH_MAX-6);
+    filename2[PATH_MAX-6] = 0;
+
     char *dot = strrchr(filename2,'.');
 // here is potentional buffer overflow when too long filename is used
     if (dot != nullptr)

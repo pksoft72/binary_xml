@@ -101,6 +101,22 @@ off_t FileGetSizeByFd(int fd)
     return file_info.st_size;
 }
 
+const char *AllocFilenameChangeExt(const char *filename,const char *extension)
+{
+    ASSERT_NO_RET_NULL(1181,filename != nullptr);
+    ASSERT_NO_RET_NULL(1182,extension != nullptr);
+
+    const char *dot = strrchr(filename,'.');
+    int len = (dot != nullptr ? dot - filename : strlen(filename));
+    int ext_len = strlen(extension);
+
+    char *new_name = new char[len+ext_len+1];
+    strncpy(new_name,filename,len);
+    strcpy(new_name+len,extension);
+    
+    return new_name;
+}
+
 bool EatEnd(char *p,const char *end)
 {
     int len0 = strlen(p);
