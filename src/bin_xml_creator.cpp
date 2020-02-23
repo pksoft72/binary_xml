@@ -3,6 +3,7 @@
 #include "files.h"
 #include "utils.h"
 #include "ANSI.h"
+#include "macros.h"
 
 #include <alloca.h>
 #include <string.h>
@@ -35,27 +36,20 @@ Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_cre
     this->bin_xml_creator = bin_xml_creator;
     this->file_size = 0;
     
-    setFilename(filename);
+    setFilename(filename,nullptr);
 }
 
-void Bin_src_plugin::setFilename(const char *filename)
+void Bin_src_plugin::setFilename(const char *filename,const char *extension)
 {
     if (this->filename)
         delete [] this->filename;
-    this->filename = nullptr;
-    if (filename != nullptr)
-    {
-        int len = strlen(filename);
-        this->filename = new char[len+1];
-        strcpy(this->filename,filename);
-    }
-    else
-        this->filename = nullptr;
+    this->filename = AllocFilenameChangeExt(filename,extension);
 }
 
 Bin_src_plugin::~Bin_src_plugin()
 {
-    delete [] this->filename;
+    if (this->filename)
+        delete [] this->filename;
 }
 
 void Bin_src_plugin::LinkCreator(Bin_xml_creator *bin_xml_creator)
@@ -197,7 +191,9 @@ bool Bin_xml_creator::DoAll()
     this->total_param_count = 0;
     this->total_value_count = 0;
 
-    src->ForAllChildrenRecursively(FirstPassEvent,src->getRoot(),(void*)this,0);
+    void *root = src->getRoot();
+    ASSERT_NO_RET_FALSE(1184,root != nullptr);
+    src->ForAllChildrenRecursively(FirstPassEvent,root,(void*)this,0);
 
 
     // I don't know final size of array yet, I will allocate more

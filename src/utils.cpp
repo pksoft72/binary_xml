@@ -103,9 +103,13 @@ off_t FileGetSizeByFd(int fd)
 
 const char *AllocFilenameChangeExt(const char *filename,const char *extension)
 {
-    ASSERT_NO_RET_NULL(1181,filename != nullptr);
-    ASSERT_NO_RET_NULL(1182,extension != nullptr);
-
+    if (filename == nullptr) return nullptr; // it is correct to send empty filename
+    if (extension == nullptr)
+    {
+        char *new_name = new char[strlen(filename)+1];
+        strcpy(new_name,filename);
+        return new_name;
+    }
     const char *dot = strrchr(filename,'.');
     int len = (dot != nullptr ? dot - filename : strlen(filename));
     int ext_len = strlen(extension);

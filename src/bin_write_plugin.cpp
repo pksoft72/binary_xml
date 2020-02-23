@@ -528,18 +528,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     this->initialized = false;
     
 
-    char filename2[PATH_MAX]; // automatically converted to .wxb suffix
-    strncpy(filename2,filename,PATH_MAX-6);
-    filename2[PATH_MAX-6] = 0;
-
-    char *dot = strrchr(filename2,'.');
-// here is potentional buffer overflow when too long filename is used
-    if (dot != nullptr)
-        strcpy(dot,".wxb");
-    else
-        strcat(filename2,".wxb"); // 
-
-    Bin_src_plugin::setFilename(filename2); // will allocate copy of filename
+    Bin_src_plugin::setFilename(filename,".wxb"); // will allocate copy of filename
 }
  
 BW_plugin::~BW_plugin()
@@ -769,6 +758,7 @@ void *BW_plugin::getRoot()
 {
     ASSERT_NO_RET_NULL(1147,this != nullptr);
     ASSERT_NO_RET_NULL(1148,pool != nullptr);
+    ASSERT_NO_RET_NULL(1183,pool->root != 0);
     return reinterpret_cast<char*>(pool) + pool->root; 
 }
 
