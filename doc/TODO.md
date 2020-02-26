@@ -50,3 +50,14 @@ But I want to use files as growing and they cannot change their names so fast!.
 But File can have a GUID and when sealed, it can have a hash. Both of them is enough to identify a file. But when file is not sealed, it's pointers can change! when compacting - otherwise no compacting would be possible.
 
 There can be some conflicts while merging.
+
+
+## Import plugins
+
+### BSON
+
+This is nice format for transfer - it is more space efficient as for expression what is next, but has no symbol table = space wasting, must be processed serially.
+
+### C3L
+
+This is format of scenes in Crash3D engine of Enemy in Sight 3D shooter game, I had been developing in it's team for 3 years. It would be nice to check, whether xb is suitable for this application.
