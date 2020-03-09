@@ -72,6 +72,7 @@ public:
 
 
     BW_element  *attrStr(int16_t id,const char *value);
+    BW_element  *attrStr2(int16_t id,const char *beg,const char *end);
     BW_element  *attrHexStr(int16_t id,const char *value);
     BW_element  *attrBLOB(int16_t id,const char *value,int32_t size);
     BW_element  *attrInt32(int16_t id,int32_t value);

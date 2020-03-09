@@ -128,6 +128,38 @@ BW_element*     BW_element::attrStr(int16_t id,const char *value)
     return this;
 }
 
+BW_element*     BW_element::attrStr2(int16_t id,const char *beg,const char *end)
+{
+    if (this == nullptr) return nullptr;
+    if (beg == nullptr) return this; // adding null value string is as nothing is added
+    if (end == nullptr) return this; // adding null value string is as nothing is added
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(1050,attr_type == XBT_STRING || attr_type == XBT_VARIANT);
+    
+    int len = end - beg;
+
+    if (attr_type == XBT_STRING)
+    {
+        BW_element* attr      = pool->new_element(XBT_STRING,len); // only variable types gives size  --- sizeof(int32_t));
+        ASSERT_NO_RET_NULL(1081,attr != nullptr);
+        attr->init(pool,id,XBT_STRING,BIN_WRITE_ATTR_FLAG);
+
+        char *dst             = reinterpret_cast<char*>(attr+1); // just after this element
+        strncpy(dst,beg,len); 
+        dst[len] = '\0';
+        
+        add(attr);
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(1082,NOT_IMPLEMENTED); // TODO: variant
+    }
+
+    return this;
+}
+
 BW_element*     BW_element::attrHexStr(int16_t id,const char *value)
 {
     if (this == nullptr) return nullptr;
