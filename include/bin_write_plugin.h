@@ -76,6 +76,7 @@ public:
     BW_element  *attrHexStr(int16_t id,const char *value);
     BW_element  *attrBLOB(int16_t id,const char *value,int32_t size);
     BW_element  *attrInt32(int16_t id,int32_t value);
+    BW_element  *attrUInt32(int16_t id,uint32_t value);
     BW_element  *attrInt64(int16_t id,int64_t value);
     BW_element  *attrUInt64(int16_t id,uint64_t value);
     BW_element  *attrFloat(int16_t id,float value);
@@ -171,7 +172,9 @@ public: // tag creation
     BW_element*     tagHexStr(int16_t id,const char *value);
     BW_element*     tagBLOB(int16_t id,const char *value,int32_t size);
     BW_element*     tagInt32(int16_t id,int32_t value);
+    BW_element*     tagUInt32(int16_t id,uint32_t value);
     BW_element*     tagInt64(int16_t id,int64_t value);
+    BW_element*     tagUInt64(int16_t id,uint64_t value);
     BW_element*     tagFloat(int16_t id,float value);
     BW_element*     tagDouble(int16_t id,double value);
     BW_element*     tagGUID(int16_t id,const char *value);

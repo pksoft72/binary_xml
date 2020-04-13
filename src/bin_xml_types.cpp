@@ -59,6 +59,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     {
         if (negative == 0 && X <= 0x7fffffff) return XBT_INT32;
         if (negative == 1 && X <= 0x80000000) return XBT_INT32;
+        if (negative == 0 && (X >> 32) == 0) return XBT_UINT32;
         if (negative == 0 && X > 0x7fffffffffffffff) return XBT_UINT64;
         return XBT_INT64;
     }
@@ -122,6 +123,7 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
         switch (A_type)
         {
             case XBT_INT32:     RETURN_COMPARE_OF_TYPE(int32_t);
+            case XBT_UINT32:    RETURN_COMPARE_OF_TYPE(uint32_t);
             case XBT_UNIX_TIME: RETURN_COMPARE_OF_TYPE(uint32_t);
             case XBT_INT64:     RETURN_COMPARE_OF_TYPE(int64_t);
             case XBT_UINT64:    RETURN_COMPARE_OF_TYPE(uint64_t);
@@ -164,6 +166,9 @@ int XBT_Size(XML_Binary_Type type,int size)
         case XBT_INT32:
             ASSERT_NO_RET_N1(1070,size == 0);
             return sizeof(int32_t);
+        case XBT_UINT32:
+            ASSERT_NO_RET_N1(1185,size == 0);
+            return sizeof(uint32_t);
         case XBT_INT64:
             ASSERT_NO_RET_N1(1071,size == 0);
             return sizeof(int64_t);
@@ -212,6 +217,9 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
             return reinterpret_cast<const char *>(data); 
         case XBT_INT32: 
             snprintf(dst,dst_size,"%d",*reinterpret_cast<const int32_t*>(data));
+            return dst;
+        case XBT_UINT32: 
+            snprintf(dst,dst_size,"%u",*reinterpret_cast<const uint32_t*>(data));
             return dst;
         case XBT_INT64:
             {

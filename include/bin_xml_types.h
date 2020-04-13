@@ -29,7 +29,8 @@ enum XML_Binary_Type
     XBT_UNKNOWN = 15,   // type detection failed
     XBT_UINT64  = 16,    // stores as binary int64_t
     XBT_UNIX_TIME64_MSEC = 17,   // time_t*1000 - 64bit
-    XBT_LAST    = 18
+    XBT_UINT32  = 18,    // stores as binary int64_t
+    XBT_LAST    = 19
 };
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes
