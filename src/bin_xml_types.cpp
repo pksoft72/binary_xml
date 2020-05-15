@@ -114,12 +114,13 @@ XML_Binary_Type XBT_Detect2(const char *value,XML_Binary_Type expected)
 int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary_Type B_type,const void *B_value,int B_size)
 {
 #define RETURN_COMPARE_OF_TYPE(_T) \
-                if (A_size != sizeof(_T) || B_size != sizeof(_T)) return INT_NULL_VALUE;\
-                if (*reinterpret_cast<const _T *>(A_value) < *reinterpret_cast<const _T *>(B_value)) return -1;\
-                if (*reinterpret_cast<const _T *>(A_value) > *reinterpret_cast<const _T *>(B_value)) return 1;\
-                return 0;
+    if (A_size != sizeof(_T) || B_size != sizeof(_T)) return INT_NULL_VALUE;\
+    if (*reinterpret_cast<const _T *>(A_value) < *reinterpret_cast<const _T *>(B_value)) return -1;\
+    if (*reinterpret_cast<const _T *>(A_value) > *reinterpret_cast<const _T *>(B_value)) return 1;\
+    return 0;
 
     if (A_type == B_type) // the same type
+    {
         switch (A_type)
         {
             case XBT_INT32:     RETURN_COMPARE_OF_TYPE(int32_t);
@@ -131,20 +132,21 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
             case XBT_DOUBLE:    RETURN_COMPARE_OF_TYPE(double);
 
             case XBT_STRING:
-                return strcmp(reinterpret_cast<const char *>(A_value),reinterpret_cast<const char *>(B_value));
+                                return strcmp(reinterpret_cast<const char *>(A_value),reinterpret_cast<const char *>(B_value));
             case XBT_HEX:
             case XBT_GUID:
             case XBT_SHA1:
             case XBT_IPv4:
             case XBT_IPv6:
-                if (A_size == B_size) // the same size
-                    return memcmp(A_value,B_value,A_size);
+                                if (A_size == B_size) // the same size
+                                    return memcmp(A_value,B_value,A_size);
             default:
-                return INT_NULL_VALUE;
+                                return INT_NULL_VALUE;
         }
-        if (A_size == B_size) // the same size
-            return memcmp(A_value,B_value,A_size);
-// TODO: some conversions could be done here, but it is too much of code - matrix of types and their conversions
+    }
+    if (A_size == B_size) // the same size
+        return memcmp(A_value,B_value,A_size);
+    // TODO: some conversions could be done here, but it is too much of code - matrix of types and their conversions
     return INT_NULL_VALUE; // uncomparable
 #undef RETURN_COMPARE_OF_TYPE
 }
@@ -154,6 +156,8 @@ int XBT_Size(XML_Binary_Type type,int size)
     switch(type)
     {
         case XBT_NULL:
+        case XBT_UNKNOWN:
+        case XBT_LAST:
             ASSERT_NO_RET_N1(1068,size == 0);
             return 0;
         case XBT_VARIABLE:
@@ -205,6 +209,7 @@ int XBT_Size(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1172,size == 0);
             return sizeof(uint64_t);
     }
+    return 0;
 }
 
 const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst_size)
@@ -225,7 +230,8 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
             {
                 int64_t value = *reinterpret_cast<const int64_t*>(data);   
                 if (value == 0) return "0";
-                if (value == -0x8000000000000000) return "9223372036854775808";
+                if (value == -576460752303423488) return "9223372036854775808";
+                //if (value == -0x8000000000000000) return "9223372036854775808";
                 char *d = dst+dst_size;
                 bool neg = (value < 0);
                 if (neg) value = -value;

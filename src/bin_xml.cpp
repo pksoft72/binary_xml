@@ -224,9 +224,9 @@ const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this met
     int offset = -i;
     AA(offset);
     
-    if (offset + sizeof(XML_Item) > R.size) return nullptr; // end of data -> no more can fit
+    if (offset + (int)sizeof(XML_Item) > (int)R.size) return nullptr; // end of data -> no more can fit
     const XML_Item *X = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(R.doc) + offset);
-    if (offset + X->length > R.size) return nullptr; // something is strange - no whole XML_Item is stored in file        
+    if (offset + X->length > (int)R.size) return nullptr; // something is strange - no whole XML_Item is stored in file        
     // must find the first extended record
     offset += X->length;
     AA(offset); // align!

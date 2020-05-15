@@ -8,7 +8,7 @@ set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
 set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
 
 set(CMAKE_CXX_COMPILER g++)
-add_compile_options(-g -fPIC)
+add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
 #find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
@@ -87,11 +87,9 @@ endif()
 #--------------------------------------------------------------------------------------------------
 add_custom_target(tests COMMAND ctest .)
 
-add_custom_target(tags  COMMAND ctags -R -f .tags . /usr/include)
 add_custom_target(run   
     COMMAND 2xb ${XML_SOURCES}
     COMMAND test -f ${XB_RESULT} && hexdump -C ${XB_RESULT})
-add_custom_target(dbg   COMMAND gdb xml2xbin)
 
 
 install(TARGETS 2xb xb2xml binary_xml binary_xml_static

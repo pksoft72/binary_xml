@@ -124,6 +124,7 @@ unsigned char *SHA1(const unsigned char *d, size_t n, unsigned char *md)
     blk_SHA1_Init(&ctx);
     blk_SHA1_Update(&ctx,d,n);
     blk_SHA1_Final(md,&ctx);    
+    return md;
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -197,11 +197,11 @@ bool ScanUInt64(const char *&p,uint64_t &value)
         while (*p1 != '\0')
         {
             if (*p1 >= '0' && *p1 <= '9')
-                x = x << 4 + (*(p1++) - '0');
+                x = (x << 4) + (*(p1++) - '0');
             else if (*p1 >= 'A' && *p1 <= 'F')
-                x = x << 4 + (*(p1++) - 'A' + 10);
+                x = (x << 4) + (*(p1++) - 'A' + 10);
             else if (*p1 >= 'a' && *p1 <= 'f')
-                x = x << 4 + (*(p1++) - 'a' + 10);
+                x = (x << 4) + (*(p1++) - 'a' + 10);
             else break;
         }
     }
@@ -332,11 +332,11 @@ bool ScanUInt64W(char *&p,uint64_t &value)
         while (*p1 != '\0')
         {
             if (*p1 >= '0' && *p1 <= '9')
-                x = x << 4 + (*(p1++) - '0');
+                x = (x << 4) + (*(p1++) - '0');
             else if (*p1 >= 'A' && *p1 <= 'F')
-                x = x << 4 + (*(p1++) - 'A' + 10);
+                x = (x << 4) + (*(p1++) - 'A' + 10);
             else if (*p1 >= 'a' && *p1 <= 'f')
-                x = x << 4 + (*(p1++) - 'a' + 10);
+                x = (x << 4) + (*(p1++) - 'a' + 10);
             else break;
         }
     }
@@ -451,11 +451,11 @@ const char *MakeIdent(const char *Source,const char *style)
     bool all_uppercase = strstr(style,"U!") != nullptr;
     bool need_uppercase = space_to_uppercase;
 
-    while (len < sizeof(_MakeIdent_Ident)-1 && *Source != '\0')
+    while (len < (int)sizeof(_MakeIdent_Ident)-1 && *Source != '\0')
     {
-        if (*Source >= 'a' && *Source <= 'z' ||
-            *Source >= 'A' && *Source <= 'Z' ||
-            len > 0 && *Source >= '0' && *Source <= '9' ||
+        if ((*Source >= 'a' && *Source <= 'z') ||
+            (*Source >= 'A' && *Source <= 'Z') ||
+            (len > 0 && *Source >= '0' && *Source <= '9') ||
             *Source == '_')
         {
             if (need_uppercase || all_uppercase)
