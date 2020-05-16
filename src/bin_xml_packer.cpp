@@ -305,21 +305,25 @@ char *Bin_xml_packer::PackNode(char **_wp,char *_X)
 Bin_xml_packer::Bin_xml_packer(const char *src,const char *dst)
     : Bin_xml_creator(src,dst)
 {
+#ifndef NDEBUG
     XML_Item A;
     _XML_Reference B;
 
     assert(sizeof(A) == sizeof(B));
     assert((char*)&A-(char*)&A.length == (char*)&B-(char*)&B.length); 
+#endif
 }
 
 Bin_xml_packer::Bin_xml_packer(Bin_src_plugin *src,const char *dst)
     : Bin_xml_creator(src,dst)
 {
+#ifndef NDEBUG
     XML_Item A;
     _XML_Reference B;
 
     assert(sizeof(A) == sizeof(B));
     assert((char*)&A-(char*)&A.length == (char*)&B-(char*)&B.length); 
+#endif
 }
 
 bool Bin_xml_packer::Convert(const char *src,const char *dst)

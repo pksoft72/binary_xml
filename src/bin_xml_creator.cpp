@@ -270,13 +270,14 @@ bool Bin_xml_creator::DoAll()
         return false;
     }
     AA(dst_file_size);
-    int written = write(dst_file,data,dst_file_size);
+    int written = 
+        write(dst_file,data,dst_file_size);
     assert(written == dst_file_size);
 
     close(dst_file);
 
 
-    return true;
+    return (written == dst_file_size);
 }
 
 bool Bin_xml_creator::Append(void *element)
