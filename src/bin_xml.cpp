@@ -34,9 +34,11 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST] = {
     "UNIX_TIME",
     "IPv4",
     "IPv6",
-    "VARIANT"
+    "Unknown??",
+    "UINT64",
+    "UNIX_TIME64_MSEC",
+    "UINT32",
 };
-
 
 bool XML_Item::Check(XB_reader *R,bool recursive) const
 // I want to check everything to be 100% sure, data are ok

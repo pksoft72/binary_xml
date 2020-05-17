@@ -14,7 +14,8 @@
 #include <ctype.h>
 #include <stdlib.h> // qsort_r
 #include <stdio.h>
-
+#include <stdarg.h> // va_start ...
+#include <limits.h> // PATH_MAX
 #include <iostream>
 
 #define DBG(x)
@@ -44,6 +45,18 @@ void Bin_src_plugin::setFilename(const char *filename,const char *extension)
     if (this->filename)
         delete [] this->filename;
     this->filename = AllocFilenameChangeExt(filename,extension);
+}
+
+void Bin_src_plugin::setFilenameFmt(const char *filename,...)
+{
+    char expanded[PATH_MAX];
+    va_list arglist;
+    va_start(arglist,filename);
+    vsnprintf(expanded,sizeof(expanded),filename,arglist);
+    expanded[PATH_MAX-1] = '\0';
+    va_end(arglist);
+
+    setFilename(expanded,nullptr);
 }
 
 Bin_src_plugin::~Bin_src_plugin()

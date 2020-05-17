@@ -43,6 +43,7 @@ public:
     off_t   getFileSize() {return file_size;}
     const char *getFilename() {return filename;}
     void setFilename(const char *filename,const char *extension);
+    void setFilenameFmt(const char *filename,...);
 
     void print();
 private:

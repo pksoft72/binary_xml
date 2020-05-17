@@ -564,6 +564,8 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
         // size is stored to the 1st byte of data
             *reinterpret_cast<int32_t*>(1+result) = size2 - sizeof(int32_t);
             break;
+        default:
+            break;
     }
     return result;
 }
@@ -693,8 +695,8 @@ bool BW_plugin::CheckExistingFile(int file_size)
 bool BW_plugin::makeSpace(int size)
 {
     int new_size = ((pool->allocator+4095) >> 12 << 12) + size;
-    ASSERT_NO_RET_FALSE(1143,new_size <= pool->mmap_size);
-    if (new_size < pool->file_size) return true; // no grow - ok
+    ASSERT_NO_RET_FALSE(1143,new_size <= (int)pool->mmap_size);
+    if (new_size < (int)pool->file_size) return true; // no grow - ok
     if (ftruncate(fd,new_size) < 0)
     {
         ERRNO_SHOW(1144,"ftruncate",filename);

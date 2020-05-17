@@ -12,7 +12,7 @@ typedef uint16_t    IPv6_t[8];
 enum XML_Binary_Type 
 {
     XBT_NULL    = 0,    // empty value is almost compatible with all values
-    XBT_VARIABLE    = 1,    // stores with XML_Binary_Type in 1st byte
+    XBT_VARIANT = 1,    // stores with XML_Binary_Type in 1st byte
     XBT_STRING  = 2,    // string 0 terminated
     XBT_BINARY  = 3,    // stored as uint32_t length + data
     XBT_INT32   = 4,    // stores as binary int32_t
@@ -25,12 +25,11 @@ enum XML_Binary_Type
     XBT_UNIX_TIME   = 11,   // time_t - 32bit
     XBT_IPv4    = 12,   // 192.168.3.15
     XBT_IPv6    = 13,   // TODO: not implemented yet
-    XBT_VARIANT = 14,   // mixing many types
-    XBT_UNKNOWN = 15,   // type detection failed
-    XBT_UINT64  = 16,    // stores as binary int64_t
-    XBT_UNIX_TIME64_MSEC = 17,   // time_t*1000 - 64bit
-    XBT_UINT32  = 18,    // stores as binary int64_t
-    XBT_LAST    = 19
+    XBT_UNKNOWN = 14,   // type detection failed
+    XBT_UINT64  = 15,    // stores as binary int64_t
+    XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
+    XBT_UINT32  = 17,    // stores as binary int64_t
+    XBT_LAST    = 18
 };
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes

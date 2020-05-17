@@ -160,8 +160,8 @@ int XBT_Size(XML_Binary_Type type,int size)
         case XBT_LAST:
             ASSERT_NO_RET_N1(1068,size == 0);
             return 0;
-        case XBT_VARIABLE:
-            ASSERT_NO_RET_N1(1069,type != XBT_VARIABLE); // must be known
+        case XBT_VARIANT:
+            ASSERT_NO_RET_N1(1069,type != XBT_VARIANT); // must be known
             break;
         case XBT_STRING:
             return ++size; // terminating character
@@ -202,9 +202,6 @@ int XBT_Size(XML_Binary_Type type,int size)
         case XBT_IPv6:
             ASSERT_NO_RET_N1(1078,size == 0);
             return 16;
-        case XBT_VARIANT:
-            ASSERT_NO_RET_N1(1079,type != XBT_VARIANT);
-            break;
         case XBT_UNIX_TIME64_MSEC:
             ASSERT_NO_RET_N1(1172,size == 0);
             return sizeof(uint64_t);

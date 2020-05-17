@@ -13,10 +13,10 @@ add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
 
-set(BIN_WRITE_PLUGIN OFF CACHE BOOL "unfinished building xb files on the fly")
-if(BIN_WRITE_PLUGIN)
+#set(BIN_WRITE_PLUGIN OFF CACHE BOOL "unfinished building xb files on the fly")
+#if(BIN_WRITE_PLUGIN)
     add_compile_options(-DBIN_WRITE_PLUGIN)
-endif()
+#endif()
 
 #--------------------------------------------------------------------------------------------------
 
