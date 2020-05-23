@@ -1,11 +1,7 @@
-# jdu na to
-#cmake_minimum_required (VERSION 3.5.1)
 cmake_minimum_required (VERSION 3.0.2)
 project (binary_xml)
 
 #-----------------------------------------------------------------------------------------------
-set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
-set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
 
 set(CMAKE_CXX_COMPILER g++)
 add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
@@ -24,14 +20,19 @@ find_package (LibXml2)
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
+if (TARGET_DEVICE)
+    #part of big project
+else()
+    set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
+    set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
+    file(MAKE_DIRECTORY build)
 
-file(MAKE_DIRECTORY build)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/${TARGET_DEVICE}")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/${TARGET_DEVICE}")
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endif()
 
 include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${CMAKE_BINARY_DIR})

@@ -79,6 +79,7 @@ protected:
 public:
     Bin_xml_creator(const char *src,const char *dst);
     Bin_xml_creator(Bin_src_plugin *src,const char *dst);
+    Bin_xml_creator(Bin_src_plugin *src);
     virtual ~Bin_xml_creator();
 
     bool DoAll();

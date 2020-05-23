@@ -164,6 +164,23 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
     }
 }
 
+Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src)
+{
+    this->src = src;
+    this->src->LinkCreator(this); // link it
+    this->src_allocated = false;
+    this->dst = AllocFilenameChangeExt(src->getFilename(),".xb");
+    this->data = nullptr;
+    this->dst_file = -1; 
+
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        this->symbol_table[t] = nullptr;
+        this->symbol_table_types[t] = nullptr;
+        this->symbol_count[t] = 0;
+    }
+}
+
 Bin_xml_creator::~Bin_xml_creator()
 {
     if (src_allocated && src != nullptr)

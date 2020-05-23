@@ -646,7 +646,7 @@ bool BW_plugin::Initialize()
 // OK, what 2 do now?
 // There are 2 situations - file is empty and I want to create and write ... simple one
 //                        - file is somehow populated, it must be fully compatibale, or I must fail
-    if (file_size == 0)
+    if (file_size > 0)
         ASSERT_NO_RET_FALSE(1101,InitEmptyFile());
     else
         ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
@@ -688,6 +688,7 @@ bool BW_plugin::InitEmptyFile()
 bool BW_plugin::CheckExistingFile(int file_size)
 {
 // TODO: I would like enable some cooperation of multiple writers, but it neets exactly the same symbol tables and some locking
+    memset(pool,0,file_size);
     return InitEmptyFile();
 //    ASSERT_NO_RET_FALSE(1103,NOT_IMPLEMENTED);
 }
