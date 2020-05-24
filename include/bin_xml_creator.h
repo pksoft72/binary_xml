@@ -39,6 +39,10 @@ public:
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata)=0;
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)=0;
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata)=0;
+    
+    virtual int getSymbolCount(SymbolTableTypes table);
+    virtual const char *getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type); // not requested
+
 
     off_t   getFileSize() {return file_size;}
     const char *getFilename() {return filename;}

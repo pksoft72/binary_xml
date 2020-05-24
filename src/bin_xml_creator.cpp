@@ -40,6 +40,17 @@ Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_cre
     setFilename(filename,nullptr);
 }
 
+int Bin_src_plugin::getSymbolCount(SymbolTableTypes table)
+{
+    return -1;
+}
+
+const char *Bin_src_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type)
+{
+    type = XBT_UNKNOWN;
+    return nullptr;
+}
+
 void Bin_src_plugin::setFilename(const char *filename,const char *extension)
 {
     if (this->filename)
@@ -152,6 +163,7 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
+    if (dst == nullptr) dst = src->getFilename();
     this->dst = AllocFilenameChangeExt(dst,".xb");
     this->data = nullptr;
     this->dst_file = -1; 
@@ -223,34 +235,56 @@ bool Bin_xml_creator::DoAll()
 
     void *root = src->getRoot();
     ASSERT_NO_RET_FALSE(1184,root != nullptr);
+    // total_node_count, total_param_count
     src->ForAllChildrenRecursively(FirstPassEvent,root,(void*)this,0);
 
-
-    // I don't know final size of array yet, I will allocate more
-    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    if (src->getSymbolCount(SYMBOL_TABLE_NODES) > 0) // has special function for symbol table
     {
-        int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
-        this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
-        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
-        memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
-
-        this->symbol_count[t] = 0;
+    // copy of symbol tables where src has some - it's faster and no type detection is needed
+        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+        {
+            int count = this->symbol_count[t] = src->getSymbolCount((SymbolTableTypes)t);
+            this->symbol_table[t] = reinterpret_cast<const char **>(malloc(sizeof(char*)*count));
+            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(sizeof(XML_Binary_Type_Stored)*count));
+            for(int i = 0;i < count;i++)
+            {
+                XML_Binary_Type type;
+                const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
+                char *name2;
+                this->symbol_table[t][i] = name2 = reinterpret_cast<char *>(malloc(strlen(name)+1));
+                strcpy(name2,name);
+                this->symbol_table_types[t][i] = (XML_Binary_Type_Stored)type;
+            }
+        }
     }
-
-    src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
-
-    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    else
     {
-        const char **table_backup = this->symbol_table[t];
-        XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
+        // I don't know final size of array yet, I will allocate more
+        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+        {
+            int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
+            this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
+            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
+            memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
 
-        int size1 = sizeof(char*)*symbol_count[t];
-        int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
-        this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
-        memcpy(this->symbol_table[t],table_backup,size1);
+            this->symbol_count[t] = 0;
+        }
 
-        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
-        memcpy(this->symbol_table_types[t],table_types_backup,size2);
+        src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
+
+        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+        {
+            const char **table_backup = this->symbol_table[t];
+            XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
+
+            int size1 = sizeof(char*)*symbol_count[t];
+            int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
+            this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
+            memcpy(this->symbol_table[t],table_backup,size1);
+
+            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
+            memcpy(this->symbol_table_types[t],table_types_backup,size2);
+        }
     }
     // 2. show stats---------------------------------
 

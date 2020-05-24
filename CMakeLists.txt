@@ -9,10 +9,6 @@ add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
 
-#set(BIN_WRITE_PLUGIN OFF CACHE BOOL "unfinished building xb files on the fly")
-#if(BIN_WRITE_PLUGIN)
-    add_compile_options(-DBIN_WRITE_PLUGIN)
-#endif()
 
 #--------------------------------------------------------------------------------------------------
 
@@ -20,9 +16,17 @@ find_package (LibXml2)
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
-if (TARGET_DEVICE)
+if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    message("TARGET_DEVICE: ${TARGET_DEVICE} ... part of big project")
+    message("CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
     #part of big project
+    add_compile_options(-DBIN_WRITE_PLUGIN)
 else()
+    set(BIN_WRITE_PLUGIN OFF CACHE BOOL "unfinished building xb files on the fly")
+    if(BIN_WRITE_PLUGIN)
+        add_compile_options(-DBIN_WRITE_PLUGIN)
+    endif()
+
     set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
     set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
     file(MAKE_DIRECTORY build)
@@ -81,7 +85,7 @@ add_executable(test-json src/tests/test-json.cpp)
     target_link_libraries(test-json binary_xml)
 
 if (BIN_WRITE_PLUGIN)
-    add_executable(test-creating src/tests/test-creating.cpp)
+    add_executable(test-creating src/tests/test-creating.cpp src/tests/test-data.cpp)
         target_include_directories(test-creating PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
         target_link_libraries(test-creating binary_xml)
 endif()

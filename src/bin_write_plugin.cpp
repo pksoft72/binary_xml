@@ -1080,5 +1080,43 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
     }
 }
 
+int BW_plugin::getSymbolCount(SymbolTableTypes table)
+{
+    switch (table)
+    {
+        case SYMBOL_TABLE_NODES:
+            return pool->tags.max_id+1;
+        case SYMBOL_TABLE_PARAMS:
+            return pool->attrs.max_id+1;
+        default:
+            return -1;
+    }
+}
+
+const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type)
+{
+    switch (table)
+    {
+        case SYMBOL_TABLE_NODES:
+            if (idx <= pool->tags.max_id)
+            {
+                type = pool->getTagType(idx);
+                return pool->getTagName(idx);
+            }
+            else
+                return nullptr;
+        case SYMBOL_TABLE_PARAMS:
+            if (idx <= pool->attrs.max_id)
+            {
+                type = pool->getAttrType(idx);
+                return pool->getAttrName(idx);
+            }
+            else
+                return nullptr;
+        default:
+            return nullptr;
+    }
+}
+
 }
 #endif // BIN_WRITE_PLUGIN

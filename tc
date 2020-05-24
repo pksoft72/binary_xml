@@ -3,4 +3,4 @@ make || exit 1
 cd build/default
 ./test-creating &&
 #./xb2xml -v test3.xb
-./xb2xml test3.xb
+./xb2xml test4.xb
