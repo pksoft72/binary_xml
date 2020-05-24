@@ -1,5 +1,6 @@
 #include "bin_xml_types.h"
 #include "macros.h"
+#include "utils.h"
 #include <assert.h>
 
 namespace pklib_xml
@@ -165,7 +166,7 @@ int XBT_Size(XML_Binary_Type type,int size)
             break;
         case XBT_STRING:
             return ++size; // terminating character
-        case XBT_BINARY:
+        case XBT_BLOB:
             return size + sizeof(int32_t);
         case XBT_INT32:
             ASSERT_NO_RET_N1(1070,size == 0);
@@ -265,6 +266,24 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
                 gmtime_r(&tm0,&tm1);
                 snprintf(dst,dst_size,"%04d-%02d-%02d %2d:%02d:%02d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec);
                 return dst;
+            }
+        case XBT_UNIX_TIME64_MSEC:
+            {
+                int64_t value = *reinterpret_cast<const int64_t*>(data);
+                time_t tm0 = (time_t)(value/1000);
+                struct tm tm1;
+                memset(dst,0,dst_size);
+
+                gmtime_r(&tm0,&tm1);
+                snprintf(dst,dst_size,"%04d-%02d-%02d %2d:%02d:%02d.%03d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec,(int)(value % 1000));
+                return dst;
+            }
+        case XBT_BLOB:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                const unsigned char *src = reinterpret_cast<const unsigned char*>(data)+4;   
+                // char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size)
+                return base64_encode(src,size,dst,dst_size);
             }
         default:
             assert(false);

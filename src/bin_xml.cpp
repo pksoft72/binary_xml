@@ -318,7 +318,7 @@ const void *XML_Item::getBinary(int32_t *size) const
         +childcount * sizeof(relative_ptr_t);
     XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
 
-    if (t == XBT_BINARY)
+    if (t == XBT_BLOB)
     {
         AA(p);
         if (size != nullptr)

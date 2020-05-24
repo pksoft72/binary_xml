@@ -498,3 +498,92 @@ int GetIdentLen(const char *p)
     }
     return len; 
 }
+
+//-------------------------------------------------------------------------------------------------
+static const char* BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+/* This function will encode binary data into base64 encoded string */
+char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size)
+// inspired by toBase64() in btppl_veiltext.c
+// https://cs.wikipedia.org/wiki/Base64
+{
+
+    char *dst_base = dst;
+
+    while (src_size > 0 && dst_size >= 2)
+    {
+        int A = src[0];
+        int B = src_size > 1 ? src[1] : 0;
+        int C = src_size > 2 ? src[2] : 0;
+        src += 3;
+
+        *(dst++) = BASE64[A >> 2];
+        *(dst++) = BASE64[((A & 3) << 4) | (B >> 4)];
+        dst_size -= 2;
+        if (src_size == 1 || dst_size == 0) break; // no B
+        *(dst++) = BASE64[((B & 15) << 2) | (C >> 6)];
+        dst_size--;
+        if (src_size == 2 || dst_size == 0) break; // no C
+        *(dst++) = BASE64[C & 63];
+        dst_size--;
+
+        src_size -= 3;
+    }
+    for(int c = (dst-dst_base) & 3;c > 0 && dst_size > 0 && c < 4;c++,dst_size--)
+            *(dst++) = '=';
+    if (dst_size > 1)
+        *dst = 0;
+    return dst_base;
+}
+
+static const int8_t BACK64[256] = {
+/*  0*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/* 16*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/* 32*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
+/* 48*/52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
+/* 64*/-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 
+/* 80*/15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, 
+/* 96*/-1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+/*112*/41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, 
+/*128*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*144*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*160*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*176*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*192*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*208*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*224*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+/*240*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+/* This function will decode binary data into base64 encoded string */
+int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size)
+{
+// init output array
+    memset(dst,0,dst_size);
+
+    char *d = dst;
+    while(src_size >= 2 && dst_size > 0)
+    {
+        int K = BACK64[src[0]];                                 // 0..63  K: AAAAAA
+        int L = BACK64[src[1]];                                 // 0..63  L: AABBBB
+        int M = (src_size > 2 ? BACK64[src[2]] : -1);           // 0..63  M: BBBBCC
+        int N = (src_size > 3 ? BACK64[src[3]] : -1);           // 0..63  N: CCCCCC
+
+        if (K < 0) break;
+        if (L < 0) break;
+        /*A*/ *(d++) = (K << 2) | (L >> 4);
+        if (M < 0) break;
+        if (dst_size <= 1) break;
+        /*B*/ *(d++) = (L & 0xf) << 4 | (M >> 2);
+        if (N < 0) break;
+        if (dst_size <= 2) break;
+        /*C*/ *(d++) = (M & 3) << 6 | N;
+
+        src         += 4;
+        src_size    -= 4;
+
+        dst_size    -= 3;
+    }
+    return d-dst;
+}
+
+
+

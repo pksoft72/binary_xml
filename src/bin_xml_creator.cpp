@@ -458,7 +458,7 @@ const char *Bin_xml_creator::WriteChildSymbols(char **_wp,tag_name_id_t tag_name
     params[1].data = SC; // I will write default type of values
 
 //-------------------------------------------------------------------------------------------------
-    **_wp = XBT_BINARY;
+    **_wp = XBT_BLOB;
     (*_wp)++;
     AA(*_wp);
 

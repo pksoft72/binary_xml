@@ -168,20 +168,20 @@ BW_element*     BW_element::attrHexStr(int16_t id,const char *value)
     return this;
 }
 
-BW_element*     BW_element::attrBLOB(int16_t id,const char *value,int32_t size)
+BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
 {
     if (this == nullptr) return nullptr;
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1084,attr_type == XBT_BINARY || attr_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(1084,attr_type == XBT_BLOB || attr_type == XBT_VARIANT);
     
     if (attr_type == XBT_STRING)
     {
-        BW_element* attr      = pool->new_element(XBT_BINARY,size); // only variable types gives size  --- sizeof(int32_t));
+        BW_element* attr      = pool->new_element(XBT_BLOB,size); // only variable types gives size  --- sizeof(int32_t));
         ASSERT_NO_RET_NULL(1085,attr != nullptr);
 
-        attr->init(pool,id,XBT_BINARY,BIN_WRITE_ATTR_FLAG);
+        attr->init(pool,id,XBT_BLOB,BIN_WRITE_ATTR_FLAG);
 
         char *dst             = reinterpret_cast<char*>(attr+1)+4; // just after this element and blob size
         memcpy(dst,value,size);
@@ -340,6 +340,33 @@ BW_element*     BW_element::attrTime(int16_t id,time_t value)
     return this;
 }
 
+BW_element* BW_element::attrTime64(int16_t id,int64_t value)
+{
+    if (this == nullptr) return nullptr;
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(1931,attr_type == XBT_UNIX_TIME64_MSEC || attr_type == XBT_VARIANT);
+
+    if (attr_type == XBT_UNIX_TIME64_MSEC)
+    {
+        BW_element* attr      = pool->new_element(XBT_UNIX_TIME64_MSEC); // only variable types gives size  --- sizeof(int32_t));
+        ASSERT_NO_RET_NULL(1932,attr != nullptr);
+        attr->init(pool,id,XBT_UNIX_TIME64_MSEC,BIN_WRITE_ATTR_FLAG);
+
+        int64_t *dst         = reinterpret_cast<int64_t*>(attr+1); // just after this element
+        *dst                 = value; // store value
+        
+        add(attr);
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(1933,NOT_IMPLEMENTED); // TODO: variant
+    }
+
+    return this;
+}
+
 BW_element*     BW_element::attrIPv4(int16_t id,const char *value)
 {
     if (this == nullptr) return nullptr;
@@ -439,8 +466,8 @@ XML_Binary_Type BW_pool::getTagType(int16_t id)
         {
             case XTNR_NULL: return XBT_UNKNOWN;                     // undefined
             case XTNR_META_ROOT: return XBT_NULL;                   // meta_root    
-            case XTNR_TAG_SYMBOLS: return XBT_BINARY;               // tag_symbols
-            case XTNR_PARAM_SYMBOLS: return XBT_BINARY;             // param_symbols
+            case XTNR_TAG_SYMBOLS: return XBT_BLOB;               // tag_symbols
+            case XTNR_PARAM_SYMBOLS: return XBT_BLOB;             // param_symbols
             case XTNR_HASH_INDEX: return XBT_UNKNOWN;               // hash_index -- not implemented yet
             case XTNR_PAYLOAD: return XBT_NULL;                     // payload = content of XML file
             case XTNR_REFERENCE: return XBT_UNKNOWN;                // this is reference tag!! - it is exact copy of other tag
@@ -559,7 +586,7 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
     result->value_type = type;
     switch(type)
     {
-        case XBT_BINARY:
+        case XBT_BLOB:
         case XBT_HEX:
         // size is stored to the 1st byte of data
             *reinterpret_cast<int32_t*>(1+result) = size2 - sizeof(int32_t);
@@ -606,6 +633,8 @@ BW_plugin::~BW_plugin()
 bool BW_plugin::Initialize()
 {
     if (initialized) return true; // no double initialize!!
+    ASSERT_NO_RET_FALSE(1937,filename != nullptr);
+
 // BW_plugin is owner and the only one (for now) writer of mapped file
 
 // int open(const char *pathname, int flags, mode_t mode);
@@ -887,10 +916,20 @@ BW_element* BW_plugin::tagHexStr(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1128,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagBLOB(int16_t id,const char *value,int32_t size)
+BW_element* BW_plugin::tagBLOB(int16_t id,const void *value,int32_t size)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1129,NOT_IMPLEMENTED);
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(1935,tag_type == XBT_BLOB || tag_type == XBT_VARIANT);
+
+    ASSERT_NO_RET_NULL(1936,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
+
+    BW_element* result = pool->new_element(XBT_BLOB,size);
+    
+    result->init(pool,id,XBT_BLOB,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int32_t*>(result+1) = size;
+    memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    return result;
 }
 
 BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
@@ -898,7 +937,7 @@ BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1130,tag_type == XBT_INT32 || tag_type == XBT_VARIANT);
 
-    ASSERT_NO_RET_NULL(1146,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
+    ASSERT_NO_RET_NULL(1934,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
 
     BW_element* result = pool->new_element(XBT_INT32,0);
     

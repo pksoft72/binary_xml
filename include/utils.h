@@ -32,3 +32,9 @@ int  GetInt(const char *p);
 bool StrWrite(char *&dest,const char *dest_limit,const char *&src,const char *src_limit);
 const char *MakeIdent(const char *Source,const char *style = "");
 int GetIdentLen(const char *p);
+
+
+/* This function will encode binary data into base64 encoded string */
+char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size);
+/* This function will decode binary data into base64 encoded string */
+int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size);

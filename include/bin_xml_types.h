@@ -14,7 +14,7 @@ enum XML_Binary_Type
     XBT_NULL    = 0,    // empty value is almost compatible with all values
     XBT_VARIANT = 1,    // stores with XML_Binary_Type in 1st byte
     XBT_STRING  = 2,    // string 0 terminated
-    XBT_BINARY  = 3,    // stored as uint32_t length + data
+    XBT_BLOB  = 3,    // stored as uint32_t length + data
     XBT_INT32   = 4,    // stores as binary int32_t
     XBT_INT64   = 5,    // stores as binary int64_t
     XBT_FLOAT   = 6,    // stores as 32bit float
