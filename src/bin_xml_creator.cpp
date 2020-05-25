@@ -243,17 +243,14 @@ bool Bin_xml_creator::DoAll()
     // copy of symbol tables where src has some - it's faster and no type detection is needed
         for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
         {
-            int count = this->symbol_count[t] = src->getSymbolCount((SymbolTableTypes)t);
+            int count = /*this->symbol_count[t] = */src->getSymbolCount((SymbolTableTypes)t);
             this->symbol_table[t] = reinterpret_cast<const char **>(malloc(sizeof(char*)*count));
             this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(sizeof(XML_Binary_Type_Stored)*count));
             for(int i = 0;i < count;i++)
             {
                 XML_Binary_Type type;
                 const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
-                char *name2;
-                this->symbol_table[t][i] = name2 = reinterpret_cast<char *>(malloc(strlen(name)+1));
-                strcpy(name2,name);
-                this->symbol_table_types[t][i] = (XML_Binary_Type_Stored)type;
+                FindOrAddType(name,(SymbolTableTypes)t,type);
             }
         }
     }
@@ -707,6 +704,55 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
     strcpy(symbol_copy,symbol);
     symbol_table[t][P] = symbol_copy;
     symbol_table_types[t][P] = static_cast<XML_Binary_Type_Stored>(XBT_Detect(value));
+
+#ifndef NDEBUG
+// check ordered
+    for(int i = 0;i < symbol_count[t]-1;i++)
+        assert(strcmp(symbol_table[t][i],symbol_table[t][i+1]) < 0);
+#endif
+    return P; // position of insert
+}
+
+int Bin_xml_creator::FindOrAddType(const char *symbol,const int t,XML_Binary_Type type)
+{
+    if (symbol == nullptr) return -1;
+    
+// binary search
+    int B = 0;
+    int E = symbol_count[t]-1;
+    while (B <= E)
+    {
+        int M = (B+E) >> 1;
+        int cmp = strcmp(symbol,symbol_table[t][M]);
+        if (cmp == 0) 
+        {
+            symbol_table_types[t][M] = type;
+            return M;   // found
+        }
+        if (cmp < 0)
+            E = M-1;
+        else
+            B = M+1;
+    }
+    if (symbol_count[t] >= MAX_SYMBOL_COUNT)
+    {
+        fprintf(stderr,"Cannot add symbol '%s' to symbol table of %s - limit %d reached",symbol,(t == SYMBOL_TABLE_NODES ? "tags" : "params"),MAX_SYMBOL_COUNT);
+        return -1; // failed
+    }
+// not found --> add
+    int P = E+1;
+    assert(P >= 0 && P <= symbol_count[t]);
+    if (symbol_count[t]-P > 0)
+    {
+        memmove(&symbol_table[t][P+1],&symbol_table[t][P],(symbol_count[t]-P)*sizeof(char*));
+        memmove(&symbol_table_types[t][P+1],&symbol_table_types[t][P],(symbol_count[t]-P)*sizeof(XML_Binary_Type_Stored));
+    }
+    symbol_count[t]++;
+
+    char *symbol_copy = reinterpret_cast<char *>(malloc(strlen(symbol)+1));
+    strcpy(symbol_copy,symbol);
+    symbol_table[t][P] = symbol_copy;
+    symbol_table_types[t][P] = type;
 
 #ifndef NDEBUG
 // check ordered

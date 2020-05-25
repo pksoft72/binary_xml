@@ -106,6 +106,7 @@ protected:
 
         virtual int32_t Pack();
 
+    int FindOrAddType(const char *symbol,const int t,XML_Binary_Type type);
     int FindOrAdd(const char *symbol,const int t,const char *value);
     int Find(const char *symbol,const int t);
     void ShowSymbols(const int t);
