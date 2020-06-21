@@ -187,6 +187,7 @@ public: // Bin_src_plugin
     virtual void *getRoot();
     virtual const char *getNodeName(void *element);
     virtual const char *getNodeValue(void *element);
+    virtual const char *getNodeBinValue(void *element,XML_Binary_Type &type,int &size);
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata);
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep);
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);

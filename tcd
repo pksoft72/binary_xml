@@ -1,4 +1,8 @@
 #!/bin/bash
+echo "Test C DEBUG"
 make || exit 1
 cd build/default
-gdb ./test-creating
+./test-creating
+#gdb test-creating
+#xb2xml -v -v -v test4.xb
+gdb --args ./xb2xml -v -v -v test4.xb

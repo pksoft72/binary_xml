@@ -21,9 +21,9 @@ namespace pklib_xml
 
 const char *XML_BINARY_TYPE_NAMES[XBT_LAST] = {
     "NULL",
-    "VARIABLE",
+    "VARIANT",
     "STRING",
-    "BINARY",
+    "BLOB",
     "INT32",
     "INT64",
     "FLOAT",
@@ -37,7 +37,7 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST] = {
     "Unknown??",
     "UINT64",
     "UNIX_TIME64_MSEC",
-    "UINT32",
+    "UINT32"
 };
 
 bool XML_Item::Check(XB_reader *R,bool recursive) const
@@ -144,10 +144,15 @@ const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const
 }
 
 char s_output[32] = "";
+
 const char *XML_Param_Description::getString(const XML_Item *X) const
 { 
     if (this == nullptr) return nullptr;
     if (X == nullptr) return nullptr;
+
+//    if (X.verbosity > 0)
+        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[type] << "]" ANSI_RESET_LF;
+
     if (type == XBT_STRING) return reinterpret_cast<const char *>(X)+data;
     if (type == XBT_INT32)
     {
@@ -155,6 +160,20 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
         return s_output;
     }
     return nullptr;
+}
+
+const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const
+{
+    if (this == nullptr) return 0;
+    if (X == nullptr) return 0;
+
+
+/*    if (R.verbosity > 0)
+        std::cerr << ANSI_GREEN_BRIGHT << "+" << (reinterpret_cast<const char *>(this) - reinterpret_cast<const char *>(X)) << " [" << name << ":" << XML_BINARY_TYPE_NAMES[type] << "/" << offset << ":@" << data << "]" ANSI_RESET_LF;
+*/
+    if (static_cast<XML_Binary_Type>(type) == XBT_INT32)
+        return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
+    return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X + data),offset,dst,dst_size);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -300,13 +319,28 @@ const char *XML_Item::getString() const
         +childcount * sizeof(relative_ptr_t);
     XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
     
-    static char output[32];
+//    if (R.verbosity > 0)
+        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[t] << "]" ANSI_RESET_LF;
 
     if (t == XBT_STRING) return p;
-    AA(p);
-    return XBT_ToString(t,p,output,sizeof(output));
+    return XBT_ToString(t,p);
 }
 
+const int XML_Item::getStringChunk(int &offset,char *dst,int dst_size) const
+{
+    if (this == nullptr) return 0;
+    CHECK_AA_THIS;
+    
+    const char *p = reinterpret_cast<const char*>(this+1)
+        +paramcount * sizeof(XML_Param_Description)
+        +childcount * sizeof(relative_ptr_t);
+    XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
+    
+//    if (R.verbosity > 0)
+//        std::cerr << ANSI_GREEN_BRIGHT << "[" << XML_BINARY_TYPE_NAMES[t] << "/" << offset << "]" ANSI_RESET_LF;
+
+    return XBT_ToStringChunk(t,p,offset,dst,dst_size);
+}
 
 const void *XML_Item::getBinary(int32_t *size) const
 {
@@ -402,11 +436,19 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
     {
         const XML_Param_Description *param = getParamByIndex(p);
         os << " " << R.getParamName(param->name) << "=\"";
-        const char *param_value = param->getString(this);
-        if (param_value != nullptr) // TODO: escape param_value!
-            os << param_value;
+    
+
+        char buffer[4096+1];
+        for(int offset = 0;;)
+        {
+            int len = param->getStringChunk(this,offset,buffer,sizeof(buffer));
+            if (len == 0) break;// TODO: escape param_value!
+            os << buffer;
+        }
+
         os << "\"";
     }
+    char buffer[4096+1];
     if (childcount > 0)
     {
         os << ">\n";
@@ -424,20 +466,31 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
             const XML_Item *child = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+children[ch]);
             child->write(os,R,deep+1);
         }*/
-        const char *value = getString();
-        if (value != nullptr && *value != 0)
+        TAB;
+
+
+        for(int offset = 0;;)
         {
-            TAB;os << value << "\n";    // TODO: escape value!
+            int len = getStringChunk(offset,buffer,sizeof(buffer));
+            if (len == 0) break;
+        // TODO: escape param_value!
+            os << buffer;
         }
+        os << "\n";    // TODO: escape value!
         TAB;os << "</" << R.getNodeName(name) << ">\n";
     }
     else
     {
-        const char *value = getString();
-        if (value == nullptr || *value == '\0')
-            os << "/>\n";
+        int offset = 0;
+        if (getStringChunk(offset,buffer,sizeof(buffer)) == 0)
+                os << "/>\n";
         else
-            os << ">" << value << "</" << R.getNodeName(name) << ">\n";
+        {
+                os << ">" << buffer;
+                while (getStringChunk(offset,buffer,sizeof(buffer)) > 0)
+                    os << buffer;
+                os << "</" << R.getNodeName(name) << ">\n";
+        }
     }
         
 #undef TAB

@@ -83,6 +83,13 @@ void Bin_src_plugin::LinkCreator(Bin_xml_creator *bin_xml_creator)
     this->bin_xml_creator = bin_xml_creator;
 }
 
+const char *Bin_src_plugin::getNodeBinValue(void *element,XML_Binary_Type &type,int &size)
+{
+    type = XBT_UNKNOWN;
+    size = 0;
+    return nullptr;
+}
+
 bool Bin_src_plugin::Initialize()
 {
     this->file_size = file_getsize(filename);
@@ -294,7 +301,8 @@ bool Bin_xml_creator::DoAll()
     DBG(std::cout << "\n");
 
     // 3. allocate and fill--------------------------
-    this->data = reinterpret_cast<char *>(malloc(1024 + src->getFileSize()*2)); // some reserve
+    this->data_size_allocated = 1024 + src->getFileSize()*2;
+    this->data = reinterpret_cast<char *>(malloc(data_size_allocated)); // some reserve
 
     DBG(std::cout << "DBG:Buffer: " << (void *)this->data << "\n");
     if (this->data == nullptr)
@@ -588,32 +596,31 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
     *_wp += sizeof(relative_ptr_t)*X->childcount;
 
 //-----------------------------------------------
-    const char *value = src->getNodeValue(element);
-    if (value != nullptr)
+    XML_Binary_Type type = XBT_UNKNOWN;
+    int size = 0;
+    const char *bin_value = src->getNodeBinValue(element,type,size);
+    if (type != XBT_UNKNOWN) // getNodeBinValue supported?
     {
-        XML_Binary_Type type = XBT_Detect(value);
-        if (type == XBT_INT32)
-        {
-            *((*_wp)++) = type;
-            AA(*_wp);
-//            std::cout << "Dbg: XBT_INT32 value: " << value << " ---> OFFSET: +" << ((*_wp) - _x) << "\n";
-            *reinterpret_cast<int32_t*>(*_wp) = atoi(value);
-            *_wp += sizeof(int32_t);
-        }
+        if (bin_value == nullptr)
+            *((*_wp)++) = XBT_NULL; // no value detected!
         else
         {
-            *((*_wp)++) = XBT_STRING; // it will be stored as string now
-            strcpy(*_wp,value);
-            //std::cout << " = " << value << "\n";
-            *_wp += strlen(value)+1;
+            *((*_wp)++) = type;
+            ASSERT_NO_RET_NULL(1201,XBT_Copy(bin_value,type,size,_wp,data+data_size_allocated));
         }
     }
     else
     {
-        *((*_wp)++) = XBT_NULL; // no value detected!
-//std::cout << " ---\n";
+        const char *value = src->getNodeValue(element);
+        if (bin_value == nullptr)
+            *((*_wp)++) = XBT_NULL; // no value detected!
+        else
+        {
+            type = XBT_Detect(value);
+            *((*_wp)++) = type;
+            ASSERT_NO_RET_NULL(1202,XBT_FromString(value,type,_wp,data+data_size_allocated));
+        }
     }
-    
 //-----------------------------------------------
     src->ForAllParams(XStoreParamsEvent,element,&xstore_data);
     src->ForAllChildren(XStoreChildrenEvent,element,&xstore_data);
@@ -636,9 +643,30 @@ void Bin_xml_creator::XCountChildrenEvent(void *element,void *userdata)
 void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
 {
     XStoreParamsData *xstore_data = reinterpret_cast<XStoreParamsData*>(userdata);
+    int name_id = 
+        xstore_data->params->name = 
+            xstore_data->creator->Find(param_name,SYMBOL_TABLE_PARAMS);
 
-    xstore_data->params->name = xstore_data->creator->Find(param_name,SYMBOL_TABLE_PARAMS);
-    if (param_value != nullptr && *param_value != '\0')
+    if (param_value == nullptr || *param_value == '\0')
+    {
+        xstore_data->params->type = XBT_NULL;
+        xstore_data->params->data = 0;
+        xstore_data->params++;
+        return; // empty - it's fast
+    }
+
+    XML_Binary_Type type = XBT_UNKNOWN;
+    if (name_id >= 0)
+        type = static_cast<XML_Binary_Type>(xstore_data->creator->symbol_table_types[SYMBOL_TABLE_PARAMS][name_id]);
+
+    type = XBT_Detect2(param_value,type);
+    int size = XBT_Size(type,0);
+    char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
+    if (size == 4 && XBT_FromString(param_value,type,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
+    {
+        xstore_data->params->type = type;
+    }
+    else
     {
         xstore_data->params->type = XBT_STRING;
         xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
@@ -646,11 +674,7 @@ void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param
         strcpy(*xstore_data->_wp,param_value);
         (*xstore_data->_wp) += strlen(param_value)+1;
     }
-    else
-    {
-        xstore_data->params->type = XBT_NULL;
-        xstore_data->params->data = 0;
-    }
+
     xstore_data->params++;
 }
 

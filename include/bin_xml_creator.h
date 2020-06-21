@@ -36,6 +36,7 @@ public:
     virtual void *getRoot()=0;
     virtual const char *getNodeName(void *element)=0;
     virtual const char *getNodeValue(void *element)=0;
+    virtual const char *getNodeBinValue(void *element,XML_Binary_Type &type,int &size);    // binary value referenced
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata)=0;
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)=0;
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata)=0;
@@ -65,10 +66,12 @@ public:
     Bin_src_plugin  *src;
 protected:
     bool        src_allocated;
+    
     const char  *dst;
-
     int32_t     dst_file_size;
+
     char        *data;
+    int32_t     data_size_allocated;
 
 // 1st pass to enumerate paramcount
     int     total_node_count;

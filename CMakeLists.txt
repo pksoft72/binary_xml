@@ -22,7 +22,7 @@ if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
     #part of big project
     add_compile_options(-DBIN_WRITE_PLUGIN)
 else()
-    set(BIN_WRITE_PLUGIN OFF CACHE BOOL "unfinished building xb files on the fly")
+    set(BIN_WRITE_PLUGIN ON CACHE BOOL "unfinished building xb files on the fly")
     if(BIN_WRITE_PLUGIN)
         add_compile_options(-DBIN_WRITE_PLUGIN)
     endif()

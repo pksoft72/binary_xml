@@ -1022,9 +1022,22 @@ const char *BW_plugin::getNodeName(void *element)
 
 const char *BW_plugin::getNodeValue(void *element)
 {
-    static char buffer[64];
     BW_element *E = reinterpret_cast<BW_element*>(element);
-    return XBT_ToString(static_cast<XML_Binary_Type>(E->value_type),E+1,buffer,sizeof(buffer));
+    return XBT_ToString(static_cast<XML_Binary_Type>(E->value_type),reinterpret_cast<char*>(E+1));
+}
+
+const char *BW_plugin::getNodeBinValue(void *element,XML_Binary_Type &type,int &size)
+{
+    BW_element *E = reinterpret_cast<BW_element*>(element);
+    type = static_cast<XML_Binary_Type>(E->value_type);
+    
+    if (type == XBT_BLOB || type == XBT_HEX)
+        size = *reinterpret_cast<int32_t*>(E+1);
+    else if (type == XBT_STRING)
+        size = strlen(reinterpret_cast<char*>(E+1));
+    else
+        size = 0;
+    return reinterpret_cast<const char*>(E+1);
 }
 
 BW_element* BW_plugin::BWE(BW_offset_t offset)

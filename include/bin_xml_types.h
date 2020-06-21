@@ -5,6 +5,13 @@
 namespace pklib_xml
 {
 
+#define MIN_OUT_BUFFER_SIZE 256
+
+//#define AA(_wp) {(_wp) += (4 - (((intptr_t)(_wp) & 3) & 3));}   // align _wp to boundary of 32bits
+#define AA(_wp) do {(_wp) += (4 - ((intptr_t)(_wp) & 3)) & 3;} while(0)
+#define AA8(_wp) do {(_wp) += (8 - ((intptr_t)(_wp) & 7)) & 7;} while(0)
+#define CHECK_AA_THIS assert(((intptr_t)this & 3) == 0)
+
 typedef char        hash192_t[24];      // hash - 24B - sha1
 typedef char        GUID_t[16];     
 typedef uint16_t    IPv6_t[8];      
@@ -44,8 +51,15 @@ int             XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_siz
 
 
 int             XBT_Size    (XML_Binary_Type type,int size);
-const char     *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst_size);
+int             XBT_Align   (XML_Binary_Type type);
+bool            XBT_Copy    (const char *src,XML_Binary_Type type,int size,char **_wp,char *limit);
+bool            XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
 
+const char     *XBT_ToString(XML_Binary_Type type,const char *data);
+int             XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *dst,int dst_size);
+
+char*           XBT_Buffer(int size);
+void            XBT_Free();
 
 
 } // pklib_xml::

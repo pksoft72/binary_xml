@@ -2,6 +2,7 @@
 #include "macros.h"
 #include "utils.h"
 #include <assert.h>
+#include "bin_xml.h"
 
 namespace pklib_xml
 {
@@ -210,7 +211,80 @@ int XBT_Size(XML_Binary_Type type,int size)
     return 0;
 }
 
-const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst_size)
+int XBT_Align(XML_Binary_Type type)
+{
+    switch(type)
+    {
+        case XBT_NULL:
+        case XBT_UNKNOWN:
+        case XBT_LAST:
+            return 0;
+        case XBT_VARIANT:
+            return 0; // TODO: alignment depend on transported type
+        case XBT_STRING:
+            return 0;
+        case XBT_BLOB:
+        case XBT_HEX:
+        case XBT_INT32:
+        case XBT_UINT32:
+        case XBT_FLOAT:
+        case XBT_GUID:
+        case XBT_SHA1:
+        case XBT_UNIX_TIME:
+        case XBT_IPv4:
+            return 4;
+        case XBT_UINT64:
+        case XBT_INT64:
+        case XBT_DOUBLE:
+        case XBT_IPv6:
+        case XBT_UNIX_TIME64_MSEC:
+            return 8;
+    }
+    return 0;
+}
+
+bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
+{
+    int value_size = XBT_Size(type,size);
+    int align_size = XBT_Align(type);
+    if (limit - *_wp < value_size + align_size) return false; // cannot fit into destination
+    if (type == XBT_STRING)
+        strcpy(*_wp,src);
+    else if (align_size == 4)
+    {
+        AA(*_wp);
+        memcpy(*_wp,src,value_size);
+        if (type == XBT_BLOB)
+            fprintf(stderr,"Copy BLOB with size %d, align %d and value size %d\n",size,align_size,value_size);
+    }
+    else if (align_size == 8)
+    {
+        AA8(*_wp);
+        memcpy(*_wp,src,value_size);
+    }
+    *_wp += value_size;
+    return true; // OK
+}
+
+bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
+{
+    switch (type)
+    {
+        case XBT_INT32:
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = atoi(src);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_STRING:
+            strcpy(*_wp,src);
+            *_wp += strlen(src)+1;
+            return true;
+    // TODO: support all types!
+    }
+    return false;
+}
+
+const char *XBT_ToString(XML_Binary_Type type,const char *data)
 {
     switch (type)
     {
@@ -218,19 +292,108 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
             return nullptr; // empty value
         case XBT_STRING: 
             return reinterpret_cast<const char *>(data); 
-        case XBT_INT32: 
-            snprintf(dst,dst_size,"%d",*reinterpret_cast<const int32_t*>(data));
-            return dst;
+        case XBT_INT32:
         case XBT_UINT32: 
+        case XBT_INT64:
+        case XBT_UINT64:
+        case XBT_FLOAT:
+        case XBT_UNIX_TIME:
+        case XBT_UNIX_TIME64_MSEC:
+            {
+                static char buffer[256+1];
+                int offset = 0;
+                XBT_ToStringChunk(type,data,offset,buffer,sizeof(buffer));
+                return buffer;
+            }
+        case XBT_BLOB:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                if (size == 0) return nullptr;
+
+                const unsigned char *src = reinterpret_cast<const unsigned char*>(data)+4;   
+
+                // char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size)
+                int dst_size = size/3 * 4 + 5;
+                char *dst = XBT_Buffer(dst_size);
+                ASSERT_NO_RET_NULL(1205,dst != nullptr);
+                return base64_encode(src,size,dst,dst_size);
+            }
+        default:
+            LOG_ERROR("Unsupported type %d",type);
+            return nullptr;
+    }
+    
+    return nullptr;
+}
+
+int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *dst,int dst_size)
+{
+    ASSERT_NO_RET_N1(1203,dst != nullptr);
+    ASSERT_NO_RET_N1(1204,dst_size > MIN_OUT_BUFFER_SIZE); // small objects will not be chunked
+
+    int align = XBT_Align(type);
+    if (align == 4)
+    {
+        AA(data);
+    }
+    else if (align == 8)
+    {
+        AA8(data);
+    }
+    
+
+    dst[--dst_size] = '\0';
+    switch(type)
+    {
+        case XBT_NULL: 
+            return 0; // empty value
+        case XBT_STRING: 
+            {
+                const char *p = reinterpret_cast<const char *>(data);
+                int len = strlen(p);
+                len -= offset;
+                p += offset;
+                if (len <= 0) return 0; // finished
+                strncpy(dst,p,dst_size);
+                int out = strlen(dst);
+                offset += out;
+                return out;
+            }
+        case XBT_INT32: 
+            if (offset > 0) return 0;
+            offset += sizeof(int32_t);
+
+            snprintf(dst,dst_size,"%d",*reinterpret_cast<const int32_t*>(data));
+            return strlen(dst);
+        case XBT_UINT32: 
+            if (offset > 0) return 0;
+            offset += sizeof(uint32_t);
+
             snprintf(dst,dst_size,"%u",*reinterpret_cast<const uint32_t*>(data));
-            return dst;
+            return strlen(dst);
+
+
+
+
         case XBT_INT64:
             {
+                if (offset > 0) return 0;
+                offset += sizeof(int64_t);
+
                 int64_t value = *reinterpret_cast<const int64_t*>(data);   
-                if (value == 0) return "0";
-                if (value == -576460752303423488) return "9223372036854775808";
+                if (value == 0) 
+                {
+                    strcpy(dst,"0");
+                    return 1;
+                }
+                if (value == -576460752303423488) 
+                {
+                    strcpy(dst,"9223372036854775808");
+                    return strlen(dst);
+                }
                 //if (value == -0x8000000000000000) return "9223372036854775808";
                 char *d = dst+dst_size;
+                *(--d) = '\0';
                 bool neg = (value < 0);
                 if (neg) value = -value;
                 while (value > 0)
@@ -239,25 +402,43 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
                     value /= 10;
                 }
                 if (neg) *(--d) = '-';
-                return d;
+                int len = (dst+dst_size) - d - 1;
+                memmove(dst,d,len);
+                return len;
             }
         case XBT_UINT64:
             {
+                if (offset > 0) return 0;
+                offset += sizeof(uint64_t);
+
                 uint64_t value = *reinterpret_cast<const uint64_t*>(data);   
-                if (value == 0) return "0";
+                if (value == 0) 
+                {
+                    strcpy(dst,"0");
+                    return 1;
+                }
                 char *d = dst+dst_size;
+                *(--d) = '\0';
                 while (value > 0)
                 {
                     *(--d) = '0'+(value % 10);
                     value /= 10;
                 }
-                return d;
+                int len = (dst+dst_size) - d - 1;
+                memmove(dst,d,len);
+                return len;
             }
         case XBT_FLOAT:
+            if (offset > 0) return 0;
+            offset += sizeof(float);
+
             snprintf(dst,dst_size,"%f",*reinterpret_cast<const float*>(data));
-            return dst;
+            return strlen(dst);
         case XBT_UNIX_TIME:
             {
+                if (offset > 0) return 0;
+                offset += sizeof(uint32_t);
+
                 uint32_t value = *reinterpret_cast<const uint32_t*>(data);
                 time_t tm0 = (time_t)value;
                 struct tm tm1;
@@ -265,10 +446,13 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
 
                 gmtime_r(&tm0,&tm1);
                 snprintf(dst,dst_size,"%04d-%02d-%02d %2d:%02d:%02d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec);
-                return dst;
+                return strlen(dst);
             }
         case XBT_UNIX_TIME64_MSEC:
             {
+                if (offset > 0) return 0;
+                offset += sizeof(int64_t);
+
                 int64_t value = *reinterpret_cast<const int64_t*>(data);
                 time_t tm0 = (time_t)(value/1000);
                 struct tm tm1;
@@ -276,21 +460,51 @@ const char *XBT_ToString(XML_Binary_Type type,const void *data,char *dst,int dst
 
                 gmtime_r(&tm0,&tm1);
                 snprintf(dst,dst_size,"%04d-%02d-%02d %2d:%02d:%02d.%03d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec,(int)(value % 1000));
-                return dst;
+                return strlen(dst);
             }
         case XBT_BLOB:
             {
                 uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
                 const unsigned char *src = reinterpret_cast<const unsigned char*>(data)+4;   
+                
+                if (offset >= size) 
+                {
+                    dst[0] = '\0';
+                    return 0;
+                }
+                int max_chunk = ((dst_size-1) >> 2)*3;
+                int left = size - offset;
+                int chunk = (left > max_chunk) ? max_chunk : left;
+                
+                base64_encode(src+offset,chunk,dst,dst_size);
                 // char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size)
-                return base64_encode(src,size,dst,dst_size);
+
+                offset += chunk;
+                return chunk;
             }
         default:
             assert(false);
-            return nullptr;
+            return 0;
     }
-    
-    return dst;
+}
+
+char *g_output_buffer = nullptr;
+int   g_output_buffer_size = 0;
+char* XBT_Buffer(int size)
+{
+    if (size <= g_output_buffer_size) return g_output_buffer;
+    XBT_Free();
+    g_output_buffer_size = ((size >> 12) << 12) + 8192;
+    g_output_buffer = new char[g_output_buffer_size];
+    if (g_output_buffer == nullptr) g_output_buffer_size = 0;
+}
+
+void XBT_Free()
+{
+    if (g_output_buffer == nullptr) return;
+    delete [] g_output_buffer;
+    g_output_buffer = nullptr;
+    g_output_buffer_size = 0;
 }
 
 }

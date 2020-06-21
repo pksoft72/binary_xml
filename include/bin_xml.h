@@ -22,9 +22,6 @@ const int XB_FORMAT_VERSION = 0x00001;  // 0.1
 const int XML_MAX_DEEP = 1024;
 
 #define XB_FORMAT_VERSION 0x100
-//#define AA(_wp) {(_wp) += (4 - (((intptr_t)(_wp) & 3) & 3));}   // align _wp to boundary of 32bits
-#define AA(_wp) {(_wp) += (4 - ((intptr_t)(_wp) & 3)) & 3;}
-#define CHECK_AA_THIS assert(((intptr_t)this & 3) == 0)
 //-------------------------------------------------------------------------------------------------
 //typedef char      type_id_t[2];       // identification of object - code characters
 typedef int16_t     tag_name_id_t;      // maximum 32K tag names - should be enough, negative values are reserved for metainformation
@@ -107,6 +104,7 @@ public:
 
 //--- Get data values
     const char          *getString() const;
+    const int           getStringChunk(int &offset,char *dst,int dst_size) const;
     const void          *getBinary(int32_t *size) const;
     int32_t             getInt() const;         
     const int32_t       *getIntPtr() const;         
@@ -143,6 +141,7 @@ public:
     }
     const int32_t *getIntPtr(const XML_Item *X) const;
     const char *getString(const XML_Item *X) const;
+    const int   getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const;
 };
 
 //-------------------------------------------------------------------------------------------------

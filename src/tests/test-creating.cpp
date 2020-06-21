@@ -146,9 +146,9 @@ int test_4()
 int main(int argc,char **argv)
 {
     int r;
-    ASSERT_NO_RET_(1196,(r = test_0()) == 0,r);
-    ASSERT_NO_RET_(1197,(r = test_1()) == 0,r);
-    ASSERT_NO_RET_(1198,(r = test_2()) == 0,r);
-    ASSERT_NO_RET_(1199,(r = test_3()) == 0,r);
+//    ASSERT_NO_RET_(1196,(r = test_0()) == 0,r);
+//    ASSERT_NO_RET_(1197,(r = test_1()) == 0,r);
+//    ASSERT_NO_RET_(1198,(r = test_2()) == 0,r);
+//    ASSERT_NO_RET_(1199,(r = test_3()) == 0,r);
     ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
 }
