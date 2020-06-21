@@ -52,6 +52,30 @@ But File can have a GUID and when sealed, it can have a hash. Both of them is en
 There can be some conflicts while merging.
 
 
+#### Query language
+
+It would be nice to have text query language, which could be compiled into some C++-code.
+But I would have to make some syntax.
+It's possible to comunicate in text only, although it is not very effective.
+
+##### Metadata
+
+There will be some xsd as types of xml files.
+
+    metadata/archive.xsd
+    metadata/database.xb
+
+    TYPE Archive IS XML LIMITED TO metadata/archive.xsd
+
+
+
+There will be description of some file hierarchy.
+
+    
+
+
+
+
 ## Import plugins
 
 ### BSON
