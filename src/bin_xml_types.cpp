@@ -279,6 +279,9 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             strcpy(*_wp,src);
             *_wp += strlen(src)+1;
             return true;
+        default:
+            fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+            return false;
     // TODO: support all types!
     }
     return false;
@@ -467,7 +470,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
                 const unsigned char *src = reinterpret_cast<const unsigned char*>(data)+4;   
                 
-                if (offset >= size) 
+                if (offset >= (int)size) 
                 {
                     dst[0] = '\0';
                     return 0;
@@ -497,6 +500,7 @@ char* XBT_Buffer(int size)
     g_output_buffer_size = ((size >> 12) << 12) + 8192;
     g_output_buffer = new char[g_output_buffer_size];
     if (g_output_buffer == nullptr) g_output_buffer_size = 0;
+    return g_output_buffer;
 }
 
 void XBT_Free()
