@@ -15,6 +15,7 @@
 #include <fcntl.h>
 
 #include <sys/mman.h>
+#include <assert.h>
 
 #define NOT_IMPLEMENTED false // used in assert
 #define THIS reinterpret_cast<char*>(this)
@@ -500,7 +501,9 @@ XML_Binary_Type BW_pool::getAttrType(int16_t id)
     ASSERT_NO_(1058,id >=0 && id <= attrs.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
     BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
     BW_offset_t offset = elements[id];
-    ASSERT_NO_(1059,offset != 0,return XBT_UNKNOWN);                                       // tag id should be correctly registered!
+
+    if (offset == 0) return XBT_UNKNOWN;    // empty id
+    //ASSERT_NO_(1059,offset != 0,return XBT_UNKNOWN);                                       // tag id should be correctly registered!
     return static_cast<XML_Binary_Type>(*reinterpret_cast<XML_Binary_Type_Stored*>(THIS+ offset + 2));  
 }
 
@@ -1035,6 +1038,11 @@ const char *BW_plugin::getNodeBinValue(void *element,XML_Binary_Type &type,int &
         size = *reinterpret_cast<int32_t*>(E+1);
     else if (type == XBT_STRING)
         size = strlen(reinterpret_cast<char*>(E+1));
+    else if (type == XBT_NULL)
+    {
+        size = 0;
+        return nullptr;
+    }
     else
         size = 0;
     return reinterpret_cast<const char*>(E+1);
@@ -1122,6 +1130,7 @@ const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type 
             if (idx <= pool->attrs.max_id)
             {
                 type = pool->getAttrType(idx);
+                if (type == XBT_UNKNOWN) return nullptr;
                 return pool->getAttrName(idx);
             }
             else

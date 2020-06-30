@@ -257,7 +257,8 @@ bool Bin_xml_creator::DoAll()
             {
                 XML_Binary_Type type;
                 const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
-                FindOrAddType(name,(SymbolTableTypes)t,type);
+                if (type != XBT_UNKNOWN)
+                    FindOrAddType(name,(SymbolTableTypes)t,type);
             }
         }
     }
