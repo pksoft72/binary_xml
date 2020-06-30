@@ -6,7 +6,7 @@
 #include "bin_xml_creator.h"
 
 namespace pklib_xml {
-class Bin_xml_plugin : public Bin_src_plugin // interface for json input format
+class Bin_xml_plugin : public Bin_src_plugin // interface for xml input format
 {
 protected:
     xmlDoc      *doc;
@@ -22,6 +22,7 @@ public:
 
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata);
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep);
+
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);
 };
 } // pklib_xml::

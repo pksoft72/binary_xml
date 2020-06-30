@@ -258,7 +258,7 @@ bool Bin_xml_creator::DoAll()
                 XML_Binary_Type type;
                 const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
                 if (type != XBT_UNKNOWN)
-                    FindOrAddType(name,(SymbolTableTypes)t,type);
+                    FindOrAddTyped(name,(SymbolTableTypes)t,type);
             }
         }
     }
@@ -382,8 +382,15 @@ void Bin_xml_creator::FirstPassEvent(void *element,void *userdata,int deep)
     assert(element != nullptr);
     Bin_xml_creator *_this = reinterpret_cast<Bin_xml_creator*>(userdata);
     _this->total_node_count++;
-    _this->src->ForAllParams(FirstPassParamEvent,element,userdata);
+    if (!_this->src->ForAllBinParams(FirstPassBinParamEvent,element,userdata)) // this is faster!
+        _this->src->ForAllParams(FirstPassParamEvent,element,userdata);
     
+}
+
+void Bin_xml_creator::FirstPassBinParamEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata)
+{
+    Bin_xml_creator *_this = reinterpret_cast<Bin_xml_creator*>(userdata);
+    _this->total_param_count++;
 }
 
 void Bin_xml_creator::FirstPassParamEvent(const char *param_name,const char *param_value,void *element,void *userdata)
@@ -397,8 +404,15 @@ void Bin_xml_creator::SecondPassEvent(void *element,void *userdata,int deep)
     assert(element != nullptr);
     Bin_xml_creator *_this = reinterpret_cast<Bin_xml_creator*>(userdata);
     _this->FindOrAdd(_this->src->getNodeName(element),SYMBOL_TABLE_NODES,_this->src->getNodeValue(element));
-    _this->src->ForAllParams(SecondPassParamEvent,element,userdata);
+    if (!_this->src->ForAllBinParams(SecondPassBinParamEvent,element,userdata))
+        _this->src->ForAllParams(SecondPassParamEvent,element,userdata);
     
+}
+
+void Bin_xml_creator::SecondPassBinParamEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata)
+{
+    Bin_xml_creator *_this = reinterpret_cast<Bin_xml_creator*>(userdata);
+    _this->FindOrAddTyped(param_name,SYMBOL_TABLE_PARAMS,type);
 }
 
 void Bin_xml_creator::SecondPassParamEvent(const char *param_name,const char *param_value,void *element,void *userdata)
@@ -580,7 +594,8 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
     X->name = Find(src->getNodeName(element),SYMBOL_TABLE_NODES);
 
     X->paramcount = 0;  // count - how many symbols are stored here?
-    src->ForAllParams(XCountParamsEvent,element,X);
+    if (!src->ForAllBinParams(XCountBinParamsEvent,element,X))
+        src->ForAllParams(XCountParamsEvent,element,X);
     
     X->childcount = 0;  // count them
     src->ForAllChildren(XCountChildrenEvent,element,X);
@@ -623,12 +638,18 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
         }
     }
 //-----------------------------------------------
-    src->ForAllParams(XStoreParamsEvent,element,&xstore_data);
+    if (!src->ForAllBinParams(XStoreBinParamsEvent,element,&xstore_data))
+        src->ForAllParams(XStoreParamsEvent,element,&xstore_data);
     src->ForAllChildren(XStoreChildrenEvent,element,&xstore_data);
 
     X->length = *_wp - _x;
     assert(X->length > 0);
     return _x;
+}
+
+void Bin_xml_creator::XCountBinParamsEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata)
+{
+    reinterpret_cast<XML_Item*>(userdata)->paramcount++; // how much they are
 }
 
 void Bin_xml_creator::XCountParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
@@ -639,6 +660,43 @@ void Bin_xml_creator::XCountParamsEvent(const char *param_name,const char *param
 void Bin_xml_creator::XCountChildrenEvent(void *element,void *userdata)
 {
     reinterpret_cast<XML_Item*>(userdata)->childcount++; // how much they are
+}
+
+void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata)
+{
+    XStoreParamsData *xstore_data = reinterpret_cast<XStoreParamsData*>(userdata);
+// TODO: translate param_id
+    int name_id = 
+        xstore_data->params->name = 
+            xstore_data->creator->Find(param_name,SYMBOL_TABLE_PARAMS);
+
+    if (param_value == nullptr || type == XBT_NULL)
+    {
+        xstore_data->params->type = XBT_NULL;
+        xstore_data->params->data = 0;
+        xstore_data->params++;
+        return; // empty - it's fast
+    }
+
+    int size = XBT_Size(type,0);
+    char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
+    // bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
+    if (size == 4 && XBT_Copy(param_value,type,0/*size*/,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
+    {
+        ASSERT_NO_DO_NOTHING(1207,in_place_wp == reinterpret_cast<char*>(&xstore_data->params->data) + 4);
+        xstore_data->params->type = type;
+    }
+    else
+    {
+        xstore_data->params->type = type;
+        xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
+
+        if (type == XBT_BLOB || type == 
+
+        ASSERT_NO_DO_NOTHING(1206,XBT_Copy(param_value,type,size,xstore_data->_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated));
+    }
+
+    xstore_data->params++;
 }
 
 void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
@@ -687,6 +745,56 @@ void Bin_xml_creator::XStoreChildrenEvent(void *element,void *userdata)
 
 //-------------------------------------------------------------------------------------------------
 
+int Bin_xml_creator::FindOrAddTyped(const char *symbol,const int t,XML_Binary_Type type)
+{
+    if (symbol == nullptr) return -1;
+    
+// binary search
+    int B = 0;
+    int E = symbol_count[t]-1;
+    while (B <= E)
+    {
+        int M = (B+E) >> 1;
+        int cmp = strcmp(symbol,symbol_table[t][M]);
+        if (cmp == 0) 
+        {
+            symbol_table_types[t][M] = static_cast<XML_Binary_Type_Stored>(
+                XBT_JoinTypes(type,static_cast<XML_Binary_Type>(symbol_table_types[t][M])));
+            return M;   // found
+        }
+        if (cmp < 0)
+            E = M-1;
+        else
+            B = M+1;
+    }
+    if (symbol_count[t] >= MAX_SYMBOL_COUNT)
+    {
+        fprintf(stderr,"Cannot add symbol '%s' to symbol table of %s - limit %d reached",symbol,(t == SYMBOL_TABLE_NODES ? "tags" : "params"),MAX_SYMBOL_COUNT);
+        return -1; // failed
+    }
+// not found --> add
+    int P = E+1;
+    assert(P >= 0 && P <= symbol_count[t]);
+    if (symbol_count[t]-P > 0)
+    {
+        memmove(&symbol_table[t][P+1],&symbol_table[t][P],(symbol_count[t]-P)*sizeof(char*));
+        memmove(&symbol_table_types[t][P+1],&symbol_table_types[t][P],(symbol_count[t]-P)*sizeof(XML_Binary_Type_Stored));
+    }
+    symbol_count[t]++;
+
+    char *symbol_copy = reinterpret_cast<char *>(malloc(strlen(symbol)+1));
+    strcpy(symbol_copy,symbol);
+    symbol_table[t][P] = symbol_copy;
+    symbol_table_types[t][P] = static_cast<XML_Binary_Type_Stored>(type);
+
+#ifndef NDEBUG
+// check ordered
+    for(int i = 0;i < symbol_count[t]-1;i++)
+        assert(strcmp(symbol_table[t][i],symbol_table[t][i+1]) < 0);
+#endif
+    return P; // position of insert
+}
+
 int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
 {
     if (symbol == nullptr) return -1;
@@ -700,7 +808,9 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
         int cmp = strcmp(symbol,symbol_table[t][M]);
         if (cmp == 0) 
         {
-            symbol_table_types[t][M] = static_cast<XML_Binary_Type_Stored>(XBT_Detect2(
+            symbol_table_types[t][M] = static_cast<XML_Binary_Type_Stored>(
+
+                XBT_Detect2(
                     value,
                     static_cast<XML_Binary_Type>(symbol_table_types[t][M])));
             return M;   // found
@@ -738,54 +848,6 @@ int Bin_xml_creator::FindOrAdd(const char *symbol,const int t,const char *value)
     return P; // position of insert
 }
 
-int Bin_xml_creator::FindOrAddType(const char *symbol,const int t,XML_Binary_Type type)
-{
-    if (symbol == nullptr) return -1;
-    
-// binary search
-    int B = 0;
-    int E = symbol_count[t]-1;
-    while (B <= E)
-    {
-        int M = (B+E) >> 1;
-        int cmp = strcmp(symbol,symbol_table[t][M]);
-        if (cmp == 0) 
-        {
-            symbol_table_types[t][M] = type;
-            return M;   // found
-        }
-        if (cmp < 0)
-            E = M-1;
-        else
-            B = M+1;
-    }
-    if (symbol_count[t] >= MAX_SYMBOL_COUNT)
-    {
-        fprintf(stderr,"Cannot add symbol '%s' to symbol table of %s - limit %d reached",symbol,(t == SYMBOL_TABLE_NODES ? "tags" : "params"),MAX_SYMBOL_COUNT);
-        return -1; // failed
-    }
-// not found --> add
-    int P = E+1;
-    assert(P >= 0 && P <= symbol_count[t]);
-    if (symbol_count[t]-P > 0)
-    {
-        memmove(&symbol_table[t][P+1],&symbol_table[t][P],(symbol_count[t]-P)*sizeof(char*));
-        memmove(&symbol_table_types[t][P+1],&symbol_table_types[t][P],(symbol_count[t]-P)*sizeof(XML_Binary_Type_Stored));
-    }
-    symbol_count[t]++;
-
-    char *symbol_copy = reinterpret_cast<char *>(malloc(strlen(symbol)+1));
-    strcpy(symbol_copy,symbol);
-    symbol_table[t][P] = symbol_copy;
-    symbol_table_types[t][P] = type;
-
-#ifndef NDEBUG
-// check ordered
-    for(int i = 0;i < symbol_count[t]-1;i++)
-        assert(strcmp(symbol_table[t][i],symbol_table[t][i+1]) < 0);
-#endif
-    return P; // position of insert
-}
 
 int Bin_xml_creator::Find(const char *symbol,const int t)
 {

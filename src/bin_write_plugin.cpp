@@ -1101,6 +1101,27 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
     }
 }
 
+bool BW_plugin::ForAllBinParams(OnBinParam_t on_param,void *element,void *userdata)
+{
+    BW_element *E = reinterpret_cast<BW_element*>(element);
+    if (E->first_attribute == 0) return true; // no attributes
+    
+    BW_element *child = BWE(E->first_attribute);
+    for(;;)
+    {
+// typedef void (*OnBinParam_t)(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
+        
+        on_param(pool->getAttrName(child->identification),child->identification,
+            static_cast<XML_Binary_Type>(child->value_type),child->BWD(),
+            element,userdata);
+
+        if (child->next == E->first_attribute) break; // finished
+        child = BWE(child->next);
+    }
+    
+    return true; // implemented
+}
+
 int BW_plugin::getSymbolCount(SymbolTableTypes table)
 {
     switch (table)

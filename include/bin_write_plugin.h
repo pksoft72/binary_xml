@@ -191,6 +191,7 @@ public: // Bin_src_plugin
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata);
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep);
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);
+    virtual bool ForAllBinParams(OnBinParam_t on_param,void *element,void *userdata);
     
     virtual int getSymbolCount(SymbolTableTypes table);
     virtual const char *getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type);

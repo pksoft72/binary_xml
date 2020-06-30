@@ -20,6 +20,7 @@ class Bin_xml_creator;
 typedef void (*OnElement_t)(void *element,void *userdata);
 typedef void (*OnElementRec_t)(void *element,void *userdata,int deep);
 typedef void (*OnParam_t)(const char *param_name,const char *param_value,void *element,void *userdata);
+typedef void (*OnBinParam_t)(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
 
 class Bin_src_plugin // interface for universal tree input format
 {
@@ -40,6 +41,7 @@ public:
     virtual void ForAllChildren(OnElement_t on_element,void *parent,void *userdata)=0;
     virtual void ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)=0;
     virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata)=0;
+    virtual bool ForAllBinParams(OnBinParam_t on_param,void *element,void *userdata) { return false; }; // default is not used
     
     virtual int getSymbolCount(SymbolTableTypes table);
     virtual const char *getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type); // not requested
@@ -94,22 +96,31 @@ public:
     bool Append(void *element);
 protected:
         static void FirstPassEvent(void *element,void *userdata,int deep);
+
+        static void FirstPassBinParamEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
         static void FirstPassParamEvent(const char *param_name,const char *param_value,void *element,void *userdata);
+
         static void SecondPassEvent(void *element,void *userdata,int deep);
+        static void SecondPassBinParamEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
         static void SecondPassParamEvent(const char *param_name,const char *param_value,void *element,void *userdata);
         
         int32_t FillData();
             const char *WriteChildSymbols(char **_wp,tag_name_id_t tag_name,int symbol_table);
             const char *WritePayloadContainer(char **_wp,tag_name_id_t tag_name,void *root);
+
+                static void XCountBinParamsEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
                 static void XCountParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata);
                 static void XCountChildrenEvent(void *element,void *userdata);
+
+                static void XStoreBinParamsEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
                 static void XStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata);
                 static void XStoreChildrenEvent(void *element,void *userdata);
+
             const char *WriteNode(char **_wp,void *element);
 
         virtual int32_t Pack();
 
-    int FindOrAddType(const char *symbol,const int t,XML_Binary_Type type);
+    int FindOrAddTyped(const char *symbol,const int t,XML_Binary_Type type);
     int FindOrAdd(const char *symbol,const int t,const char *value);
     int Find(const char *symbol,const int t);
     void ShowSymbols(const int t);
