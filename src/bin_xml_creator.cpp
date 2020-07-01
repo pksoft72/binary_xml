@@ -666,7 +666,7 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
 {
     XStoreParamsData *xstore_data = reinterpret_cast<XStoreParamsData*>(userdata);
     // TODO: translate param_id
-    int name_id = 
+//    int name_id = 
         xstore_data->params->name = 
         xstore_data->creator->Find(param_name,SYMBOL_TABLE_PARAMS);
 
