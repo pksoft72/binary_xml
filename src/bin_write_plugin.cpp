@@ -230,6 +230,9 @@ BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
     ASSERT_NO_RET_NULL(1190,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
+    LOG("UInt32: id=%d value=%u",id,value);
+
+    
     uint32_t *dst         = reinterpret_cast<uint32_t*>(attr+1); // just after this element
     *dst                  = value; // store value
 
@@ -357,6 +360,7 @@ BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 
         int64_t *dst         = reinterpret_cast<int64_t*>(attr+1); // just after this element
         *dst                 = value; // store value
+        LOG("Time64: id=%d value=%08x-%08x",id,(uint32_t)(value),(uint32_t)(value >> 32));
         
         add(attr);
     }

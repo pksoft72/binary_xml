@@ -255,7 +255,11 @@ bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *lim
         AA(*_wp);
         memcpy(*_wp,src,value_size);
         if (type == XBT_BLOB)
-            fprintf(stderr,"Copy BLOB with size %d, align %d and value size %d\n",size,align_size,value_size);
+            LOG("Copy-BLOB: size=%d align=%d and value size=%d\n",size,align_size,value_size);
+        else if (type == XBT_UINT32)
+            LOG("Copy-UInt32: value=%u",*reinterpret_cast<const uint32_t*>(src));
+        else if (type == XBT_UNIX_TIME64_MSEC)
+            LOG("Copy-int64-time: value=%08x-%08x",*reinterpret_cast<const uint32_t*>(src),*reinterpret_cast<const uint32_t*>(src+4));
     }
     else if (align_size == 8)
     {
@@ -374,9 +378,6 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
 
             snprintf(dst,dst_size,"%u",*reinterpret_cast<const uint32_t*>(data));
             return strlen(dst);
-
-
-
 
         case XBT_INT64:
             {
