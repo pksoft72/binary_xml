@@ -695,15 +695,20 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
             ASSERT_NO_DO_NOTHING(1207,in_place_wp == reinterpret_cast<char*>(&xstore_data->params->data) + 4);
             xstore_data->params->type = type;
             xstore_data->params++;
+            return; // finished
         }
     }
+    int align = XBT_Align(type);
+    if (align == 4)
+        AA(xstore_data->_wp);
+    else if (align == 8)
+        AA8(xstore_data->_wp);
+         
     xstore_data->params->type = type;
     xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
 
-
     ASSERT_NO_DO_NOTHING(1206,XBT_Copy(param_value,type,content_size,xstore_data->_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated));
     xstore_data->params++;
-
 }
 
 void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
