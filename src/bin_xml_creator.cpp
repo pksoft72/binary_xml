@@ -665,10 +665,10 @@ void Bin_xml_creator::XCountChildrenEvent(void *element,void *userdata)
 void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata)
 {
     XStoreParamsData *xstore_data = reinterpret_cast<XStoreParamsData*>(userdata);
-// TODO: translate param_id
+    // TODO: translate param_id
     int name_id = 
         xstore_data->params->name = 
-            xstore_data->creator->Find(param_name,SYMBOL_TABLE_PARAMS);
+        xstore_data->creator->Find(param_name,SYMBOL_TABLE_PARAMS);
 
     if (param_value == nullptr || type == XBT_NULL)
     {
@@ -678,25 +678,32 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
         return; // empty - it's fast
     }
 
-    int size = XBT_Size(type,0);
-    char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
-    // bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
-    if (size == 4 && XBT_Copy(param_value,type,0/*size*/,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
+    int content_size = 0;
+    if (XBT_IS_VARSIZE(type))
     {
-        ASSERT_NO_DO_NOTHING(1207,in_place_wp == reinterpret_cast<char*>(&xstore_data->params->data) + 4);
-        xstore_data->params->type = type;
+        AA(param_value);
+        content_size = *reinterpret_cast<const int32_t*>(param_value);
     }
     else
     {
-        xstore_data->params->type = type;
-        xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
-
-        if (type == XBT_BLOB || type == 
-
-        ASSERT_NO_DO_NOTHING(1206,XBT_Copy(param_value,type,size,xstore_data->_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated));
+        int size = XBT_Size(type,0); // empty size of type
+        char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
+        // bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
+        
+        if (size <= 4 && XBT_Copy(param_value,type,0/*size*/,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
+        { // store parameter value directly to params.data
+            ASSERT_NO_DO_NOTHING(1207,in_place_wp == reinterpret_cast<char*>(&xstore_data->params->data) + 4);
+            xstore_data->params->type = type;
+            xstore_data->params++;
+        }
     }
+    xstore_data->params->type = type;
+    xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
 
+
+    ASSERT_NO_DO_NOTHING(1206,XBT_Copy(param_value,type,content_size,xstore_data->_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated));
     xstore_data->params++;
+
 }
 
 void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
