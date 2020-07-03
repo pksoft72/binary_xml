@@ -243,6 +243,7 @@ std::ostream& operator<<(std::ostream& os, Bin_src_plugin &src)
     BIN_SRC_PLUGIN2STREAM_CONTEXT_t context = {0,0,&src,os};
     // void Bin_json_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
     Bin_src_plugin::s_On2Stream(src.getRoot(),(void*)&context);
+    return os;
 }
 
 //-------------------------------------------------------------------------------------------------

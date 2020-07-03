@@ -570,14 +570,14 @@ bool   BW_pool::checkTable(BW_symbol_table_12B &table,BW_offset_t limit)
 {
 // I must check, the symbol table is ok and valid!    
     if (table.max_id == -1) return true; // no symbols = OK
-    ASSERT_NO_RET_FALSE(0,table.index >= sizeof(*this));
-    ASSERT_NO_RET_FALSE(0,table.index + sizeof(int32_t) * (table.max_id+1) < payload);
+    ASSERT_NO_RET_FALSE(1938,table.index >= (int)sizeof(*this));
+    ASSERT_NO_RET_FALSE(1939,table.index + (int)sizeof(int32_t) * (table.max_id+1) < payload);
     int32_t *index = reinterpret_cast<int32_t*>(THIS + table.index);
     for(int i = 0;i <= table.max_id;i++)
     {
         if (index[i] == 0) continue; // empty - ok
-        ASSERT_NO_RET_FALSE(0,index[i] >= table.names_offset);
-        ASSERT_NO_RET_FALSE(0,index[i] < table.names_offset);
+        ASSERT_NO_RET_FALSE(1940,index[i] >= table.names_offset);
+        ASSERT_NO_RET_FALSE(1941,index[i] < table.names_offset);
         
     }
     return true;
@@ -603,7 +603,7 @@ char*           BW_pool::allocate8(int size)        // 64 bit aligned value
     if (size <= 0) return 0;
     ROUND64UP(allocator);
 // memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
-    ASSERT_NO_RET_0(1080,allocator + size <= allocator_limit);
+    ASSERT_NO_RET_0(1942,allocator + size <= allocator_limit);
 
     BW_offset_t offset = allocator;
     allocator += size;
@@ -712,8 +712,8 @@ bool BW_plugin::Initialize()
             ERRNO_SHOW(1049,"mmap",filename);
             return false;
         }
-        if (file_size < sizeof(*pool)) file_size = 0; // too small - deleting
-        ASSERT_NO_RET_FALSE(1948,file_size == 0 || pool->mmap_size >= file_size); // must be allocated for whole size
+        if (file_size < (int)sizeof(*pool)) file_size = 0; // too small - deleting
+        ASSERT_NO_RET_FALSE(1948,file_size == 0 || (int)pool->mmap_size >= file_size); // must be allocated for whole size
         if (file_size == 0) break; // was empty -> OK
         if (pool->mmap_size == max_pool_size) break; // correct size
         int new_pool_size = pool->mmap_size;
