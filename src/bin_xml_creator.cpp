@@ -142,6 +142,109 @@ void Bin_src_plugin::s_PrintParam(const char *param_name,const char *param_value
     printf(" %s=\"%s\"",param_name,param_value);
 }
 
+typedef struct 
+{
+    int deep;
+    int sibling_count;
+    Bin_src_plugin *src;
+    std::ostream &os;
+} BIN_SRC_PLUGIN2STREAM_CONTEXT_t;
+
+void Bin_src_plugin::s_OnBinParam2Stream(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata)
+{
+    BIN_SRC_PLUGIN2STREAM_CONTEXT_t *CTX = reinterpret_cast<BIN_SRC_PLUGIN2STREAM_CONTEXT_t *>(userdata);
+
+    CTX->os << " " << param_name << "=\"";
+    // void XBT_ToStringStream(XML_Binary_Type type,const char *data,std::ostream &os)
+    XBT_ToXMLStream(type,param_value,CTX->os);
+    CTX->os << "\"";
+}
+
+void Bin_src_plugin::s_OnParam2Stream(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+    BIN_SRC_PLUGIN2STREAM_CONTEXT_t *CTX = reinterpret_cast<BIN_SRC_PLUGIN2STREAM_CONTEXT_t *>(userdata);
+
+    CTX->os << " " << param_name << "=\"";
+    for(const char *c = param_value;*c != '\0';c++)
+    {
+        if (*c == '<') CTX->os << "&lt;";
+        else if (*c == '>') CTX->os << "&gt;";
+        else if (*c == '&') CTX->os << "&amp;";
+        else if (*c == '\"') CTX->os << "&quot;";
+        else CTX->os << *c;
+    }
+    CTX->os << "\"";
+}
+
+// typedef void (*OnElementRec_t)(void *element,void *userdata,int deep);
+void Bin_src_plugin::s_On2Stream(void *element,void *userdata)
+{
+    BIN_SRC_PLUGIN2STREAM_CONTEXT_t *CTX = reinterpret_cast<BIN_SRC_PLUGIN2STREAM_CONTEXT_t *>(userdata);
+
+    int deep = CTX->deep;
+    int sibling_count = CTX->sibling_count;
+//-----------------------------------------------------------------------------------
+
+    if (deep > 0 && sibling_count == 0) // finish parent tag
+        CTX->os << ">\n";
+
+    for(int t = 0;t < deep;t++) CTX->os << "\t";
+
+
+    CTX->os << "<" << CTX->src->getNodeName(element);
+    // bool ForAllBinParams(OnBinParam_t on_param,void *element,void *userdata)
+    if (!CTX->src->ForAllBinParams(s_OnBinParam2Stream,element,userdata))
+    {
+        // void Bin_json_plugin::ForAllParams(OnParam_t on_param,void *parent,void *userdata)
+        CTX->src->ForAllParams(s_OnParam2Stream,element,userdata);
+    }
+        
+    
+    CTX->deep++;
+    CTX->sibling_count = 0;
+
+    CTX->src->ForAllChildren(Bin_src_plugin::s_On2Stream,element,userdata);
+
+
+// value info
+    XML_Binary_Type value_type;
+    int value_size = 0;
+    const char *value = CTX->src->getNodeBinValue(element,value_type,value_size);    // binary value referenced
+
+    if (CTX->sibling_count == 0) 
+        if (value == nullptr) CTX->os << "/>\n";
+        else
+        {
+            CTX->os << ">";
+            // void XBT_ToStringStream(XML_Binary_Type type,const char *data,std::ostream &os)
+            XBT_ToXMLStream(value_type,value,CTX->os);
+            CTX->os << "<" << CTX->src->getNodeName(element) << ">\n";
+        }
+    else
+    {
+        if (value_type != XBT_NULL)
+        {
+            for(int t = 0;t < deep+1;t++) CTX->os << "\t";
+            XBT_ToXMLStream(value_type,value,CTX->os);
+
+            CTX->os << "\n";    
+        }
+        for(int t = 0;t < deep;t++) CTX->os << "\t";
+        CTX->os << "</" << CTX->src->getNodeName(element) << ">\n";
+    }
+
+//-----------------------------------------------------------------------------------
+    CTX->deep = deep;
+    CTX->sibling_count = sibling_count + 1;
+}
+
+std::ostream& operator<<(std::ostream& os, Bin_src_plugin &src)
+{
+    BIN_SRC_PLUGIN2STREAM_CONTEXT_t context = {0,0,&src,os};
+    // void Bin_json_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
+    Bin_src_plugin::s_On2Stream(src.getRoot(),(void*)&context);
+}
+
 //-------------------------------------------------------------------------------------------------
 
 Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)

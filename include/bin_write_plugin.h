@@ -32,6 +32,7 @@ namespace pklib_xml {
 
 // BW = Bin Write
 #define ROUND32UP(ptr) do { (ptr) = (((ptr)+3) >> 2) << 2; } while(0) // round up
+#define ROUND64UP(ptr) do { (ptr) = (((ptr)+7) >> 3) << 3; } while(0) // round up
 
 typedef int32_t BW_offset_t;                // pool + this value -> pointer
 
@@ -129,8 +130,10 @@ public: // index tables (indexed by id) - allocated on pool
     const char*     getAttrName(int16_t id);
     
     bool            makeTable(BW_symbol_table_12B &table,BW_offset_t limit);
+    bool            checkTable(BW_symbol_table_12B &table,BW_offset_t limit);
 public:
     char*           allocate(int size);
+    char*           allocate8(int size);        // 64 bit aligned value
     BW_element*     new_element(XML_Binary_Type type,int size = 0);
 };
 
@@ -147,6 +150,8 @@ protected:
     int         fd;             // file handle
     BW_pool     *pool;
     bool        initialized;
+    bool        check_only;     // register methods will only check
+    int         check_failures; // how many errors was in registration
 public:
     BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
     virtual ~BW_plugin();
@@ -195,6 +200,7 @@ public: // Bin_src_plugin
     
     virtual int getSymbolCount(SymbolTableTypes table);
     virtual const char *getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type);
+    
 };
 
 } // namespace pklib_xml

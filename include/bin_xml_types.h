@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <iostream>
 
 namespace pklib_xml
 {
@@ -59,6 +60,9 @@ bool            XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,c
 
 const char     *XBT_ToString(XML_Binary_Type type,const char *data);
 int             XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *dst,int dst_size);
+    
+void            XBT_ToStringStream(XML_Binary_Type type,const char *data,std::ostream &os);
+void            XBT_ToXMLStream(XML_Binary_Type type,const char *data,std::ostream &os);
 
 char*           XBT_Buffer(int size);
 void            XBT_Free();

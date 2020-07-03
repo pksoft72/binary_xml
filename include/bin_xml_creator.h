@@ -58,6 +58,11 @@ private:
     int print_node_counter;
     static void s_PrintElement(void *element,void *userdata);
     static void s_PrintParam(const char *param_name,const char *param_value,void *element,void *userdata);
+public:
+    static void s_OnBinParam2Stream(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
+    static void s_OnParam2Stream(const char *param_name,const char *param_value,void *element,void *userdata);
+    static void s_On2Stream(void *element,void *userdata);
+    friend std::ostream& operator<<(std::ostream& os, Bin_src_plugin &src);
 };
 
 typedef Bin_src_plugin* (*Bin_src_plugin_selector_t)(const char *filename,Bin_xml_creator *bin_xml_creator);

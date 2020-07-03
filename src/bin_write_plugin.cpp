@@ -566,6 +566,22 @@ bool   BW_pool::makeTable(BW_symbol_table_12B &table,BW_offset_t limit)
     return true;
 }
 
+bool   BW_pool::checkTable(BW_symbol_table_12B &table,BW_offset_t limit)
+{
+// I must check, the symbol table is ok and valid!    
+    if (table.max_id == -1) return true; // no symbols = OK
+    ASSERT_NO_RET_FALSE(0,table.index >= sizeof(*this));
+    ASSERT_NO_RET_FALSE(0,table.index + sizeof(int32_t) * (table.max_id+1) < payload);
+    int32_t *index = reinterpret_cast<int32_t*>(THIS + table.index);
+    for(int i = 0;i <= table.max_id;i++)
+    {
+        if (index[i] == 0) continue; // empty - ok
+        ASSERT_NO_RET_FALSE(0,index[i] >= table.names_offset);
+        ASSERT_NO_RET_FALSE(0,index[i] < table.names_offset);
+        
+    }
+    return true;
+}
 
 char*  BW_pool::allocate(int size)
 {
@@ -582,13 +598,28 @@ char*  BW_pool::allocate(int size)
     return THIS+offset;
 }
 
+char*           BW_pool::allocate8(int size)        // 64 bit aligned value
+{
+    if (size <= 0) return 0;
+    ROUND64UP(allocator);
+// memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
+    ASSERT_NO_RET_0(1080,allocator + size <= allocator_limit);
+
+    BW_offset_t offset = allocator;
+    allocator += size;
+    ROUND32UP(allocator);
+
+    MAXIMIZE(size,allocator);
+
+    return THIS+offset;
+}
 
 BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 {
     ASSERT_NO_RET_NULL(1067,this != nullptr);
     int size2 = XBT_Size(type,size);
     if (size2 < 0) return nullptr;
-    BW_element* result = reinterpret_cast<BW_element*>(allocate(sizeof(BW_element)+size2));
+    BW_element* result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
     if (result == nullptr) return nullptr; // error message already shown in allocate
     result->value_type = type;
     switch(type)
@@ -614,9 +645,11 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     this->pool = nullptr;
     this->fd = -1;
     this->initialized = false;
+    this->check_only = false;
+    this->check_failures = 0;
     
 
-    Bin_src_plugin::setFilename(filename,".wxb"); // will allocate copy of filename
+    Bin_src_plugin::setFilename(filename,".xbw"); // will allocate copy of filename
 }
  
 BW_plugin::~BW_plugin()
@@ -640,7 +673,7 @@ BW_plugin::~BW_plugin()
 bool BW_plugin::Initialize()
 {
     if (initialized) return true; // no double initialize!!
-    ASSERT_NO_RET_FALSE(1937,filename != nullptr);
+    ASSERT_NO_RET_FALSE(1938,filename != nullptr);
 
 // BW_plugin is owner and the only one (for now) writer of mapped file
 
@@ -662,30 +695,45 @@ bool BW_plugin::Initialize()
     int file_size = (int)statbuf.st_size;
     ASSERT_NO_RET_FALSE(1100,file_size >= 0); // file should exist now
 
-
-//  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
-    this->pool = reinterpret_cast<BW_pool*>(mmap(nullptr,max_pool_size,PROT_READ | PROT_WRITE, 
-        MAP_SHARED |  //  Share  this  mapping.   Updates to the mapping are visible to other processes mapping the same region, 
-                      // and (in the case of file-backed mappings) are carried through to the underlying file.  
-                      // (To precisely control when updates are carried through to the underlying file requires the use of msync(2).)
-
-        MAP_NONBLOCK, // (since Linux 2.5.46) This flag is meaningful only in conjunction with MAP_POPULATE.  
-                      // Don't perform read-ahead: create page tables entries only for pages that are already present in RAM.  
-                      // Since Linux 2.6.23, this flag causes MAP_POPULATE to do nothing.  One day, the combination of MAP_POPULATE and MAP_NONBLOCK may be reimplemented.
-        fd, 0));
-    if (pool == nullptr)
+    for(int pass = 0;pass < 2;pass++)
     {
-        ERRNO_SHOW(1049,"mmap",filename);
-        return false;
+        //  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+        this->pool = reinterpret_cast<BW_pool*>(mmap(nullptr,max_pool_size,PROT_READ | PROT_WRITE, 
+                    MAP_SHARED |  //  Share  this  mapping.   Updates to the mapping are visible to other processes mapping the same region, 
+                    // and (in the case of file-backed mappings) are carried through to the underlying file.  
+                    // (To precisely control when updates are carried through to the underlying file requires the use of msync(2).)
+
+                    MAP_NONBLOCK, // (since Linux 2.5.46) This flag is meaningful only in conjunction with MAP_POPULATE.  
+                    // Don't perform read-ahead: create page tables entries only for pages that are already present in RAM.  
+                    // Since Linux 2.6.23, this flag causes MAP_POPULATE to do nothing.  One day, the combination of MAP_POPULATE and MAP_NONBLOCK may be reimplemented.
+                    fd, 0));
+        if (pool == nullptr)
+        {
+            ERRNO_SHOW(1049,"mmap",filename);
+            return false;
+        }
+        if (file_size < sizeof(*pool)) file_size = 0; // too small - deleting
+        ASSERT_NO_RET_FALSE(1948,file_size == 0 || pool->mmap_size >= file_size); // must be allocated for whole size
+        if (file_size == 0) break; // was empty -> OK
+        if (pool->mmap_size == max_pool_size) break; // correct size
+        int new_pool_size = pool->mmap_size;
+    
+        if (munmap(this->pool,max_pool_size) != 0)
+            ERRNO_SHOW(1949,"munmap",filename);
+        this->pool = nullptr;
+
+        max_pool_size = new_pool_size;
+
+        ASSERT_NO_RET_FALSE(1950,pass < 1);
     }
 
 // OK, what 2 do now?
 // There are 2 situations - file is empty and I want to create and write ... simple one
 //                        - file is somehow populated, it must be fully compatibale, or I must fail
     if (file_size > 0)
-        ASSERT_NO_RET_FALSE(1101,InitEmptyFile());
-    else
         ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
+    else
+        ASSERT_NO_RET_FALSE(1101,InitEmptyFile());
 
     initialized = true;
     return true;
@@ -723,10 +771,29 @@ bool BW_plugin::InitEmptyFile()
 
 bool BW_plugin::CheckExistingFile(int file_size)
 {
-// TODO: I would like enable some cooperation of multiple writers, but it neets exactly the same symbol tables and some locking
+    ASSERT_NO_RET_FALSE(1939,strcmp(pool->binary_xml_write_type_info,"binary_xml.pksoft.org") == 0);
+    ASSERT_NO_RET_FALSE(1942,pool->pool_format_version == BIN_WRITE_POOL_FORMAT_VERSION);
+    ASSERT_NO_RET_FALSE(1943,pool->file_size == file_size);
+    ASSERT_NO_RET_FALSE(1944,pool->mmap_size == max_pool_size); // !! must be the same !!
+    ASSERT_NO_RET_FALSE(1945,pool->allocator_limit == pool->file_size);
+    ASSERT_NO_RET_FALSE(1946,pool->allocator >= sizeof(*pool));
+    ASSERT_NO_RET_FALSE(1947,pool->allocator <= pool->allocator_limit);
+
+    this->check_only = true;
+    this->check_failures = 0;
+
+//    ASSERT_NO_RET_FALSE(1951,allRegistered()); // make tables and be ready for checking of registration
+    // check pool->tags
+    // check pool->attrs
+
+    return true;
+
+#if 0
+// TODO: I would like enable some cooperation of multiple writers, but it needs exactly the same symbol tables and some locking
     memset(pool,0,file_size);
     return InitEmptyFile();
 //    ASSERT_NO_RET_FALSE(1103,NOT_IMPLEMENTED);
+#endif
 }
 
 bool BW_plugin::makeSpace(int size)
@@ -752,6 +819,19 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 {
     ASSERT_NO_RET_FALSE(1107,name != nullptr);
     ASSERT_NO_RET_FALSE(1119,type >= XBT_NULL && type < XBT_LAST);
+    if (check_only)
+    {
+        bool ok1 = (id >= 0 && id <= pool->tags.max_id);
+        const char *name_stored = pool->getTagName(id);
+        bool ok2 = name_stored != nullptr && strcmp(name,name_stored) == 0;
+        XML_Binary_Type type_stored = pool->getTagType(id);
+        bool ok3 = (type_stored == type);
+        
+        if (ok1 && ok2 && ok3) return true; // OK
+        LOG_ERROR("registerTag(%d,%s,%s) failed - %s/%s",id,name,XML_BINARY_TYPE_NAMES[type],name_stored,XML_BINARY_TYPE_NAMES[type_stored]);
+        check_failures++; 
+        return false;
+    }
 // elements must be defined first
     ASSERT_NO_RET_FALSE(1108,pool->attrs.names_offset == 0);
 // root must be later
@@ -782,6 +862,19 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 {
     ASSERT_NO_RET_FALSE(1114,name != nullptr);
     ASSERT_NO_RET_FALSE(1120,type >= XBT_NULL && type < XBT_LAST);
+    if (check_only)
+    {
+        bool ok1 = (id >= 0 && id <= pool->attrs.max_id);
+        const char *name_stored = pool->getAttrName(id);
+        bool ok2 = name_stored != nullptr && strcmp(name,name_stored) == 0;
+        XML_Binary_Type type_stored = pool->getAttrType(id);
+        bool ok3 = (type_stored == type);
+        
+        if (ok1 && ok2 && ok3) return true; // OK
+        LOG_ERROR("registerAttr(%d,%s,%s) failed - %s/%s",id,name,XML_BINARY_TYPE_NAMES[type],name_stored,XML_BINARY_TYPE_NAMES[type_stored]);
+        check_failures++; 
+        return false;
+    }
 // elements must be defined first, empty element are not allowed!
     ASSERT_NO_RET_FALSE(1115,pool->tags.names_offset != 0);
 // root must be later
@@ -928,7 +1021,7 @@ BW_element* BW_plugin::tagBLOB(int16_t id,const void *value,int32_t size)
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1935,tag_type == XBT_BLOB || tag_type == XBT_VARIANT);
 
-    ASSERT_NO_RET_NULL(1936,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
+    ASSERT_NO_RET_NULL(1940,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
 
     BW_element* result = pool->new_element(XBT_BLOB,size);
     
@@ -944,7 +1037,7 @@ BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1130,tag_type == XBT_INT32 || tag_type == XBT_VARIANT);
 
-    ASSERT_NO_RET_NULL(1934,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
+    ASSERT_NO_RET_NULL(1941,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
 
     BW_element* result = pool->new_element(XBT_INT32,0);
     
@@ -1164,6 +1257,8 @@ const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type 
             return nullptr;
     }
 }
+
+//-------------------------------------------------------------------------------------------------
 
 }
 #endif // BIN_WRITE_PLUGIN

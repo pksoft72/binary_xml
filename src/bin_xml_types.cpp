@@ -492,6 +492,40 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
     }
 }
 
+void XBT_ToStringStream(XML_Binary_Type type,const char *data,std::ostream &os)
+{
+    char buffer[4096+1];
+    int offset = 0;
+    for(;;)
+    {
+        // int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *dst,int dst_size)
+        int len = XBT_ToStringChunk(type,data,offset,buffer,sizeof(buffer));
+        if (len == 0) break;
+        buffer[len] = '\0';
+        os << buffer;
+    }
+}
+
+void XBT_ToXMLStream(XML_Binary_Type type,const char *data,std::ostream &os)
+{
+    char buffer[4096+1];
+    int offset = 0;
+    for(;;)
+    {
+        // int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *dst,int dst_size)
+        int len = XBT_ToStringChunk(type,data,offset,buffer,sizeof(buffer));
+        if (len == 0) break;
+        for(int i = 0;i < len;i++)
+        {
+            if (buffer[i] == '<') os << "&lt;";
+            else if (buffer[i] == '>') os << "&gt;";
+            else if (buffer[i] == '&') os << "&amp;";
+            else if (buffer[i] == '\"') os << "&quot;";
+            else os << buffer[i];
+        }
+    }
+}
+
 char *g_output_buffer = nullptr;
 int   g_output_buffer_size = 0;
 char* XBT_Buffer(int size)
