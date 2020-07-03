@@ -484,7 +484,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 // char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size)
 
                 offset += chunk;
-                return chunk;
+                return strlen(dst);
             }
         default:
             assert(false);

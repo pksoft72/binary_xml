@@ -4,7 +4,7 @@ cmake_install.cmake
 Makefile
 .tags
 .sourcetree
-*.swp
+*.sw?
 CTestTestfile.cmake
 Testing
 build
