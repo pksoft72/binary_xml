@@ -903,6 +903,8 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
+    if (check_only)
+        return (check_failures == 0); // no problems?
 
     BW_offset_t names_limit = pool->allocator;
     ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
