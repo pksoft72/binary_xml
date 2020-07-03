@@ -92,6 +92,7 @@ public:
     BW_element  *attrGet(int16_t id);
     int32_t     *getInt32();
     
+    BW_element  *findChildByTag(int16_t tag_id);
     BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
 };
 

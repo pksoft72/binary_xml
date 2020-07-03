@@ -413,6 +413,25 @@ int32_t *BW_element::getInt32()
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
 
+BW_element  *BW_element::findChildByTag(int16_t tag_id)
+{
+    if (this == nullptr) return nullptr;
+    // for all children
+    
+    if (first_child == 0) return nullptr; // no children
+
+    BW_element *child = BWE(first_child);
+    for(;;)
+    {
+        if (child->identification == tag_id) // child has requested tag_id
+            return child;
+
+        if (child->next == first_child) break; // finished
+        child = BWE(child->next);
+    }
+    return nullptr;
+}
+
 BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size)
 {
     if (this == nullptr) return nullptr;
