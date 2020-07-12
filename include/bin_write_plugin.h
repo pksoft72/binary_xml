@@ -140,7 +140,7 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-class BW_plugin : public Bin_src_plugin
+class BW_plugin : public Bin_src_plugin  // !!! #define BIN_WRITE_PLUGIN
 {
 // This object organize complete DOM tree built on the fly.
 // Can be used to produce xb file via several passes.
