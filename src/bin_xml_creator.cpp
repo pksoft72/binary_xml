@@ -35,7 +35,7 @@ Bin_src_plugin::Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_cre
 
     this->filename = nullptr;
     this->bin_xml_creator = bin_xml_creator;
-    this->file_size = 0;
+    this->file_size = -1;
     
     setFilename(filename,nullptr);
 }
@@ -49,6 +49,11 @@ const char *Bin_src_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_
 {
     type = XBT_UNKNOWN;
     return nullptr;
+}
+
+void Bin_src_plugin::updateFileSize()
+{
+    this->file_size = file_getsize(filename);
 }
 
 void Bin_src_plugin::setFilename(const char *filename,const char *extension)
@@ -406,6 +411,7 @@ bool Bin_xml_creator::DoAll()
     DBG(std::cout << "\n");
 
     // 3. allocate and fill--------------------------
+    src->updateFileSize();
     this->data_size_allocated = 1024 + src->getFileSize()*2;
     this->data = reinterpret_cast<char *>(malloc(data_size_allocated)); // some reserve
 
