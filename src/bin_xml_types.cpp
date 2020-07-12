@@ -247,7 +247,11 @@ bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *lim
 {
     int value_size = XBT_Size(type,size);
     int align_size = XBT_Align(type);
-    if (limit - *_wp < value_size + align_size) return false; // cannot fit into destination
+    if (limit - *_wp < value_size + align_size) 
+    {
+        LOG(ANSI_RED_BRIGHT "XBT_Copy: type=%s no space (%d) for value (%d+%d)\n",XML_BINARY_TYPE_NAMES[type],(int)(limit - *_wp),(int)value_size,(int)align_size);
+        return false; // cannot fit into destination
+    }
     if (type == XBT_STRING)
         strcpy(*_wp,src);
     else if (align_size == 4)
