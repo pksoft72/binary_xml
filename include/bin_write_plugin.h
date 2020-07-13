@@ -187,6 +187,7 @@ public: // tag creation
     BW_element*     tagGUID(int16_t id,const char *value);
     BW_element*     tagSHA1(int16_t id,const char *value);
     BW_element*     tagTime(int16_t id,time_t value);
+    BW_element*     tagTime64(int16_t id,int64_t value);
     BW_element*     tagIPv4(int16_t id,const char *value);
     BW_element*     tagIPv6(int16_t id,const char *value);
 public: // Bin_src_plugin

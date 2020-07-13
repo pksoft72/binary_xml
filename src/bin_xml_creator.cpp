@@ -732,7 +732,7 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
         else
         {
             *((*_wp)++) = type;
-            ASSERT_NO_RET_NULL(1201,XBT_Copy(bin_value,type,size,_wp,data+data_size_allocated));
+            ASSERT_NO_RET_NULL(1201,XBT_Copy(bin_value,type,size,_wp,data+data_size_allocated)); // copy of value
         }
     }
     else
@@ -816,6 +816,10 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
          
     xstore_data->params->type = type;
     xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
+    
+    if (type == XBT_UNIX_TIME64_MSEC)
+        LOG("-- Storing %s : time64 %s to pointer %p -> %p",
+            param_name,XBT_ToString(type,param_value),param_value,*xstore_data->_wp);
 
     ASSERT_NO_DO_NOTHING(1206,XBT_Copy(param_value,type,content_size,xstore_data->_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated));
     xstore_data->params++;

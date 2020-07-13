@@ -1,9 +1,9 @@
 #ifdef BIN_WRITE_PLUGIN
-#include "bin_write_plugin.h"
+#include <bin_write_plugin.h>
 
-#include "bin_xml.h"
-#include "bin_xml_types.h"
-#include "macros.h"
+#include <bin_xml.h>
+#include <bin_xml_types.h>
+#include <macros.h>
 
 #include <string.h>
 #include <stdio.h>     // perror
@@ -692,7 +692,7 @@ BW_plugin::~BW_plugin()
 bool BW_plugin::Initialize()
 {
     if (initialized) return true; // no double initialize!!
-    ASSERT_NO_RET_FALSE(1938,filename != nullptr);
+    ASSERT_NO_RET_FALSE(1952,filename != nullptr);
 
 // BW_plugin is owner and the only one (for now) writer of mapped file
 
@@ -790,8 +790,8 @@ bool BW_plugin::InitEmptyFile()
 
 bool BW_plugin::CheckExistingFile(int file_size)
 {
-    ASSERT_NO_RET_FALSE(1939,strcmp(pool->binary_xml_write_type_info,"binary_xml.pksoft.org") == 0);
-    ASSERT_NO_RET_FALSE(1942,pool->pool_format_version == BIN_WRITE_POOL_FORMAT_VERSION);
+    ASSERT_NO_RET_FALSE(1953,strcmp(pool->binary_xml_write_type_info,"binary_xml.pksoft.org") == 0);
+    ASSERT_NO_RET_FALSE(1954,pool->pool_format_version == BIN_WRITE_POOL_FORMAT_VERSION);
     ASSERT_NO_RET_FALSE(1943,pool->file_size == file_size);
     ASSERT_NO_RET_FALSE(1944,pool->mmap_size == max_pool_size); // !! must be the same !!
     ASSERT_NO_RET_FALSE(1945,pool->allocator_limit == pool->file_size);
@@ -1042,7 +1042,7 @@ BW_element* BW_plugin::tagBLOB(int16_t id,const void *value,int32_t size)
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1935,tag_type == XBT_BLOB || tag_type == XBT_VARIANT);
 
-    ASSERT_NO_RET_NULL(1940,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
+    ASSERT_NO_RET_NULL(1955,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
 
     BW_element* result = pool->new_element(XBT_BLOB,size);
     
@@ -1058,7 +1058,7 @@ BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1130,tag_type == XBT_INT32 || tag_type == XBT_VARIANT);
 
-    ASSERT_NO_RET_NULL(1941,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
+    ASSERT_NO_RET_NULL(1956,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
 
     BW_element* result = pool->new_element(XBT_INT32,0);
     
@@ -1110,11 +1110,41 @@ BW_element* BW_plugin::tagSHA1(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1135,NOT_IMPLEMENTED);
 }
 
+
+
+
 BW_element* BW_plugin::tagTime(int16_t id,time_t value)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1136,NOT_IMPLEMENTED);
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(1957,tag_type == XBT_UNIX_TIME || tag_type == XBT_VARIANT);
+
+    ASSERT_NO_RET_NULL(1958,makeSpace(BW2_INITIAL_FILE_SIZE+4));
+
+    BW_element* result = pool->new_element(XBT_UNIX_TIME,0);
+    
+    result->init(pool,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
+    
+    *reinterpret_cast<uint32_t*>(result+1) = (uint32_t)value;
+    return result;
 }
+
+BW_element* BW_plugin::tagTime64(int16_t id,int64_t value)
+{
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(1959,tag_type == XBT_UNIX_TIME64_MSEC || tag_type == XBT_VARIANT);
+
+    ASSERT_NO_RET_NULL(1960,makeSpace(BW2_INITIAL_FILE_SIZE+8));
+
+    BW_element* result = pool->new_element(XBT_UNIX_TIME64_MSEC,0);
+    
+    result->init(pool,id,XBT_UNIX_TIME64_MSEC,BIN_WRITE_ELEMENT_FLAG);
+    
+    *reinterpret_cast<int64_t*>(result+1) = value;
+    return result;
+}
+
+
+
 
 BW_element* BW_plugin::tagIPv4(int16_t id,const char *value)
 {

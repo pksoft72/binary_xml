@@ -18,8 +18,10 @@ using namespace pklib_xml;
 #define TAG_NAME        2
 #define TAG_SURNAME     3
 #define TAG_PICTURE     4
+#define TAG_MODIFIED    5
 
 #define ATTR_ID         0
+#define ATTR_UPDATED    1
 
 #define ERROR_0OK       0
 #define ERROR_1INIT     1
@@ -33,8 +35,10 @@ bool MakeDictionary(BW_plugin &W)
     W.registerTag(TAG_NAME,"name",XBT_STRING);
     W.registerTag(TAG_SURNAME,"surname",XBT_STRING);
     W.registerTag(TAG_PICTURE,"picture",XBT_BLOB);
+    W.registerTag(TAG_MODIFIED,"modified",XBT_UNIX_TIME64_MSEC);
 
     W.registerAttr(ATTR_ID,"ID",XBT_INT32);
+    W.registerAttr(ATTR_UPDATED,"updated",XBT_UNIX_TIME64_MSEC);
     ASSERT_NO_RET_FALSE(1151,W.allRegistered());
     return true;
 }
@@ -104,19 +108,29 @@ int test_3()
 
     printf("%d B\n",(int)file_getsize("test3.xb"));
 
+    int XXX = 990;
     for(int i = 0;i < 10;i++)
     { 
+        
+
+
         BW_element *batch = // it is element linked with 
-            W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+            W.tag(TAG_PERSON)
+                ->attrInt32(ATTR_ID,ID++)
+                ->attrTime64(ATTR_UPDATED,time(NULL)*(int64_t)1000 + XXX++)
             ->add(W.tagStr(TAG_NAME,"Petr"))
             ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
-            ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+            ->join(W.tag(TAG_PERSON)
+                        ->attrInt32(ATTR_ID,ID++)
+                        ->attrTime64(ATTR_UPDATED,time(NULL)*(int64_t)1000 + XXX++)
                     ->add(W.tagStr(TAG_NAME,"Jan"))
                     ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                    ->add(W.tagTime64(TAG_MODIFIED,time(NULL)*(int64_t)1000 + XXX++))
                   )
             ->join(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
                     ->add(W.tagStr(TAG_NAME,"Vít"))
                     ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
+                    ->add(W.tagTime64(TAG_MODIFIED,time(NULL)*(int64_t)1000 + XXX++))
                   );
         ASSERT_NO_RET_(1161,W.Write(batch),5);
         ASSERT_NO_RET_(1180,W.Clear(),6); // clear all except dictionary
@@ -131,7 +145,8 @@ int test_4()
     ASSERT_NO_RET_(1193,W.Initialize(),1);
     ASSERT_NO_RET_(1194,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
-            ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
+            ->add(W.tag(TAG_PERSON)
+                    ->attrInt32(ATTR_ID,1)
                 ->add(W.tagStr(TAG_NAME,"Petr"))
                 ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                 ->add(W.tagBLOB(TAG_PICTURE,TEST_BLOB,TEST_BLOB_SIZE))
@@ -149,6 +164,6 @@ int main(int argc,char **argv)
 //    ASSERT_NO_RET_(1196,(r = test_0()) == 0,r);
 //    ASSERT_NO_RET_(1197,(r = test_1()) == 0,r);
 //    ASSERT_NO_RET_(1198,(r = test_2()) == 0,r);
-//    ASSERT_NO_RET_(1199,(r = test_3()) == 0,r);
-    ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
+    ASSERT_NO_RET_(1199,(r = test_3()) == 0,r);
+//    ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
 }

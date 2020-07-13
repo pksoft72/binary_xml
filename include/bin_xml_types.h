@@ -37,7 +37,17 @@ enum XML_Binary_Type
     XBT_UINT64  = 15,    // stores as binary int64_t
     XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
     XBT_UINT32  = 17,    // stores as binary int64_t
-    XBT_LAST    = 18
+    XBT_LAST    = 18,
+
+#if 0
+// Array types are not supported now
+// Encoded as BLOB of basic value
+    XBT_INT8    = 18,
+    XBT_UINT8   = 19,
+    XBT_INT16   = 20,
+    XBT_UINT16  = 21
+    XBT_ARRAY   = 127   // when used this bitmask, data consist of many values of base type
+#endif
 };
 
 #define XBT_IS_VARSIZE(type) ((type) == XBT_BLOB || (type) == XBT_HEX)
