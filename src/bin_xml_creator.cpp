@@ -471,13 +471,23 @@ bool Bin_xml_creator::Append(void *element)
             return false;
         }
     }
-    char *wp = data;
+// I should continue in the same alignement as in original file
+	struct stat file_info;
+	int err = fstat(dst_file,&file_info);
+	if (err != 0)
+    {
+
+        ERRNO_SHOW(0,"fstat",dst);	
+        return false;
+    }
+	int file_align = file_info.st_size & 0xf; // use alignemenet like length of file
+
+    char *wp = data+file_align;
     AA(wp);
     this->WriteNode(&wp,element);
     
-    int size = wp - data;
-    AA(size);
-    int written = write(dst_file,data,size);
+    int size = wp - data - file_align;
+    int written = write(dst_file,data+file_align,size);
     if (written != size)
     {
             std::cerr << "error: " << strerror(errno) << " cannot append " << size << "B\n";
@@ -817,9 +827,9 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
     xstore_data->params->type = type;
     xstore_data->params->data = *xstore_data->_wp - xstore_data->_x;
     
-//    if (type == XBT_UNIX_TIME64_MSEC)
-//        LOG("-- Storing %s : time64 %s to pointer %p -> %p-%p ... offset=%d",
-//            param_name,XBT_ToString(type,param_value),param_value,*xstore_data->_wp,xstore_data->_x,xstore_data->params->data);
+    if (type == XBT_UNIX_TIME64_MSEC)
+        LOG("-- Storing %s : time64 %s to pointer %p -> %p-%p ... offset=%d",
+            param_name,XBT_ToString(type,param_value),param_value,*xstore_data->_wp,xstore_data->_x,xstore_data->params->data);
 
     ASSERT_NO_DO_NOTHING(1206,XBT_Copy(param_value,type,content_size,xstore_data->_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated));
     xstore_data->params++;

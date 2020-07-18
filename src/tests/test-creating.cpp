@@ -113,6 +113,7 @@ int test_3()
     for(int i = 0;i < 2;i++)
     { 
         
+        LOG("--[%d]--",i);
 
 
         BW_element *batch = // it is element linked with 
@@ -181,6 +182,6 @@ int main(int argc,char **argv)
 //    ASSERT_NO_RET_(1197,(r = test_1()) == 0,r);
 //    ASSERT_NO_RET_(1198,(r = test_2()) == 0,r);
     ASSERT_NO_RET_(1199,(r = test_3()) == 0,r);
-    ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
-    ASSERT_NO_RET_(0,(r = test_5()) == 0,r);
+//    ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
+//    ASSERT_NO_RET_(0,(r = test_5()) == 0,r);
 }

@@ -11,6 +11,7 @@ namespace pklib_xml
 //#define AA(_wp) {(_wp) += (4 - (((intptr_t)(_wp) & 3) & 3));}   // align _wp to boundary of 32bits
 #define AA(_wp) do {(_wp) += (4 - ((intptr_t)(_wp) & 3)) & 3;} while(0)
 #define AA8(_wp) do {(_wp) += (8 - ((intptr_t)(_wp) & 7)) & 7;} while(0)
+#define AA16(_wp) do {(_wp) += (16 - ((intptr_t)(_wp) & 15)) & 15;} while(0)
 #define CHECK_AA_THIS assert(((intptr_t)this & 3) == 0)
 
 typedef char        hash192_t[24];      // hash - 24B - sha1
