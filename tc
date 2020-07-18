@@ -1,6 +1,7 @@
 #!/bin/bash
 make || exit 1
 cd build/*
+rm *.xb*
 ./test-creating &&
 ./xb2xml -v test*.xb
 #./xb2xml test4.xb

@@ -13,7 +13,7 @@ using namespace pklib_xml;
 // Normally I need tree representation of all objects and several passes of that structure.
 // But each object can provide it's properties in some simple way.
 
-#define TAG_MAIN        0
+#define TAG_TEST        0
 #define TAG_PERSON      1
 #define TAG_NAME        2
 #define TAG_SURNAME     3
@@ -30,7 +30,7 @@ using namespace pklib_xml;
 
 bool MakeDictionary(BW_plugin &W)
 {
-    W.registerTag(TAG_MAIN,"main",XBT_NULL);
+    W.registerTag(TAG_TEST,"test",XBT_NULL);
     W.registerTag(TAG_PERSON,"person",XBT_NULL);
     W.registerTag(TAG_NAME,"name",XBT_STRING);
     W.registerTag(TAG_SURNAME,"surname",XBT_STRING);
@@ -50,7 +50,7 @@ int test_0()
     BW_plugin W("test0.xbw",nullptr,0x40000);
     ASSERT_NO_RET_(1147,W.Initialize(),1); // opens file & prepares pool
     ASSERT_NO_RET_(1152,MakeDictionary(W),2);
-    W.setRoot(W.tag(TAG_MAIN)); // <main></main>
+    W.setRoot(W.tag(TAG_TEST)->attrInt32(ATTR_ID,0)); // <main></main>
     ASSERT_NO_RET_(1153,Bin_xml_packer::Convert(&W,"test0.xb"),3);
     printf("%d B\n",(int)file_getsize("test0.xb"));
     return 0;
@@ -63,8 +63,7 @@ int test_1()
     ASSERT_NO_RET_(1148,W.Initialize(),1);
     ASSERT_NO_RET_(1154,MakeDictionary(W),2);
     W.setRoot(                  // <main ID="1"></main>
-            W.tag(TAG_MAIN)
-            ->attrInt32(ATTR_ID,1)
+            W.tag(TAG_TEST)->attrInt32(ATTR_ID,1)
             );
     ASSERT_NO_RET_(1155,Bin_xml_packer::Convert(&W,"test1.xb"),3);
     printf("%d B\n",(int)file_getsize("test1.xb"));
@@ -77,7 +76,8 @@ int test_2()
     BW_plugin W("test2.xbw",nullptr,0x40000);
     ASSERT_NO_RET_(1149,W.Initialize(),1);
     ASSERT_NO_RET_(1156,MakeDictionary(W),2);
-    W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+    W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+            ->attrInt32(ATTR_ID,2)
             ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,1)
                 ->add(W.tagStr(TAG_NAME,"Petr"))
                 ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
@@ -90,12 +90,15 @@ int test_2()
 int test_3()
 {
     int ID = 0;
+    int XXX = 990;
     printf("creating test3.xb ... ");
     BW_plugin W("test3.xbw",nullptr,0x40000);
     ASSERT_NO_RET_(1150,W.Initialize(),1);
     ASSERT_NO_RET_(1158,MakeDictionary(W),2);
-    W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+    W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+            ->attrInt32(ATTR_ID,3)
             ->add(W.tag(TAG_PERSON)->attrInt32(ATTR_ID,ID++)
+                ->attrTime64(ATTR_UPDATED,time(NULL)*(int64_t)1000 + XXX++)
                 ->add(W.tagStr(TAG_NAME,"Petr"))
                 ->add(W.tagStr(TAG_SURNAME,"Kundrata"))
                 )
@@ -107,9 +110,7 @@ int test_3()
     ASSERT_NO_RET_(1160,XC.DoAll(),4);
 
     printf("%d B\n",(int)file_getsize("test3.xb"));
-
-    int XXX = 990;
-    for(int i = 0;i < 10;i++)
+    for(int i = 0;i < 2;i++)
     { 
         
 
@@ -144,7 +145,8 @@ int test_4()
     BW_plugin W("test4.xbw",nullptr,0x40000);
     ASSERT_NO_RET_(1193,W.Initialize(),1);
     ASSERT_NO_RET_(1194,MakeDictionary(W),2);
-    W.setRoot(W.tag(TAG_MAIN)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+    W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+            ->attrInt32(ATTR_ID,4)
             ->add(W.tag(TAG_PERSON)
                     ->attrInt32(ATTR_ID,1)
                 ->add(W.tagStr(TAG_NAME,"Petr"))
@@ -156,6 +158,20 @@ int test_4()
     return 0;
 }
 
+int test_5()
+{
+    printf("creating test5.xb ... ");
+    BW_plugin W("test5.xbw",nullptr,0x40000);
+    ASSERT_NO_RET_(1193,W.Initialize(),1);
+    ASSERT_NO_RET_(1194,MakeDictionary(W),2);
+    W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
+            ->attrInt32(ATTR_ID,5)
+            ->attrTime64(ATTR_UPDATED,time(NULL)*(int64_t)1000 + 789)
+            );
+    ASSERT_NO_RET_(1195,Bin_xml_packer::Convert(&W,nullptr),3);
+    printf("%d B\n",(int)file_getsize("test5.xb"));
+    return 0;
+}
 //-------------------------------------------------------------------------------------------------
 
 int main(int argc,char **argv)
@@ -165,5 +181,6 @@ int main(int argc,char **argv)
 //    ASSERT_NO_RET_(1197,(r = test_1()) == 0,r);
 //    ASSERT_NO_RET_(1198,(r = test_2()) == 0,r);
     ASSERT_NO_RET_(1199,(r = test_3()) == 0,r);
-//    ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
+    ASSERT_NO_RET_(1200,(r = test_4()) == 0,r);
+    ASSERT_NO_RET_(0,(r = test_5()) == 0,r);
 }

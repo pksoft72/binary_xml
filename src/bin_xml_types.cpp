@@ -258,17 +258,19 @@ bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *lim
     {
         AA(*_wp);
         memcpy(*_wp,src,value_size);
-        if (type == XBT_BLOB)
+/*        if (type == XBT_BLOB)
             LOG("Copy-BLOB: size=%d align=%d and value size=%d\n",size,align_size,value_size);
         else if (type == XBT_UINT32)
             LOG("Copy-UInt32: value=%u",*reinterpret_cast<const uint32_t*>(src));
+*/
     }
     else if (align_size == 8)
     {
         AA8(*_wp);
         memcpy(*_wp,src,value_size);
-        if (type == XBT_UNIX_TIME64_MSEC)
+/*        if (type == XBT_UNIX_TIME64_MSEC)
             LOG("Copy-int64-time: value=%08x-%08x size=%d --> %p",*reinterpret_cast<const uint32_t*>(src),*reinterpret_cast<const uint32_t*>(src+4),value_size,*_wp);
+*/
     }
     *_wp += value_size;
     return true; // OK
@@ -467,9 +469,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 if (offset > 0) return 0;
                 offset += sizeof(int64_t);
 
-                LOG("TIME64(%p) --> %08X:%08X",data,
-                    *reinterpret_cast<const uint32_t*>(data),
-                    *(reinterpret_cast<const uint32_t*>(data)+1));
+//                LOG("TIME64(%p) --> %08X:%08X",data, *reinterpret_cast<const uint32_t*>(data), *(reinterpret_cast<const uint32_t*>(data)+1));
 
                 int64_t value = *reinterpret_cast<const int64_t*>(data);
                 time_t tm0 = (time_t)(value/1000);

@@ -360,7 +360,7 @@ BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 
         int64_t *dst         = reinterpret_cast<int64_t*>(attr+1); // just after this element
         *dst                 = value; // store value
-        LOG("Time64: id=%d value=%08x-%08x",id,(uint32_t)(value),(uint32_t)(value >> 32));
+//        LOG("Time64: id=%d value=%08x-%08x",id,(uint32_t)(value),(uint32_t)(value >> 32));
         
         add(attr);
     }
@@ -1255,10 +1255,15 @@ bool BW_plugin::ForAllBinParams(OnBinParam_t on_param,void *element,void *userda
     if (E->first_attribute == 0) return true; // no attributes
     
     BW_element *child = BWE(E->first_attribute);
+
+//    LOG("%p.ForAllBinParams:",(void*)element);
+
     for(;;)
     {
 // typedef void (*OnBinParam_t)(const char *param_name,int param_id,XML_Binary_Type type,const char *param_value,void *element,void *userdata);
         
+//        LOG("\t%p: %s ... %s",(void*)child,pool->getAttrName(child->identification),XML_BINARY_TYPE_NAMES[child->value_type]);
+       
         on_param(pool->getAttrName(child->identification),child->identification,
             static_cast<XML_Binary_Type>(child->value_type),child->BWD(),
             element,userdata);

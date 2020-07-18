@@ -3,7 +3,8 @@ echo "Test C DEBUG"
 make || exit 1
 cd build/default
 #./test-creating
-#gdb test-creating
+rm *.xb*
+gdb test-creating
 #xb2xml -v -v -v test4.xb
 #gdb --args ./xb2xml -v -v -v test4.xb
-gdb --args ./xb2xml -v -v -v /dev/shm/1/archive-current.xbw
+#gdb --args ./xb2xml -v -v -v /dev/shm/1/archive-current.xbw

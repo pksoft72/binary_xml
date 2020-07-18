@@ -173,7 +173,7 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
 */
     if (static_cast<XML_Binary_Type>(type) == XBT_INT32)
         return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
-    return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X + data),offset,dst,dst_size);
+    return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -445,7 +445,11 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
             if (len == 0) break;// TODO: escape param_value!
             os << buffer;
         }
-
+/*        LOG("\tparam[%d]:name=%s (%d) type=%s (%d) data=%d absolute=%08x",p,
+            R.getParamName(param->name),param->name,
+            XML_BINARY_TYPE_NAMES[param->type],param->type,
+            param->data,static_cast<int>(reinterpret_cast<const char*>(this)+param->data - reinterpret_cast<const char*>(R.doc)));
+*/
         os << "\"";
     }
     char buffer[4096+1];
