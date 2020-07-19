@@ -292,14 +292,40 @@ BW_element  *BW_element::attrUInt64(int16_t id,uint64_t value)
 BW_element*     BW_element::attrFloat(int16_t id,float value)
 {
     if (this == nullptr) return nullptr;
-        ASSERT_NO_RET_NULL(1092,NOT_IMPLEMENTED); // TODO: variant
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(0,attr_type == XBT_FLOAT);// || attr_type == XBT_VARIANT);
+
+    BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
+    ASSERT_NO_RET_NULL(1089,attr != nullptr);
+    attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+
+    float *dst            = reinterpret_cast<float*>(attr+1); // just after this element
+    *dst                  = value; // store value
+
+    add(attr);
+
     return this;
 }
 
 BW_element*     BW_element::attrDouble(int16_t id,double value)
 {
     if (this == nullptr) return nullptr;
-        ASSERT_NO_RET_NULL(1093,NOT_IMPLEMENTED); // TODO: variant
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(0,attr_type == XBT_DOUBLE);// || attr_type == XBT_VARIANT);
+
+    BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
+    ASSERT_NO_RET_NULL(1089,attr != nullptr);
+    attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+
+    double *dst            = reinterpret_cast<double*>(attr+1); // just after this element
+    *dst                  = value; // store value
+
+    add(attr);
+
     return this;
 }
 
@@ -413,6 +439,13 @@ int32_t *BW_element::getInt32()
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
 
+char *BW_element::getStr()
+{
+    if (this == nullptr) return nullptr;
+    if (value_type != XBT_STRING) return nullptr;
+    return reinterpret_cast<char*>(this+1);
+}
+
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
 {
     if (this == nullptr) return nullptr;
@@ -470,6 +503,26 @@ BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Bin
     }
     return nullptr;
 }
+
+BW_element  *BW_element::findAttr(int16_t attr_id)
+{
+    if (this == nullptr) return nullptr;
+    // for all children
+    
+    if (first_attribute == 0) return nullptr; // no children
+
+    BW_element *attr = BWE(first_attribute);
+    for(;;)
+    {
+        if (attr->identification == attr_id) // attr has requested attattrd
+            return attr;
+
+        if (attr->next == first_attribute) break; // finished
+        attr = BWE(attr->next);
+    }
+    return nullptr;
+}
+
 //-------------------------------------------------------------------------------------------------
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
@@ -963,7 +1016,8 @@ void *BW_plugin::getRoot()
 {
     ASSERT_NO_RET_NULL(1147,this != nullptr);
     ASSERT_NO_RET_NULL(1148,pool != nullptr);
-    ASSERT_NO_RET_NULL(1183,pool->root != 0);
+    if (pool->root == 0) return nullptr;
+//    ASSERT_NO_RET_NULL(1183,pool->root != 0);
     return reinterpret_cast<char*>(pool) + pool->root; 
 }
 

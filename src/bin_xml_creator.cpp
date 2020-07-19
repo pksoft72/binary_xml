@@ -439,7 +439,7 @@ bool Bin_xml_creator::DoAll()
     }
 #endif
 
-//    this->dst_file_size = Pack();
+    this->dst_file_size = Pack();
 
 
     // 5. write to file------------------------------
