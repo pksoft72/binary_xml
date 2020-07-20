@@ -240,7 +240,7 @@ const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this met
             return X;
     // this is ET_TECERA special tag and will be replaced with jump to next element
         int length = R.doc->length;
-        i = -R.doc->length; // negative value means direct offset
+        i = -length; // negative value means direct offset
     }
     
     int offset = -i;

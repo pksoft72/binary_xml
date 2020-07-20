@@ -230,7 +230,7 @@ BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
     ASSERT_NO_RET_NULL(1190,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
-    LOG("UInt32: id=%d value=%u",id,value);
+//    LOG("UInt32: id=%d value=%u",id,value);
 
     
     uint32_t *dst         = reinterpret_cast<uint32_t*>(attr+1); // just after this element
@@ -787,7 +787,7 @@ bool BW_plugin::Initialize()
         if (file_size < (int)sizeof(*pool)) file_size = 0; // too small - deleting
         ASSERT_NO_RET_FALSE(1948,file_size == 0 || (int)pool->mmap_size >= file_size); // must be allocated for whole size
         if (file_size == 0) break; // was empty -> OK
-        if (pool->mmap_size == max_pool_size) break; // correct size
+        if ((int)pool->mmap_size == max_pool_size) break; // correct size
         int new_pool_size = pool->mmap_size;
     
         if (munmap(this->pool,max_pool_size) != 0)
@@ -845,10 +845,10 @@ bool BW_plugin::CheckExistingFile(int file_size)
 {
     ASSERT_NO_RET_FALSE(1953,strcmp(pool->binary_xml_write_type_info,"binary_xml.pksoft.org") == 0);
     ASSERT_NO_RET_FALSE(1954,pool->pool_format_version == BIN_WRITE_POOL_FORMAT_VERSION);
-    ASSERT_NO_RET_FALSE(1943,pool->file_size == file_size);
-    ASSERT_NO_RET_FALSE(1944,pool->mmap_size == max_pool_size); // !! must be the same !!
-    ASSERT_NO_RET_FALSE(1945,pool->allocator_limit == pool->file_size);
-    ASSERT_NO_RET_FALSE(1946,pool->allocator >= sizeof(*pool));
+    ASSERT_NO_RET_FALSE(1943,(int)pool->file_size == file_size);
+    ASSERT_NO_RET_FALSE(1944,(int)pool->mmap_size == max_pool_size); // !! must be the same !!
+    ASSERT_NO_RET_FALSE(1945,pool->allocator_limit == (int)pool->file_size);
+    ASSERT_NO_RET_FALSE(1946,pool->allocator >= (int)sizeof(*pool));
     ASSERT_NO_RET_FALSE(1947,pool->allocator <= pool->allocator_limit);
 
     this->check_only = true;
