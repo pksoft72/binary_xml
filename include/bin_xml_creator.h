@@ -32,6 +32,7 @@ public:
     Bin_src_plugin(const char *filename,Bin_xml_creator *bin_xml_creator);
     virtual ~Bin_src_plugin();
     virtual bool Initialize();
+    virtual bool Finalize() {return true;};
     void LinkCreator(Bin_xml_creator *bin_xml_creator);
 
     virtual void *getRoot()=0;

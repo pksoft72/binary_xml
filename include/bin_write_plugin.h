@@ -162,6 +162,7 @@ public:
     virtual bool Initialize();
         bool InitEmptyFile();
         bool CheckExistingFile(int file_size);
+    virtual bool Finalize();
 
     bool makeSpace(int size);
 
