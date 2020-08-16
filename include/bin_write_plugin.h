@@ -27,6 +27,7 @@
 #define BIN_WRITE_ELEMENT_FLAG      1  // element (1) or attribute (0)
 #define BIN_WRITE_REMOTE_VALUE      2  // for sharing big values with stable pointers ouf of pool
 #define BIN_WRITTEN                 4  // this element and all of it's children is written
+#define BIN_WRITE_CFG_ALWAYS_CREATE_NEW     1
 
 namespace pklib_xml {
 
@@ -155,8 +156,9 @@ protected:
     bool        initialized;
     bool        check_only;     // register methods will only check
     int         check_failures; // how many errors was in registration
+    uint32_t    config_flags;
 public:
-    BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
+    BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size,uint32_t config_flags);
     virtual ~BW_plugin();
     
     virtual bool Initialize();

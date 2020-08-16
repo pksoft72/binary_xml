@@ -27,7 +27,7 @@ int main(int argc,char **argv)
                 int max_pool_size = (((file_size * 3) >> 1) + 0x4000) >> 12 << 12;
                 
                 // BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size);
-                pklib_xml::BW_plugin BW(argv[i],nullptr,max_pool_size);
+                pklib_xml::BW_plugin BW(argv[i],nullptr,max_pool_size,0);
                 ASSERT_NO_RET_1(1209,BW.Initialize());
 
                 std::cout << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";

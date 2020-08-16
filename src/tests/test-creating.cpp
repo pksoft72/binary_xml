@@ -47,7 +47,7 @@ int test_0()
 // Bin_xml_creator is standard way of converting xml or json to xb
 {
     printf("creating test0.xb ... ");
-    BW_plugin W("test0.xbw",nullptr,0x40000);
+    BW_plugin W("test0.xbw",nullptr,0x40000,0);
     ASSERT_NO_RET_(1147,W.Initialize(),1); // opens file & prepares pool
     ASSERT_NO_RET_(1152,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_TEST)->attrInt32(ATTR_ID,0)); // <main></main>
@@ -59,7 +59,7 @@ int test_0()
 int test_1()
 {
     printf("creating test1.xb ... ");
-    BW_plugin W("test1.xbw",nullptr,0x40000);
+    BW_plugin W("test1.xbw",nullptr,0x40000,0);
     ASSERT_NO_RET_(1148,W.Initialize(),1);
     ASSERT_NO_RET_(1154,MakeDictionary(W),2);
     W.setRoot(                  // <main ID="1"></main>
@@ -73,7 +73,7 @@ int test_1()
 int test_2()
 {
     printf("creating test2.xb ... ");
-    BW_plugin W("test2.xbw",nullptr,0x40000);
+    BW_plugin W("test2.xbw",nullptr,0x40000,0);
     ASSERT_NO_RET_(1149,W.Initialize(),1);
     ASSERT_NO_RET_(1156,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
@@ -92,7 +92,7 @@ int test_3()
     int ID = 0;
     int XXX = 990;
     printf("creating test3.xb ... ");
-    BW_plugin W("test3.xbw",nullptr,0x40000);
+    BW_plugin W("test3.xbw",nullptr,0x40000,0);
     ASSERT_NO_RET_(1150,W.Initialize(),1);
     ASSERT_NO_RET_(1158,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
@@ -143,7 +143,7 @@ int test_3()
 int test_4()
 {
     printf("creating test4.xb ... ");
-    BW_plugin W("test4.xbw",nullptr,0x40000);
+    BW_plugin W("test4.xbw",nullptr,0x40000,0);
     ASSERT_NO_RET_(1193,W.Initialize(),1);
     ASSERT_NO_RET_(1194,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
@@ -162,7 +162,7 @@ int test_4()
 int test_5()
 {
     printf("creating test5.xb ... ");
-    BW_plugin W("test5.xbw",nullptr,0x40000);
+    BW_plugin W("test5.xbw",nullptr,0x40000,0);
     ASSERT_NO_RET_(1193,W.Initialize(),1);
     ASSERT_NO_RET_(1194,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>

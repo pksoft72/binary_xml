@@ -709,7 +709,7 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 
 //-------------------------------------------------------------------------------------------------
 
-BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
+BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size,uint32_t config_flags)
     : Bin_src_plugin(nullptr,bin_xml_creator)
 // automatic change of extension
 {
@@ -719,6 +719,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     this->initialized = false;
     this->check_only = false;
     this->check_failures = 0;
+    this->config_flags = config_flags;
     
 
     Bin_src_plugin::setFilename(filename,".xbw"); // will allocate copy of filename
@@ -790,10 +791,10 @@ bool BW_plugin::Initialize()
 // OK, what 2 do now?
 // There are 2 situations - file is empty and I want to create and write ... simple one
 //                        - file is somehow populated, it must be fully compatibale, or I must fail
-    if (file_size > 0)
-        ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
-    else
+    if (config_flags & BIN_WRITE_CFG_ALWAYS_CREATE_NEW || file_size == 0)
         ASSERT_NO_RET_FALSE(1101,InitEmptyFile());
+    else
+        ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
 
     initialized = true;
     return true;

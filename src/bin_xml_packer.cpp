@@ -65,7 +65,7 @@ Bin_src_plugin *Bin_src_plugin_selector(const char *filename,Bin_xml_creator *bi
         return new Bin_json_plugin(filename,bin_xml_creator);
 #ifdef BIN_WRITE_PLUGIN
     if (strcmp(dot,".xbw") == 0)
-        return new BW_plugin(filename,bin_xml_creator,0x40000); // 256kB
+        return new BW_plugin(filename,bin_xml_creator,0x40000,0); // 256kB
 #endif
     return nullptr;
 }
