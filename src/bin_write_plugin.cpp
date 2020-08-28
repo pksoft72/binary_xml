@@ -1,9 +1,9 @@
 #ifdef BIN_WRITE_PLUGIN
-#include <bin_write_plugin.h>
+#include "bin_write_plugin.h"
 
-#include <bin_xml.h>
-#include <bin_xml_types.h>
-#include <macros.h>
+#include "bin_xml.h"
+#include "bin_xml_types.h"
+#include "macros.h"
 
 #include <string.h>
 #include <stdio.h>     // perror
@@ -295,10 +295,10 @@ BW_element*     BW_element::attrFloat(int16_t id,float value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(0,attr_type == XBT_FLOAT);// || attr_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(1961,attr_type == XBT_FLOAT);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
-    ASSERT_NO_RET_NULL(1089,attr != nullptr);
+    ASSERT_NO_RET_NULL(1962,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
     float *dst            = reinterpret_cast<float*>(attr+1); // just after this element
@@ -315,10 +315,10 @@ BW_element*     BW_element::attrDouble(int16_t id,double value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(0,attr_type == XBT_DOUBLE);// || attr_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(1963,attr_type == XBT_DOUBLE);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
-    ASSERT_NO_RET_NULL(1089,attr != nullptr);
+    ASSERT_NO_RET_NULL(1964,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
     double *dst            = reinterpret_cast<double*>(attr+1); // just after this element
@@ -709,7 +709,7 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 
 //-------------------------------------------------------------------------------------------------
 
-BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size)
+BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size,uint32_t config_flags)
     : Bin_src_plugin(nullptr,bin_xml_creator)
 // automatic change of extension
 {
@@ -719,6 +719,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     this->initialized = false;
     this->check_only = false;
     this->check_failures = 0;
+    this->config_flags = config_flags;
     
 
     Bin_src_plugin::setFilename(filename,".xbw"); // will allocate copy of filename
@@ -726,19 +727,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
  
 BW_plugin::~BW_plugin()
 {
-    if (fd != -1)
-    {
-        if (close(fd) < 0)
-            ERRNO_SHOW(1046,"close",filename);
-        fd = -1;
-    }
-
-    if (this->pool)
-    {
-        if (munmap(pool,max_pool_size) != 0)
-            ERRNO_SHOW(1047,"munmap",filename);
-        pool = nullptr;
-    }
+    ASSERT_NO_DO_NOTHING(1965,Finalize());
 }
 
 
@@ -802,12 +791,34 @@ bool BW_plugin::Initialize()
 // OK, what 2 do now?
 // There are 2 situations - file is empty and I want to create and write ... simple one
 //                        - file is somehow populated, it must be fully compatibale, or I must fail
-    if (file_size > 0)
-        ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
-    else
+    if (config_flags & BIN_WRITE_CFG_ALWAYS_CREATE_NEW || file_size == 0)
         ASSERT_NO_RET_FALSE(1101,InitEmptyFile());
+    else
+        ASSERT_NO_RET_FALSE(1102,CheckExistingFile(file_size));
 
     initialized = true;
+    return true;
+}
+
+bool BW_plugin::Finalize()
+{
+    if (fd != -1)
+    {
+        if (close(fd) < 0)
+            ERRNO_SHOW(1046,"close",filename);
+        fd = -1;
+    }
+
+    if (this->pool)
+    {
+        if (munmap(pool,max_pool_size) != 0)
+            ERRNO_SHOW(1047,"munmap",filename);
+        pool = nullptr;
+    }
+
+    this->initialized = false;
+    this->check_only = false;
+    this->check_failures = 0;
     return true;
 }
 
