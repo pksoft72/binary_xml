@@ -175,6 +175,7 @@ public:
     bool Clear();
     
     BW_element* BWE(BW_offset_t offset);
+    int  getDataSize();
 public: // tag creation
     BW_element*     tag(int16_t id);
     BW_element*     tagStr(int16_t id,const char *value);

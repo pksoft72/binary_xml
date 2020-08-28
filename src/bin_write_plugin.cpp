@@ -1053,6 +1053,14 @@ bool BW_plugin::Clear()
     memset(BWE(pool->allocator),0,size2clear);
     return true; 
 }
+
+int  BW_plugin::getDataSize()
+{
+    if (pool == nullptr) return 0;
+    if (pool->payload == 0) return 0;
+    return pool->allocator - pool->payload;
+}
+
 //-------------------------------------------------------------------------------------------------
 
 BW_element* BW_plugin::tag(int16_t id)
