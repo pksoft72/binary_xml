@@ -16,6 +16,7 @@
 
 #define ERRNO_SHOW(code,command,params) do {int __e = errno;std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
 #define ERRNO_SHOW_EXPL(code,command,params,__e) do {std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
+#define ERRNO_SHOW_MSG(code,command,params,msg) do {std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - : " << msg << ANSI_RESET_LF;} while(0)
 
 
 
@@ -60,5 +61,6 @@
     #define END_EXTERN_C
 #endif
 
+#define elementsof(X) (sizeof(X) / sizeof(X[0]))
 
 //#define exit _exit
