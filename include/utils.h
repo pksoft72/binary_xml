@@ -15,6 +15,7 @@ bool ScanUInt64(const char *&p,uint64_t &value);
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size);
 void SkipSpaces(const char *&p);
 bool SkipLine(const char *&p);
+int ScanHex(const char *&p,uint8_t *dst,int dst_size);
 
 // writeable pointer variants
 bool ScanW(char *&p,const char *beg);

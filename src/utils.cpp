@@ -266,6 +266,41 @@ bool SkipLine(const char *&p)
     return true;
 }
 
+int ScanHex(const char *&p,uint8_t *dst,int dst_size)
+{
+    memset(dst,0,dst_size);
+    if (*p == '\0') return false;
+    for(int count = 0;count < dst_size;count++)
+    {
+        if (p[0] == '-') p++;
+        else if (p[0] == ' ') p++;
+
+        int value = 0;
+        if (p[0] >= '0' && p[0] <= '9')
+            value = p[0] - '0';
+        else if (p[0] >= 'a' && p[0] <= 'f')
+            value = p[0] - 'a' + 10;
+        else if (p[0] >= 'A' && p[0] <= 'F')
+            value = p[0] - 'A' + 10;
+        else return count;
+
+        value <<= 4;
+
+        if (p[1] >= '0' && p[1] <= '9')
+            value |= p[1] - '0';
+        else if (p[1] >= 'a' && p[1] <= 'f')
+            value |= p[1] - 'a' + 10;
+        else if (p[1] >= 'A' && p[1] <= 'F')
+            value |= p[1] - 'A' + 10;
+        else return count;
+
+        p += 2;
+
+        *(dst++) = value;
+    }
+    return dst_size;
+}
+
 //-------------------------------------------------------------------------------------------------
 
 bool ScanW(char *&p,const char *beg)
