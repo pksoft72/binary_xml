@@ -1,6 +1,10 @@
 #include "missings.h"
 #include <string.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "macros.h"
 
 void qsort_r2(void *base, int nmemb, int size,
                   int (*compar)(const void *, const void *, void *),
@@ -125,6 +129,39 @@ unsigned char *SHA1(const unsigned char *d, size_t n, unsigned char *md)
     blk_SHA1_Update(&ctx,d,n);
     blk_SHA1_Final(md,&ctx);    
     return md;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+bool file_getsha1(const char *filename,unsigned char *hash)
+{
+    int fd = open(filename,O_RDONLY);
+    if (fd < 0)
+    {
+        ERRNO_SHOW(1966,"open",filename);
+        return false;
+    }
+
+    unsigned char buffer[4096];
+    blk_SHA_CTX ctx;
+    blk_SHA1_Init(&ctx);
+    for(;;)
+    {
+        int size = read(fd,buffer,sizeof(buffer));
+        if (size < 0)
+        {
+            ERRNO_SHOW(1967,"read",filename);
+            close(fd);
+            return false;
+        }
+        blk_SHA1_Update(&ctx,buffer,size);
+        if (size < sizeof(buffer))
+            break; // finished
+    }
+    blk_SHA1_Final(hash,&ctx);    
+    if (close(fd) < 0)    
+        ERRNO_SHOW(1968,"close",filename);
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------------

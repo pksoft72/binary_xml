@@ -12,3 +12,5 @@ void mergesort_r2(void *base, int nmemb, int size,
                   void *arg);
 
 unsigned char *SHA1(const unsigned char *d, size_t n, unsigned char *md);
+
+bool file_getsha1(const char *filename,unsigned char *hash);
