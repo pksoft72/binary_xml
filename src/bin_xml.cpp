@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include "utils.h"
 
 #include "bin_xml_packer.h" // for autoconversion
 
@@ -139,6 +140,21 @@ const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const
         int value0 = atoi(reinterpret_cast<const char *>(X)+data);
         s_int32_value = value0;
         return &s_int32_value; // non reetrant!!!
+    }
+    return nullptr; 
+}
+
+static int64_t s_int64_value = -1;
+const int64_t *XML_Param_Description::getInt64Ptr(const XML_Item *X) const 
+{
+    if (this == nullptr) return nullptr;
+    if (X == nullptr) return nullptr;
+    if (type == XBT_INT64) return reinterpret_cast<const int64_t *>(&data);
+    if (type == XBT_STRING) 
+    {
+        const char *p = reinterpret_cast<const char *>(X)+data;
+        if (!ScanInt64(p,s_int64_value)) return nullptr;
+        return &s_int64_value; // non reetrant!!!
     }
     return nullptr; 
 }
@@ -421,6 +437,32 @@ const int32_t *XML_Item::getIntPtr() const
     return nullptr;
 }
 
+const int64_t *XML_Item::getInt64Ptr() const
+{
+    if (this == nullptr) return nullptr;
+    CHECK_AA_THIS;
+
+    const char *p = reinterpret_cast<const char*>(this+1)
+        +paramcount * sizeof(XML_Param_Description)
+        +childcount * sizeof(relative_ptr_t);
+    XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
+
+//    std::cout << "getInt(" << t << ")\n";
+    
+    if (t == XBT_INT64)
+    {
+        AA8(p);
+        return reinterpret_cast<const int64_t*>(p);
+    }
+    else if (t == XBT_STRING)
+    {
+        if (p == nullptr) return nullptr;
+        static int64_t p_result;
+        if (!ScanInt64(p,p_result)) return nullptr;
+        return &p_result;
+    }
+    return nullptr;
+}
 
 const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
 {
