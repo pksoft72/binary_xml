@@ -167,7 +167,7 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
     if (X == nullptr) return nullptr;
 
 //    if (X.verbosity > 0)
-        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[type] << "]" ANSI_RESET_LF;
+//        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[type] << "]" ANSI_RESET_LF;
 
     if (type == XBT_STRING) return reinterpret_cast<const char *>(X)+data;
     if (type == XBT_INT32)
@@ -337,7 +337,7 @@ const char *XML_Item::getString() const
     XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
     
 //    if (R.verbosity > 0)
-        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[t] << "]" ANSI_RESET_LF;
+//        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[t] << "]" ANSI_RESET_LF;
 
     if (t == XBT_STRING) return p;
     return XBT_ToString(t,p);

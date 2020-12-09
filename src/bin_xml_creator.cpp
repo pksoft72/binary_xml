@@ -748,7 +748,7 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
     else
     {
         const char *value = src->getNodeValue(element);
-        if (bin_value == nullptr)
+        if (value == nullptr)
             *((*_wp)++) = XBT_NULL; // no value detected!
         else
         {
