@@ -15,6 +15,13 @@
 #define DBG(x) //x
 #define DBG2(x) //x
 
+#ifdef _B
+	#undef _B
+#endif
+#ifdef _X
+	#undef _X
+#endif
+
 namespace pklib_xml {
 
 // private structures
