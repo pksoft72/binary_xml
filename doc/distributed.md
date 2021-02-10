@@ -66,3 +66,28 @@ But it can be enough to refrerence only repeating elements. Some elements can be
 Attributes will not need any references.
    
 32bit guid is enough for referencing inside 2G max files!
+
+
+## New ideas
+
+How can I modify xb or xbw file?
+
+In xbw I can fully change simple values, add or remove nodes, attributes.
+
+In xb I can change simple values and can issue a new copy of node, when node is changed. But there is limitation in reused nodes - these must be copied out and changed there. I would like to have some attribute of node, whether it has multiple references or not. When multiple references, node must be copied and then changed!
+
+## Conflict resolving
+
+There could exist a conflict of changes, when there is some delay between read - write.
+
+For possibility of conflict resolving is full history of changes needed.
+
+Could I just atomically add some changes to journal? What about different order of changes?
+
+Is it possible to merge journals which were isolated for a long time?
+
+So communication would be upstream and downstream of changes - all applied or rejected.
+
+There would be only 1 main server. Failure or success could be judged only by main process.
+
+
