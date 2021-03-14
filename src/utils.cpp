@@ -101,7 +101,7 @@ off_t FileGetSizeByFd(int fd)
     return file_info.st_size;
 }
 
-const char *AllocFilenameChangeExt(const char *filename,const char *extension)
+char *AllocFilenameChangeExt(const char *filename,const char *extension)
 {
     if (filename == nullptr) return nullptr; // it is correct to send empty filename
     if (extension == nullptr)

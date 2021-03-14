@@ -1,5 +1,9 @@
 #pragma once
 
+// idea is simple, sending messages encoded via common symbol tables
+// but it is not done (2%)
+
+/*
 namespace pklib_xml
 {
 
@@ -13,3 +17,4 @@ class MessageQueue
 };
 
 };
+*/

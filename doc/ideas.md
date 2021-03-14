@@ -26,4 +26,6 @@ Features:
 3. mirror up and down changes
 
 
+## Full history
 
+We can think about data not only as a current snapshot but about whole history and snapshots at any time. This may be less effective and only sometimes it is needed.
