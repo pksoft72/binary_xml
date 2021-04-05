@@ -73,8 +73,9 @@ XML_Binary_Type XBT_Detect(const char *value)
     }
     if (digits+hexadigits == 40 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
         return XBT_SHA1;
-    if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
-        return XBT_HEX;
+// DISABLED - not fully supported yet
+//  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
+//      return XBT_HEX;
 
     return XBT_STRING;
 }

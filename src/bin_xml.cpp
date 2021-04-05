@@ -630,6 +630,14 @@ const char *_XB_symbol_table::getSymbol(tag_name_id_t name_id) const
     return reinterpret_cast<const char *>(item_container)+reference_array[name_id];
 }
 
+XML_Binary_Type_Stored  _XB_symbol_table::getType(tag_name_id_t name_id) const
+{
+	if (name_id < 0) return XBT_NULL;
+	if (name_id >= type_count) return XBT_NULL;
+	if (type_array == nullptr) return XBT_NULL;
+	return type_array[name_id];
+}
+
 
 int _XB_symbol_table::getID(const char *name) const
 {

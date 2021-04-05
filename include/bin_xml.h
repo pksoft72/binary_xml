@@ -162,8 +162,9 @@ struct _XB_symbol_table
     virtual ~_XB_symbol_table();
 
     bool Load(const XML_Item *container);
-    const char *getSymbol(tag_name_id_t name_id) const;
-    int getID(const char *name) const;
+    const char *            getSymbol(tag_name_id_t name_id) const;
+    XML_Binary_Type_Stored  getType(tag_name_id_t name_id) const;
+    int                     getID(const char *name) const;
 };
 
 class XB_reader 
