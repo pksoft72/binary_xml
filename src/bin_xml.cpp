@@ -159,7 +159,6 @@ const int64_t *XML_Param_Description::getInt64Ptr(const XML_Item *X) const
     return nullptr; 
 }
 
-char s_output[32] = "";
 
 const char *XML_Param_Description::getString(const XML_Item *X) const
 { 
@@ -169,13 +168,19 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
 //    if (X.verbosity > 0)
 //        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[type] << "]" ANSI_RESET_LF;
 
-    if (type == XBT_STRING) return reinterpret_cast<const char *>(X)+data;
+    if (type == XBT_STRING) 
+        return reinterpret_cast<const char *>(X)+data;
     if (type == XBT_INT32)
+        return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char*>(&data));
+    return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char *>(X)+data);
+
+/*    if (type == XBT_INT32)
     {
+        static char s_output[32] = "";
         snprintf(s_output,sizeof(s_output)-1,"%d",(int)data);
         return s_output;
     }
-    return nullptr;
+    return nullptr;*/
 }
 
 const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const

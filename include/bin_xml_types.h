@@ -18,6 +18,8 @@ typedef char        hash192_t[24];      // hash - 24B - sha1
 typedef char        GUID_t[16];     
 typedef uint16_t    IPv6_t[8];      
 
+#define MAX_REETRANT_BUFFERS 64  // workaround for XBT_ToString
+
 enum XML_Binary_Type 
 {
     XBT_NULL    = 0,    // empty value is almost compatible with all values

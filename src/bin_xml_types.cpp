@@ -306,6 +306,9 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
     else if (align_size == 8)
         AA8(data);
 
+    static char buffers[MAX_REETRANT_BUFFERS][256+1];
+    static int buffer_idx = 0;
+
     switch (type)
     {
         case XBT_NULL: 
@@ -320,10 +323,12 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_UNIX_TIME:
         case XBT_UNIX_TIME64_MSEC:
             {
-                static char buffer[256+1];
+                
                 int offset = 0;
-                XBT_ToStringChunk(type,data,offset,buffer,sizeof(buffer));
-                return buffer;
+                XBT_ToStringChunk(type,data,offset,buffers[buffer_idx],sizeof(buffers[0]));
+                const char *ret = buffers[buffer_idx++];
+                if (buffer_idx >= MAX_REETRANT_BUFFERS) buffer_idx = 0;
+                return ret;
             }
         case XBT_BLOB:
             {
