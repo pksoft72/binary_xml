@@ -347,7 +347,6 @@ bool Bin_xml_creator::DoAll()
     // 1. filling symbol tables----------------------
     this->total_node_count = 4; // service elements!
     this->total_param_count = 0;
-    this->total_value_count = 0;
 
     void *root = src->getRoot();
     ASSERT_NO_RET_FALSE(1184,root != nullptr);
@@ -748,7 +747,7 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
     else
     {
         const char *value = src->getNodeValue(element);
-        if (bin_value == nullptr)
+        if (value == nullptr)
             *((*_wp)++) = XBT_NULL; // no value detected!
         else
         {

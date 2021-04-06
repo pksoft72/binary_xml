@@ -85,7 +85,6 @@ protected:
 // 1st pass to enumerate paramcount
     int     total_node_count;
     int     total_param_count;
-    int     total_value_count;
 // 2nd pass to fill tables
     const char              **symbol_table[SYMBOL_TABLES_COUNT];
     XML_Binary_Type_Stored  *symbol_table_types[SYMBOL_TABLES_COUNT];

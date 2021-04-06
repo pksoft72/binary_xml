@@ -30,6 +30,7 @@
     #define ANSI_WHITE_ON_RED   "\033[37;41m"
     #define ANSI_WHITE_ON_GREEN "\033[37;42m"
     #define ANSI_WHITE_ON_MAGENTA "\033[37;45m"
+    #define ANSI_BLACK_ON_YELLOW  "\033[30;43m"
 
 
 #endif
