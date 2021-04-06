@@ -20,6 +20,16 @@
 #define NOT_IMPLEMENTED false // used in assert
 #define THIS reinterpret_cast<char*>(this)
 
+
+// on Windows these flags are not supported
+#ifndef O_NOATIME
+	#define O_NOATIME 0
+#endif
+#ifndef MAP_NONBLOCK
+	#define MAP_NONBLOCK 0
+#endif
+
+
 namespace pklib_xml {
 
 void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags)

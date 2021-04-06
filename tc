@@ -2,7 +2,10 @@
 make || exit 1
 cd build/*
 rm *.xb*
-./test-creating &&
-./xb2xml -v test*.xb
+2xb test.xml &&
+xb2xml test.xb
+
+#./test-creating &&
+#./xb2xml -v test*.xb
 #./xb2xml test4.xb
 #./xb2xml /dev/shm/1/archive-current.xbw

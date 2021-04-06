@@ -16,21 +16,28 @@ find_package (LibXml2)
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
+
 if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
     message("TARGET_DEVICE: ${TARGET_DEVICE} ... part of big project")
     message("CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
     #part of big project
     add_compile_options(-DBIN_WRITE_PLUGIN)
 else()
-    set(BIN_WRITE_PLUGIN ON CACHE BOOL "unfinished building xb files on the fly")
-    if(BIN_WRITE_PLUGIN)
+    if (CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
+        message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+        set(TARGET_DEVICE cygwin)
         add_compile_options(-DBIN_WRITE_PLUGIN)
+    else()
+        set(BIN_WRITE_PLUGIN ON CACHE BOOL "unfinished building xb files on the fly")
+        if(BIN_WRITE_PLUGIN)
+            add_compile_options(-DBIN_WRITE_PLUGIN)
+        endif()
+
+        set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
+        set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
     endif()
-
-    set(TARGET_DEVICE "default" CACHE STRING "device we are building for")
-    set_property(CACHE TARGET_DEVICE PROPERTY STRINGS default pc)
     file(MAKE_DIRECTORY build)
-
+    
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/${TARGET_DEVICE}")
 
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include "utils.h"
 
 #include "bin_xml_packer.h" // for autoconversion
 
@@ -143,7 +144,21 @@ const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const
     return nullptr; 
 }
 
-char s_output[32] = "";
+static int64_t s_int64_value = -1;
+const int64_t *XML_Param_Description::getInt64Ptr(const XML_Item *X) const 
+{
+    if (this == nullptr) return nullptr;
+    if (X == nullptr) return nullptr;
+    if (type == XBT_INT64) return reinterpret_cast<const int64_t *>(&data);
+    if (type == XBT_STRING) 
+    {
+        const char *p = reinterpret_cast<const char *>(X)+data;
+        if (!ScanInt64(p,s_int64_value)) return nullptr;
+        return &s_int64_value; // non reetrant!!!
+    }
+    return nullptr; 
+}
+
 
 const char *XML_Param_Description::getString(const XML_Item *X) const
 { 
@@ -151,15 +166,21 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
     if (X == nullptr) return nullptr;
 
 //    if (X.verbosity > 0)
-        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[type] << "]" ANSI_RESET_LF;
+//        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[type] << "]" ANSI_RESET_LF;
 
-    if (type == XBT_STRING) return reinterpret_cast<const char *>(X)+data;
+    if (type == XBT_STRING) 
+        return reinterpret_cast<const char *>(X)+data;
     if (type == XBT_INT32)
+        return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char*>(&data));
+    return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char *>(X)+data);
+
+/*    if (type == XBT_INT32)
     {
+        static char s_output[32] = "";
         snprintf(s_output,sizeof(s_output)-1,"%d",(int)data);
         return s_output;
     }
-    return nullptr;
+    return nullptr;*/
 }
 
 const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const
@@ -321,7 +342,7 @@ const char *XML_Item::getString() const
     XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
     
 //    if (R.verbosity > 0)
-        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[t] << "]" ANSI_RESET_LF;
+//        std::cerr << ANSI_GREEN_DARK << "[" << XML_BINARY_TYPE_NAMES[t] << "]" ANSI_RESET_LF;
 
     if (t == XBT_STRING) return p;
     return XBT_ToString(t,p);
@@ -421,6 +442,32 @@ const int32_t *XML_Item::getIntPtr() const
     return nullptr;
 }
 
+const int64_t *XML_Item::getInt64Ptr() const
+{
+    if (this == nullptr) return nullptr;
+    CHECK_AA_THIS;
+
+    const char *p = reinterpret_cast<const char*>(this+1)
+        +paramcount * sizeof(XML_Param_Description)
+        +childcount * sizeof(relative_ptr_t);
+    XML_Binary_Type t = static_cast<XML_Binary_Type>(*(p++));
+
+//    std::cout << "getInt(" << t << ")\n";
+    
+    if (t == XBT_INT64)
+    {
+        AA8(p);
+        return reinterpret_cast<const int64_t*>(p);
+    }
+    else if (t == XBT_STRING)
+    {
+        if (p == nullptr) return nullptr;
+        static int64_t p_result;
+        if (!ScanInt64(p,p_result)) return nullptr;
+        return &p_result;
+    }
+    return nullptr;
+}
 
 const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
 {
@@ -586,6 +633,14 @@ const char *_XB_symbol_table::getSymbol(tag_name_id_t name_id) const
     if (name_id < 0) return XTNR2str(name_id);
     if (name_id >= count) return "__out_of_range__";
     return reinterpret_cast<const char *>(item_container)+reference_array[name_id];
+}
+
+XML_Binary_Type_Stored  _XB_symbol_table::getType(tag_name_id_t name_id) const
+{
+	if (name_id < 0) return XBT_NULL;
+	if (name_id >= type_count) return XBT_NULL;
+	if (type_array == nullptr) return XBT_NULL;
+	return type_array[name_id];
 }
 
 

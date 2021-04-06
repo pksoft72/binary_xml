@@ -108,6 +108,7 @@ public:
     const void          *getBinary(int32_t *size) const;
     int32_t             getInt() const;         
     const int32_t       *getIntPtr() const;         
+    const int64_t       *getInt64Ptr() const;
 
 //--- write as text to stream
     const void write(std::ostream& os,XB_reader &R,int deep) const;
@@ -140,6 +141,7 @@ public:
         return INT32_NULL; 
     }
     const int32_t *getIntPtr(const XML_Item *X) const;
+    const int64_t *getInt64Ptr(const XML_Item *X) const;
     const char *getString(const XML_Item *X) const;
     const int   getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const;
 };
@@ -160,8 +162,9 @@ struct _XB_symbol_table
     virtual ~_XB_symbol_table();
 
     bool Load(const XML_Item *container);
-    const char *getSymbol(tag_name_id_t name_id) const;
-    int getID(const char *name) const;
+    const char *            getSymbol(tag_name_id_t name_id) const;
+    XML_Binary_Type_Stored  getType(tag_name_id_t name_id) const;
+    int                     getID(const char *name) const;
 };
 
 class XB_reader 
