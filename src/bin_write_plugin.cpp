@@ -23,10 +23,10 @@
 
 // on Windows these flags are not supported
 #ifndef O_NOATIME
-	#define O_NOATIME 0
+    #define O_NOATIME 0
 #endif
 #ifndef MAP_NONBLOCK
-	#define MAP_NONBLOCK 0
+    #define MAP_NONBLOCK 0
 #endif
 
 
@@ -535,6 +535,70 @@ BW_element  *BW_element::findAttr(int16_t attr_id)
 
 //-------------------------------------------------------------------------------------------------
 
+int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type)
+{
+    ASSERT_NO_RET_N1(1969,pool != nullptr);
+    char *POOL = reinterpret_cast<char*>(pool);
+
+    if (index == 0) // sequential search
+    {
+        int id = 0;
+// ID:word|Type:byte|string|NUL:byte
+        const char *p =       POOL+names_offset;
+        const char *p_limit = POOL+pool->allocator;
+
+        while (id < max_id)
+        { 
+            const char *n = name;
+            const char *start = p;
+            id = *(p++);
+            id |= *(p++) << 8;
+    
+            XML_Binary_Type element_type = static_cast<XML_Binary_Type>(*(p++));
+
+            // compare symbol and name
+            for(;p < p_limit && *n == *p && *n != '\0';p++,n++);
+            // result?
+            if (p >= p_limit) return -1; // not found
+            if (*p == '\0' && *n == '\0') 
+            {
+                if (offset != nullptr)
+                    *offset = start-POOL;
+                if (type != nullptr)
+                    *type = element_type;
+                return id; // found
+            }
+
+            // skip rest of identifier
+            while(p < p_limit && *p != '\0') p++; // find end of string
+            if (p >= p_limit) return -1; // not found
+
+            AA(p); // round 4B
+            // next id
+            id++;
+        }
+    }
+    else
+    {
+    // OK, i have indexed access and this should be faster
+        BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
+        for(int id = 0;id <= max_id;id++)
+        {
+            const char *start = POOL+elements[id]; 
+            if (strcmp(name,start+3) != 0) continue; // NEXT!
+        //------FOUND---------
+            if (offset != nullptr)
+                *offset = elements[id];
+            if (type != nullptr)
+                *type = static_cast<XML_Binary_Type>(start[2]);
+            return id;
+        }
+    }
+    return -1; // not found
+}
+
+//-------------------------------------------------------------------------------------------------
+
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
 {
     ASSERT_NO_(1063,this != nullptr,return XBT_UNKNOWN);
@@ -580,12 +644,13 @@ const char*     BW_pool::getTagName(int16_t id)
     return reinterpret_cast<const char *>(THIS+ offset + 3);  
 }
 
+
 XML_Binary_Type BW_pool::getAttrType(int16_t id)
 {
     ASSERT_NO_(1065,this != nullptr,return XBT_UNKNOWN);
-    ASSERT_NO_(1057,attrs.index != 0,return XBT_UNKNOWN);                // index not initialized 
-    ASSERT_NO_(1058,id >=0 && id <= attrs.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
-    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
+    ASSERT_NO_(1057,params.index != 0,return XBT_UNKNOWN);                // index not initialized 
+    ASSERT_NO_(1058,id >=0 && id <= params.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+params.index);
     BW_offset_t offset = elements[id];
 
     if (offset == 0) return XBT_UNKNOWN;    // empty id
@@ -596,7 +661,7 @@ XML_Binary_Type BW_pool::getAttrType(int16_t id)
 const char*     BW_pool::getAttrName(int16_t id)
 {
     ASSERT_NO_RET_NULL(1066,this != nullptr);
-    ASSERT_NO_RET_NULL(1060,attrs.index != 0);                // index not initialized 
+    ASSERT_NO_RET_NULL(1060,params.index != 0);                // index not initialized 
 
     switch (id)
     {
@@ -610,8 +675,8 @@ const char*     BW_pool::getAttrName(int16_t id)
 
         default:
         {
-           ASSERT_NO_RET_NULL(1061,id >=0 && id <= attrs.max_id);    // id out of range - should be in range, because range is defined by writing application
-           BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+attrs.index);
+           ASSERT_NO_RET_NULL(1061,id >=0 && id <= params.max_id);    // id out of range - should be in range, because range is defined by writing application
+           BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+params.index);
            BW_offset_t offset = elements[id];
            ASSERT_NO_RET_NULL(1062,offset != 0);                                       // tag id should be correctly registered!
            return reinterpret_cast<const char *>(THIS+ offset + 3);  
@@ -619,7 +684,7 @@ const char*     BW_pool::getAttrName(int16_t id)
     }
 }
 
-bool   BW_pool::makeTable(BW_symbol_table_12B &table,BW_offset_t limit)
+bool   BW_pool::makeTable(BW_symbol_table_16B &table,BW_offset_t limit)
 // This is called after registration of symbols to table - see registerTag & registerAttr
 {
     table.index = 0;
@@ -648,7 +713,7 @@ bool   BW_pool::makeTable(BW_symbol_table_12B &table,BW_offset_t limit)
     return true;
 }
 
-bool   BW_pool::checkTable(BW_symbol_table_12B &table,BW_offset_t limit)
+bool   BW_pool::checkTable(BW_symbol_table_16B &table,BW_offset_t limit)
 {
 // I must check, the symbol table is ok and valid!    
     if (table.max_id == -1) return true; // no symbols = OK
@@ -853,7 +918,7 @@ bool BW_plugin::InitEmptyFile()
     pool->allocator_limit = pool->file_size;
 
     pool->tags.max_id = -1;
-    pool->attrs.max_id = -1;
+    pool->params.max_id = -1;
     
     pool->size = pool->allocator;
 
@@ -877,7 +942,7 @@ bool BW_plugin::CheckExistingFile(int file_size)
 
 //    ASSERT_NO_RET_FALSE(1951,allRegistered()); // make tables and be ready for checking of registration
     // check pool->tags
-    // check pool->attrs
+    // check pool->params
 
     return true;
 
@@ -908,7 +973,7 @@ bool BW_plugin::makeSpace(int size)
 
 bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with element names    
-// element names starts at offset pool->tags.names_offset and ends at pool->attrs.offset
+// element names starts at offset pool->tags.names_offset and ends at pool->params.offset
 {
     ASSERT_NO_RET_FALSE(1107,name != nullptr);
     ASSERT_NO_RET_FALSE(1119,type >= XBT_NULL && type < XBT_LAST);
@@ -926,7 +991,7 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
         return false;
     }
 // elements must be defined first
-    ASSERT_NO_RET_FALSE(1108,pool->attrs.names_offset == 0);
+    ASSERT_NO_RET_FALSE(1108,pool->params.names_offset == 0);
 // root must be later
     ASSERT_NO_RET_FALSE(1109,pool->root == 0);
 //-----------------------------------------------
@@ -957,7 +1022,7 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
     ASSERT_NO_RET_FALSE(1120,type >= XBT_NULL && type < XBT_LAST);
     if (check_only)
     {
-        bool ok1 = (id >= 0 && id <= pool->attrs.max_id);
+        bool ok1 = (id >= 0 && id <= pool->params.max_id);
         const char *name_stored = pool->getAttrName(id);
         bool ok2 = name_stored != nullptr && strcmp(name,name_stored) == 0;
         XML_Binary_Type type_stored = pool->getAttrType(id);
@@ -973,10 +1038,10 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 // root must be later
     ASSERT_NO_RET_FALSE(1116,pool->root == 0);
 //-----------------------------------------------
-    if (pool->attrs.names_offset == 0)
-        pool->attrs.names_offset = pool->allocator;
+    if (pool->params.names_offset == 0)
+        pool->params.names_offset = pool->allocator;
 
-    MAXIMIZE(pool->attrs.max_id,id);
+    MAXIMIZE(pool->params.max_id,id);
     int len = strlen(name);
 
 // allocation
@@ -993,6 +1058,107 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
     return true;
 }
 
+XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
+{
+    int id;
+    if ((pool->tags.flags & BW_SYMBOLS_FAST_REG) == 0)
+    {
+        BW_offset_t item_offset;
+        XML_Binary_Type item_type;
+
+        id = pool->tags.getByName(pool,name,&item_offset,&item_type);
+        if (id >= 0) // found
+        {
+            if (item_type != type) // extending type
+            {
+                char *POOL = reinterpret_cast<char*>(pool);
+                POOL[item_offset+2] = XBT_JoinTypes(type,item_type);
+            }   
+            return static_cast<XML_Tag_Names>(id);
+        }
+    }
+    int len = strlen(name);
+    char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
+    ASSERT_NO_RET_(0,dst != 0,XTNR_NULL);
+    id = ++pool->tags.max_id;
+// id
+    *reinterpret_cast<int16_t*>(dst) = id;
+    dst += sizeof(int16_t);
+// type
+    *reinterpret_cast<XML_Binary_Type_Stored*>(dst) = type;
+    dst += sizeof(XML_Binary_Type_Stored);
+// name
+    strcpy(dst,name);
+    return static_cast<XML_Tag_Names>(id);
+}
+
+XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
+{
+    int id;
+    if ((pool->params.flags & BW_SYMBOLS_FAST_REG) == 0)
+    {
+        BW_offset_t item_offset;
+        XML_Binary_Type item_type;
+
+        id = pool->params.getByName(pool,name,&item_offset,&item_type);
+        if (id >= 0) // found
+        {
+            if (item_type != type) // extending type
+            {
+                char *POOL = reinterpret_cast<char*>(pool);
+                POOL[item_offset+2] = XBT_JoinTypes(type,item_type);
+            }   
+            return static_cast<XML_Param_Names>(id);
+        }
+    }
+    int len = strlen(name);
+    char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
+    ASSERT_NO_RET_(0,dst != 0,XPNR_NULL);
+    id = ++pool->params.max_id;
+// id
+    *reinterpret_cast<int16_t*>(dst) = id;
+    dst += sizeof(int16_t);
+// type
+    *reinterpret_cast<XML_Binary_Type_Stored*>(dst) = type;
+    dst += sizeof(XML_Binary_Type_Stored);
+// name
+    strcpy(dst,name);
+    return static_cast<XML_Param_Names>(id);
+}
+
+void BW_plugin::importTags(XB_reader *src)
+{
+    if (pool->tags.max_id == -1) pool->tags.flags |= BW_SYMBOLS_FAST_REG;
+    else pool->tags.flags &= ~BW_SYMBOLS_FAST_REG;
+
+    if (src == nullptr) return; // OK
+
+    for(int i = 0;i < src->tag_symbols.count;i++)
+        registerTag(
+                src->tag_symbols.getSymbol(i),
+                static_cast<XML_Binary_Type>(src->tag_symbols.getType(i)));
+
+    if (pool->tags.max_id == -1) pool->tags.flags |= BW_SYMBOLS_FAST_REG;
+    else pool->tags.flags &= ~BW_SYMBOLS_FAST_REG;
+}
+
+void BW_plugin::importParams(XB_reader *src)
+{
+    if (pool->params.max_id == -1) pool->params.flags |= BW_SYMBOLS_FAST_REG;
+    else pool->params.flags &= ~BW_SYMBOLS_FAST_REG;
+    if (src == nullptr) return; // OK
+
+    for(int i = 0;i < src->param_symbols.count;i++)
+        registerParam(src->param_symbols.
+            getSymbol(i),
+            static_cast<XML_Binary_Type>(src->param_symbols.getType(i)));
+
+    if (pool->params.max_id == -1) pool->params.flags |= BW_SYMBOLS_FAST_REG;
+    else pool->params.flags &= ~BW_SYMBOLS_FAST_REG;
+}
+
+//-------------------------------------------------------------------------------------------------
+
 bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
@@ -1001,8 +1167,8 @@ bool BW_plugin::allRegistered()
 
     BW_offset_t names_limit = pool->allocator;
     ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
-    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags,pool->attrs.names_offset));
-    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->attrs,names_limit));
+    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags,pool->params.names_offset));
+    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->params,names_limit));
     pool->payload = pool->allocator;
     return true;
 }
@@ -1016,11 +1182,11 @@ void BW_plugin::setRoot(const BW_element* X)
 // I have standard xb file:
 // |<--------base.xb------------->|
 // I am writing to BW plugin
-// |<pool|completed_size|tags|attrs|root ----------------------------->|
+// |<pool|completed_size|tags|params|root ----------------------------->|
 // Once upon a time I will take data from BW plugin and write them transcoded to the end of base.xb
 // |<--------base.xb------------->|root ----------------------------->|
 // and shring pool to it's initial empty size
-// |<pool|tags|attrs|00000000000000000000000000000000000|
+// |<pool|tags|params|00000000000000000000000000000000000|
 // From point of view of writing process is this easy and simple.
 // But from readers point of view is this very confusing.
 // Problem is, that reader should not break his reading when it is in BW plugin part.
@@ -1365,7 +1531,7 @@ int BW_plugin::getSymbolCount(SymbolTableTypes table)
         case SYMBOL_TABLE_NODES:
             return pool->tags.max_id+1;
         case SYMBOL_TABLE_PARAMS:
-            return pool->attrs.max_id+1;
+            return pool->params.max_id+1;
         default:
             return -1;
     }
@@ -1384,7 +1550,7 @@ const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type 
             else
                 return nullptr;
         case SYMBOL_TABLE_PARAMS:
-            if (idx <= pool->attrs.max_id)
+            if (idx <= pool->params.max_id)
             {
                 type = pool->getAttrType(idx);
                 if (type == XBT_UNKNOWN) return nullptr;

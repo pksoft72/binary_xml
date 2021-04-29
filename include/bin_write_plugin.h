@@ -100,12 +100,16 @@ public:
     BW_element  *findAttr(int16_t attr_id);
 };
 
-class BW_symbol_table_12B
+#define BW_SYMBOLS_FAST_REG 1
+class BW_symbol_table_16B
 {
 public:
-    int32_t                 max_id;                 // maximum defines sizes of indexes
-    BW_offset_t             names_offset;           // elements table link
-    BW_offset_t             index;                  // BW_offset_t[id]
+    int32_t         max_id;                 // maximum defines sizes of indexes
+    BW_offset_t     names_offset;           // elements table link
+    BW_offset_t     index;                  // BW_offset_t[id]
+    uint32_t        flags;                  // BW_SYMBOLS_FAST_REG | ....
+
+    int16_t         getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type);
 };
 
 class BW_pool // this is flat pointer-less structure mapped directly to the first position of shared memory
@@ -124,8 +128,8 @@ public:
     BW_offset_t             allocator;
     BW_offset_t             allocator_limit;                // end of space in which allocation is possible
    
-    BW_symbol_table_12B     tags;
-    BW_symbol_table_12B     attrs;
+    BW_symbol_table_16B     tags;
+    BW_symbol_table_16B     params;
 
 public: // index tables (indexed by id) - allocated on pool
     XML_Binary_Type getTagType(int16_t id);
@@ -134,8 +138,8 @@ public: // index tables (indexed by id) - allocated on pool
     XML_Binary_Type getAttrType(int16_t id);
     const char*     getAttrName(int16_t id);
     
-    bool            makeTable(BW_symbol_table_12B &table,BW_offset_t limit);
-    bool            checkTable(BW_symbol_table_12B &table,BW_offset_t limit);
+    bool            makeTable(BW_symbol_table_16B &table,BW_offset_t limit);
+    bool            checkTable(BW_symbol_table_16B &table,BW_offset_t limit);
 public:
     char*           allocate(int size);
     char*           allocate8(int size);        // 64 bit aligned value
@@ -171,6 +175,12 @@ public:
 
     bool registerTag(int16_t id,const char *name,XML_Binary_Type type);
     bool registerAttr(int16_t id,const char *name,XML_Binary_Type type);
+
+    XML_Tag_Names   registerTag(const char *name,XML_Binary_Type type);
+    XML_Param_Names registerParam(const char *name,XML_Binary_Type type);
+
+    void importTags(XB_reader *src);
+    void importParams(XB_reader *src);
     bool allRegistered();
 
     void setRoot(const BW_element* X);
