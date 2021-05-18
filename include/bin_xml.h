@@ -135,8 +135,8 @@ public:
 
     int32_t getInt(const XML_Item *X) const {
         if (this == nullptr) return INT32_NULL;
-        if (X == nullptr) return INT32_NULL;
         if (type == XBT_INT32) return static_cast<int32_t>(data);
+        if (X == nullptr) return INT32_NULL;
         if (type == XBT_STRING) return atoi(reinterpret_cast<const char *>(X)+data);
         return INT32_NULL; 
     }
@@ -196,6 +196,9 @@ public:
     inline const XML_Item *getRoot() const                          { return (this == nullptr ? nullptr : data);}
 
     friend std::ostream& operator<<(std::ostream& os,  XB_reader& R);
+
+    virtual bool ParamIsKey(int param_name) const; 
+    virtual bool TagIsKey(int tag_name) const; 
 };
 
 std::ostream& operator<<(std::ostream& os, const hash192_t& h);

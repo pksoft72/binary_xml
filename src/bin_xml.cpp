@@ -798,6 +798,16 @@ bool XB_reader::Finalize()
     return true;
 }
 
+bool XB_reader::ParamIsKey(int param_name) const
+{
+    return false;
+}
+
+bool XB_reader::TagIsKey(int tag_name) const
+{
+    return false;
+}
+
 std::ostream& operator<<(std::ostream& os, XB_reader& R)
 {
 //  os << "<!-- Content of file " << R.filename << ": -->\n";       

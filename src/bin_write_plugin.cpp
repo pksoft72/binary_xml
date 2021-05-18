@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>     // perror
 #include <unistd.h>    // close,fstat
+#include <stdarg.h>    // va_start ..
 #include "assert.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -422,6 +423,43 @@ BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
     return this;
 }
 
+BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Param_Description *param_desc)
+{
+    if (this == nullptr) return nullptr;
+    ASSERT_NO_RET_NULL(1980,param_desc != nullptr);
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     src_type = static_cast<XML_Binary_Type>(param_desc->type)
+    XML_Binary_Type     dst_type = pool->getAttrType((int16_t)param_desc->name);
+    ASSERT_NO_RET_NULL(1982,src_type == dst_type); // need full compatibility
+
+    switch (src_type)
+    { 
+        case XBT_NULL:
+            return attr(param_desc->name);
+    // param 4B inlined types
+        case XBT_INT32:
+            return attrInt32(param_desc->name,static_cast<int32_t>(param_desc->data));
+        case XBT_UINT32:
+            return attrUInt32(param_desc->name,static_cast<uint32_t>(param_desc->data));
+        case XBT_UNIX_TIME:
+            return attrTime(param_desc->name,static_cast<uint32_t>(param_desc->data));
+        case XBT_FLOAT:
+            return attrFloat(param_desc->name,*static_cast<float*>(&param_desc->data));
+
+        case XBT_STRING:
+            return attrStr(param_desc->name,param_desc->getString());
+    }    
+
+//int             XBT_Size    (XML_Binary_Type type,int size);
+//int             XBT_Align   (XML_Binary_Type type);
+//bool            XBT_Copy    (const char *src,XML_Binary_Type type,int size,char **_wp,char *limit);
+
+
+    return this;
+}
+
+
 BW_element  *BW_element::attrGet(int16_t id)
 {
     if (this == nullptr) return nullptr;
@@ -531,6 +569,48 @@ BW_element  *BW_element::findAttr(int16_t attr_id)
         attr = BWE(attr->next);
     }
     return nullptr;
+}
+
+BW_element*  BW_element::CopyAll(const XB_reader &xb,const XML_Item *src)
+{
+// this should recursively copy whole subtree of src
+    return this;
+}
+
+BW_element*  BW_element::CopyKeys(const XB_reader &xb,const XML_Item *src)
+{
+// must be empty element
+    ASSERT_NO_RET_NULL(1978,first_child == 0);
+    ASSERT_NO_RET_NULL(1979,first_attribute == 0);
+    ASSERT_NO_RET_NULL(1981,identification == (int16_t)src->name); // must be the same element type
+
+    for(int i = 0;i < src->paramcount;i++)
+    {
+        const XML_Param_Description *PD = src->getParamByIndex(i);
+        if (!xb.ParamIsKey(PD->name)) continue; // skip this param - it is not 
+        ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,PD) == this);
+    }
+    return this;
+}
+
+bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
+// This should compare all key values from src and this
+// when some element miss, it should return false
+{
+    if (src == nullptr) return false;
+
+    int checked_params[16];
+    int checked_params_count = 0;
+    for(int p = 0;p < src->paramcount;p++)
+    {
+        const XML_Param_Description *PD = getParamByIndex(p);
+        if (!xb.ParamIsKey(pd->name)) continue;
+    // slow?
+        
+        
+    }
+// TODO: missing implementation
+    return false;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1060,6 +1140,9 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 
 XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
 {
+    if (pool->tags.names_offset == 0) // empty
+        pool->tags.names_offset = pool->allocator;
+
     int id;
     if ((pool->tags.flags & BW_SYMBOLS_FAST_REG) == 0)
     {
@@ -1079,7 +1162,7 @@ XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
     }
     int len = strlen(name);
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
-    ASSERT_NO_RET_(0,dst != 0,XTNR_NULL);
+    ASSERT_NO_RET_(1972,dst != 0,XTNR_NULL);
     id = ++pool->tags.max_id;
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
@@ -1094,6 +1177,9 @@ XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
 
 XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
 {
+    if (pool->params.names_offset == 0) // empty
+        pool->params.names_offset = pool->allocator;
+
     int id;
     if ((pool->params.flags & BW_SYMBOLS_FAST_REG) == 0)
     {
@@ -1113,7 +1199,7 @@ XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
     }
     int len = strlen(name);
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
-    ASSERT_NO_RET_(0,dst != 0,XPNR_NULL);
+    ASSERT_NO_RET_(1973,dst != 0,XPNR_NULL);
     id = ++pool->params.max_id;
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
@@ -1406,6 +1492,52 @@ BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
 // TODO: not implemented
     ASSERT_NO_RET_NULL(1138,NOT_IMPLEMENTED);
 }
+
+BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
+{
+// source root
+    if (root == nullptr) return nullptr; // nothing? OK
+    ASSERT_NO_RET_NULL(1975,root == xb.getRoot());
+
+// destination root
+    BW_element* root2;
+    if (pool->root == 0)
+    {
+        setRoot(root2 = tag(root->name));
+        ASSERT_NO_RET_NULL(1976,root2->EqualKeys(xb,root));
+    }
+    else
+    {
+        root2 = BWE(pool->root);
+        ASSERT_NO_RET_NULL(1974,root2->identification == root->name); // root element must be the same
+        ASSERT_NO_RET_NULL(1977,root2->CopyKeys(xb,root) != nullptr);
+    }
+
+    va_list ap;
+    va_start(ap,root);
+
+//-----------
+
+    // have I destination root?
+
+    BW_element *last = nullptr;
+    const XML_Item  *src = root;
+    BW_element      *dst = root2;
+
+    for(;;)
+    {
+        // root2->CopyParams(root);
+
+
+        XML_Item *element = va_arg(ap,XML_Item *);
+        if (element == nullptr) break;
+    }
+//-----------
+    va_end(ap);
+    return last;
+}
+
+//-------------------------------------------------------------------------------------------------
 
 const char *BW_plugin::getNodeName(void *element)
 {

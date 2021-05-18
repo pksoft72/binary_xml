@@ -91,6 +91,8 @@ public:
     BW_element  *attrIPv4(int16_t id,const char *value);
     BW_element  *attrIPv6(int16_t id,const char *value);
 
+    BW_element  *attrCopy(const XB_reader &xb,const XML_Param_Description *param_desc);
+
     BW_element  *attrGet(int16_t id);
     int32_t     *getInt32();
     char        *getStr();
@@ -98,6 +100,9 @@ public:
     BW_element  *findChildByTag(int16_t tag_id);
     BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
     BW_element  *findAttr(int16_t attr_id);
+    BW_element*  CopyAll(const XB_reader &xb,const XML_Item *src);
+    BW_element*  CopyKeys(const XB_reader &xb,const XML_Item *src);
+    bool         EqualKeys(const XB_reader &xb,const XML_Item *src);
 };
 
 #define BW_SYMBOLS_FAST_REG 1
@@ -207,6 +212,8 @@ public: // tag creation
     BW_element*     tagTime64(int16_t id,int64_t value);
     BW_element*     tagIPv4(int16_t id,const char *value);
     BW_element*     tagIPv6(int16_t id,const char *value);
+    
+    BW_element*     CopyPath(const XB_reader &xb,const XML_Item *root,...);
 public: // Bin_src_plugin
     virtual void *getRoot();
     virtual const char *getNodeName(void *element);
