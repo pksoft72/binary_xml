@@ -110,6 +110,29 @@ BW_element* BW_element::add(BW_element *tag)
 
 
 
+BW_element*     BW_element::attrNull(int16_t id)
+{
+    if (this == nullptr) return nullptr;
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(0,attr_type == XBT_NULL || attr_type == XBT_VARIANT);
+    
+    if (attr_type == XBT_NULL)
+    {
+        BW_element* attr      = pool->new_element(XBT_NULL,0); // only variable types gives size  --- sizeof(int32_t));
+        ASSERT_NO_RET_NULL(0,attr != nullptr);
+        attr->init(pool,id,XBT_NULL,BIN_WRITE_ATTR_FLAG);
+
+        add(attr);
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(1082,NOT_IMPLEMENTED); // TODO: variant
+    }
+
+    return this;
+}
+
 BW_element*     BW_element::attrStr(int16_t id,const char *value)
 {
     if (this == nullptr) return nullptr;
@@ -423,20 +446,20 @@ BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
     return this;
 }
 
-BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Param_Description *param_desc)
+BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Item *X,const XML_Param_Description *param_desc)
 {
     if (this == nullptr) return nullptr;
     ASSERT_NO_RET_NULL(1980,param_desc != nullptr);
 
     BW_pool             *pool = getPool();    
-    XML_Binary_Type     src_type = static_cast<XML_Binary_Type>(param_desc->type)
+    XML_Binary_Type     src_type = static_cast<XML_Binary_Type>(param_desc->type);
     XML_Binary_Type     dst_type = pool->getAttrType((int16_t)param_desc->name);
     ASSERT_NO_RET_NULL(1982,src_type == dst_type); // need full compatibility
 
     switch (src_type)
     { 
         case XBT_NULL:
-            return attr(param_desc->name);
+            return attrNull(param_desc->name);
     // param 4B inlined types
         case XBT_INT32:
             return attrInt32(param_desc->name,static_cast<int32_t>(param_desc->data));
@@ -445,10 +468,10 @@ BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Param_Descrip
         case XBT_UNIX_TIME:
             return attrTime(param_desc->name,static_cast<uint32_t>(param_desc->data));
         case XBT_FLOAT:
-            return attrFloat(param_desc->name,*static_cast<float*>(&param_desc->data));
+            return attrFloat(param_desc->name,*reinterpret_cast<const float*>(&param_desc->data));
 
         case XBT_STRING:
-            return attrStr(param_desc->name,param_desc->getString());
+            return attrStr(param_desc->name,param_desc->getString(X));
     }    
 
 //int             XBT_Size    (XML_Binary_Type type,int size);
@@ -588,7 +611,7 @@ BW_element*  BW_element::CopyKeys(const XB_reader &xb,const XML_Item *src)
     {
         const XML_Param_Description *PD = src->getParamByIndex(i);
         if (!xb.ParamIsKey(PD->name)) continue; // skip this param - it is not 
-        ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,PD) == this);
+        ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,src,PD) == this);
     }
     return this;
 }
@@ -603,7 +626,7 @@ bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
     int checked_params_count = 0;
     for(int p = 0;p < src->paramcount;p++)
     {
-        const XML_Param_Description *PD = getParamByIndex(p);
+        const XML_Param_Description *pd = src->getParamByIndex(p);
         if (!xb.ParamIsKey(pd->name)) continue;
     // slow?
         

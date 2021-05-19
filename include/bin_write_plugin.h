@@ -74,6 +74,7 @@ public:
     BW_element* add(BW_element *tag);
 
 
+    BW_element  *attrNull(int16_t id);
     BW_element  *attrStr(int16_t id,const char *value);
     BW_element  *attrStr2(int16_t id,const char *beg,const char *end);
     BW_element  *attrHexStr(int16_t id,const char *value);
@@ -91,7 +92,7 @@ public:
     BW_element  *attrIPv4(int16_t id,const char *value);
     BW_element  *attrIPv6(int16_t id,const char *value);
 
-    BW_element  *attrCopy(const XB_reader &xb,const XML_Param_Description *param_desc);
+    BW_element  *attrCopy(const XB_reader &xb,const XML_Item *X,const XML_Param_Description *param_desc);
 
     BW_element  *attrGet(int16_t id);
     int32_t     *getInt32();
