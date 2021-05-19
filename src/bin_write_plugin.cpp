@@ -115,12 +115,12 @@ BW_element*     BW_element::attrNull(int16_t id)
     if (this == nullptr) return nullptr;
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(0,attr_type == XBT_NULL || attr_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(1985,attr_type == XBT_NULL || attr_type == XBT_VARIANT);
     
     if (attr_type == XBT_NULL)
     {
         BW_element* attr      = pool->new_element(XBT_NULL,0); // only variable types gives size  --- sizeof(int32_t));
-        ASSERT_NO_RET_NULL(0,attr != nullptr);
+        ASSERT_NO_RET_NULL(1986,attr != nullptr);
         attr->init(pool,id,XBT_NULL,BIN_WRITE_ATTR_FLAG);
 
         add(attr);
@@ -157,7 +157,7 @@ BW_element*     BW_element::attrStr(int16_t id,const char *value)
     }
     else
     {
-        ASSERT_NO_RET_NULL(1082,NOT_IMPLEMENTED); // TODO: variant
+        ASSERT_NO_RET_NULL(1987,NOT_IMPLEMENTED); // TODO: variant
     }
 
     return this;
@@ -472,6 +472,8 @@ BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Item *X,const
 
         case XBT_STRING:
             return attrStr(param_desc->name,param_desc->getString(X));
+        default:
+            ASSERT_NO_RET_NULL(1989,NOT_IMPLEMENTED);
     }    
 
 //int             XBT_Size    (XML_Binary_Type type,int size);
@@ -629,7 +631,7 @@ bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
         const XML_Param_Description *pd = src->getParamByIndex(p);
         if (!xb.ParamIsKey(pd->name)) continue;
     // slow?
-        
+        ASSERT_NO_RET_FALSE(1988,NOT_IMPLEMENTED); 
         
     }
 // TODO: missing implementation
