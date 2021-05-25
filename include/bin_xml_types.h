@@ -53,7 +53,10 @@ enum XML_Binary_Type
 #endif
 };
 
+#define XBT_IS_4(type) ((type) == XBT_INT32 || ((type) == XBT_FLOAT) || ((type) == XBT_UNIX_TIME) || ((type) == XBT_IPv4) || ((type) == XBT_UINT32))
+
 #define XBT_IS_VARSIZE(type) ((type) == XBT_BLOB || (type) == XBT_HEX)
+#define XBT_FIXEDSIZE(type)  ((type) == XBT_NULL ? 0 : ((type) == XBT_INT64 || (type) == XBT_DOUBLE || (type) == XBT_UINT64 || (type) == XBT_UNIX_TIME64_MSEC ? 8 : ((type) == XBT_GUID ? 16 : ((type) == XBT_SHA1 ? 20 : ((type) == XBT_IPv6 ? 16 : -1)))))
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes
 extern const char *XML_BINARY_TYPE_NAMES[XBT_LAST];

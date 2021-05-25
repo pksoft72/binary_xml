@@ -30,6 +30,7 @@
     #define MAP_NONBLOCK 0
 #endif
 
+#define MAX_PARAM_KEYS 16   // good number of keys is 1, 3 is possible
 
 namespace pklib_xml {
 
@@ -446,42 +447,33 @@ BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
     return this;
 }
 
+BW_element*     BW_element::attrData(int16_t id,XML_Binary_Type content_type,const char *content,int size)
+{
+    if (this == nullptr) return nullptr;
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(1992,attr_type == content_type);
+
+    BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+size));
+    ASSERT_NO_RET_NULL(1993,attr != nullptr);
+
+    attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+
+    memcpy(attr+1,content,size);
+
+    add(attr);
+
+    return this;
+
+}
+
 BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Item *X,const XML_Param_Description *param_desc)
 {
     if (this == nullptr) return nullptr;
-    ASSERT_NO_RET_NULL(1980,param_desc != nullptr);
-
-    BW_pool             *pool = getPool();    
-    XML_Binary_Type     src_type = static_cast<XML_Binary_Type>(param_desc->type);
-    XML_Binary_Type     dst_type = pool->getAttrType((int16_t)param_desc->name);
-    ASSERT_NO_RET_NULL(1982,src_type == dst_type); // need full compatibility
-
-    switch (src_type)
-    { 
-        case XBT_NULL:
-            return attrNull(param_desc->name);
-    // param 4B inlined types
-        case XBT_INT32:
-            return attrInt32(param_desc->name,static_cast<int32_t>(param_desc->data));
-        case XBT_UINT32:
-            return attrUInt32(param_desc->name,static_cast<uint32_t>(param_desc->data));
-        case XBT_UNIX_TIME:
-            return attrTime(param_desc->name,static_cast<uint32_t>(param_desc->data));
-        case XBT_FLOAT:
-            return attrFloat(param_desc->name,*reinterpret_cast<const float*>(&param_desc->data));
-
-        case XBT_STRING:
-            return attrStr(param_desc->name,param_desc->getString(X));
-        default:
-            ASSERT_NO_RET_NULL(1989,NOT_IMPLEMENTED);
-    }    
-
-//int             XBT_Size    (XML_Binary_Type type,int size);
-//int             XBT_Align   (XML_Binary_Type type);
-//bool            XBT_Copy    (const char *src,XML_Binary_Type type,int size,char **_wp,char *limit);
-
-
-    return this;
+    const char *content;
+    int size = param_desc->getData(X,content);
+    return attrData(param_desc->name,static_cast<XML_Binary_Type>(param_desc->type),content,size);
 }
 
 
@@ -517,6 +509,20 @@ char *BW_element::getStr()
     if (this == nullptr) return nullptr;
     if (value_type != XBT_STRING) return nullptr;
     return reinterpret_cast<char*>(this+1);
+}
+
+int BW_element::getData(char *&content)
+{
+    if (this == nullptr) 
+    {
+        content = nullptr;
+        return 0; // no data
+    }
+    content = reinterpret_cast<char*>(this+1);
+    if (value_type == XBT_STRING) return 1+strlen(content);
+    if (XBT_IS_4(value_type)) return 4;
+    if (XBT_IS_VARSIZE(value_type)) return 4 + *reinterpret_cast<int32_t*>(content);
+    return XBT_FIXEDSIZE(value_type);
 }
 
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
@@ -624,18 +630,65 @@ bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
 {
     if (src == nullptr) return false;
 
-    int checked_params[16];
+    // I must remember all processed keys
+    int checked_params[MAX_PARAM_KEYS];
     int checked_params_count = 0;
+
+    // O(n*n)
     for(int p = 0;p < src->paramcount;p++)
     {
         const XML_Param_Description *pd = src->getParamByIndex(p);
         if (!xb.ParamIsKey(pd->name)) continue;
-    // slow?
-        ASSERT_NO_RET_FALSE(1988,NOT_IMPLEMENTED); 
         
+        // for all params
+        if (first_attribute == 0) return false; // no key
+        BW_element *child = BWE(first_attribute);
+        for(;;)
+        {
+            if (child->identification == pd->name)
+            {
+                if (child->value_type != pd->type) return false; // key must have exact the same type
+                
+                const char *pd_data;
+                int pd_size = pd->getData(src,pd_data);
+                if (pd_data == nullptr) return false;
+
+                char *bw_data;
+                int bw_size = child->getData(bw_data);
+                if (pd_data == nullptr) return false;
+
+                if (pd_size != bw_size) return false; // different size -> not equal
+                if (memcmp(pd_data,bw_data,pd_size) != 0) return false;
+
+                // OK, equal
+                break; // found and equal
+            }
+            if (child->next == first_attribute) return false; // not found key
+            child = BWE(child->next);
+        }
+
+        ASSERT_NO_RET_FALSE(1990,checked_params_count < MAX_PARAM_KEYS);
+        checked_params[checked_params_count++] = pd->name;
     }
-// TODO: missing implementation
-    return false;
+// BW_element pass
+    if (first_attribute != 0)
+    {
+        BW_element *child = BWE(first_attribute);
+        for(;;)
+        {
+            if (xb.ParamIsKey(child->identification))
+            {
+                bool ok = false;
+                for(int i = 0;!ok && i < checked_params_count;i++)
+                    ok = (child->identification == checked_params[i]);
+                if (!ok) return false; // not found
+            }
+            if (child->next == first_attribute) break;
+            child = BWE(child->next);
+        }
+    }
+// OK - equal
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1526,16 +1579,16 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
 
 // destination root
     BW_element* root2;
-    if (pool->root == 0)
+    if (pool->root == 0) // no root element -> create one
     {
         setRoot(root2 = tag(root->name));
-        ASSERT_NO_RET_NULL(1976,root2->EqualKeys(xb,root));
+        ASSERT_NO_RET_NULL(1977,root2->CopyKeys(xb,root) != nullptr);
     }
     else
     {
         root2 = BWE(pool->root);
         ASSERT_NO_RET_NULL(1974,root2->identification == root->name); // root element must be the same
-        ASSERT_NO_RET_NULL(1977,root2->CopyKeys(xb,root) != nullptr);
+        ASSERT_NO_RET_NULL(1976,root2->EqualKeys(xb,root));
     }
 
     va_list ap;
@@ -1545,21 +1598,41 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
 
     // have I destination root?
 
-    BW_element *last = nullptr;
     const XML_Item  *src = root;
     BW_element      *dst = root2;
 
     for(;;)
     {
-        // root2->CopyParams(root);
-
-
-        XML_Item *element = va_arg(ap,XML_Item *);
+        const XML_Item *element = va_arg(ap,XML_Item *);
         if (element == nullptr) break;
+        BW_element *element2 = nullptr;
+        // 1. Find element in dst
+        if (dst->first_child != 0)
+        {
+            BW_element *child  = BWE(dst->first_child);
+            for(;;)
+            {
+                if (child->EqualKeys(xb,element))
+                { // Found!
+                    element2 = child;
+                    break;
+                }
+                if (child->next == dst->first_child) break; // finished
+                child = BWE(child->next);
+            }
+        }
+        // 2. Create if missing
+        if (element2 == nullptr)
+        {
+            element2 = tag(element->name);
+            ASSERT_NO_RET_NULL(0,element2->CopyKeys(xb,element) != nullptr);
+        }
+        src = element;
+        dst = element2;
     }
 //-----------
     va_end(ap);
-    return last;
+    return dst;
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -155,6 +155,7 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
 }
 
 int XBT_Size(XML_Binary_Type type,int size)
+// This function will return total size of type, when I need to store size bytes of information.
 {
     switch(type)
     {

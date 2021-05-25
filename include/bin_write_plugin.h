@@ -91,12 +91,13 @@ public:
     BW_element  *attrTime64(int16_t id,int64_t value);
     BW_element  *attrIPv4(int16_t id,const char *value);
     BW_element  *attrIPv6(int16_t id,const char *value);
-
+    BW_element  *attrData(int16_t id,XML_Binary_Type content_type,const char *content,int size);
     BW_element  *attrCopy(const XB_reader &xb,const XML_Item *X,const XML_Param_Description *param_desc);
 
     BW_element  *attrGet(int16_t id);
     int32_t     *getInt32();
     char        *getStr();
+    int          getData(char *&content);
     
     BW_element  *findChildByTag(int16_t tag_id);
     BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
@@ -104,6 +105,7 @@ public:
     BW_element*  CopyAll(const XB_reader &xb,const XML_Item *src);
     BW_element*  CopyKeys(const XB_reader &xb,const XML_Item *src);
     bool         EqualKeys(const XB_reader &xb,const XML_Item *src);
+
 };
 
 #define BW_SYMBOLS_FAST_REG 1

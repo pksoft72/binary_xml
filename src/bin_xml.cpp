@@ -197,6 +197,25 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
     return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
 }
 
+int XML_Param_Description::getData(const XML_Item *X,const char *&content) const
+{
+    if (this == nullptr || X == nullptr) 
+    {
+        content = nullptr;
+        return 0;
+    }
+    
+    if (XBT_IS_4(type)) 
+    {
+        content = reinterpret_cast<const char*>(&data);
+        return 4;
+    }
+    content = reinterpret_cast<const char*>(X) + data;
+    if (type == XBT_STRING) return 1+strlen(content);
+    if (XBT_IS_VARSIZE(type)) return 4 + *reinterpret_cast<const int32_t*>(content);
+    return XBT_FIXEDSIZE(type);
+}
+
 //-------------------------------------------------------------------------------------------------
 
 const XML_Param_Description *XML_Item::getParamByIndex(int i) const
@@ -637,10 +656,10 @@ const char *_XB_symbol_table::getSymbol(tag_name_id_t name_id) const
 
 XML_Binary_Type_Stored  _XB_symbol_table::getType(tag_name_id_t name_id) const
 {
-	if (name_id < 0) return XBT_NULL;
-	if (name_id >= type_count) return XBT_NULL;
-	if (type_array == nullptr) return XBT_NULL;
-	return type_array[name_id];
+    if (name_id < 0) return XBT_NULL;
+    if (name_id >= type_count) return XBT_NULL;
+    if (type_array == nullptr) return XBT_NULL;
+    return type_array[name_id];
 }
 
 

@@ -144,6 +144,8 @@ public:
     const int64_t *getInt64Ptr(const XML_Item *X) const;
     const char *getString(const XML_Item *X) const;
     const int   getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const;
+
+    int getData(const XML_Item *X,const char *&content) const;
 };
 
 //-------------------------------------------------------------------------------------------------
