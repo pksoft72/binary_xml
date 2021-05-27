@@ -287,6 +287,16 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             *reinterpret_cast<int32_t*>(*_wp) = atoi(src);
             *_wp += sizeof(int32_t);
             return true;
+        case XBT_INT64:
+            {
+                int64_t v;
+                ASSERT_NO_RET_FALSE(0,ScanInt64(src,v));
+                AA8(*_wp);
+                *reinterpret_cast<int64_t*>(*_wp) = v;
+                *_wp += sizeof(int64_t);
+                return true;
+            }
+            
         case XBT_STRING:
             strcpy(*_wp,src);
             *_wp += strlen(src)+1;

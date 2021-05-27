@@ -453,17 +453,39 @@ BW_element*     BW_element::attrData(int16_t id,XML_Binary_Type content_type,con
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1992,attr_type == content_type);
 
-    BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+size));
-    ASSERT_NO_RET_NULL(1993,attr != nullptr);
+    if (content_type == XBT_STRING && attr_type != XBT_STRING)
+    { // default conversion
+        // this is not so easy
+        // I must know the size of target representation before I start
+        char *buffer = reinterpret_cast<char*>(alloca(size+64)); // binary representation should fit into it's string representation size
+        char *p = buffer;
+        //bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
+        ASSERT_NO_RET_NULL(1995,XBT_FromString(content,attr_type,&p,buffer+size+64));
+        int target_data_size = p - buffer;
 
-    attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+        BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+target_data_size));
+        ASSERT_NO_RET_NULL(1996,attr != nullptr);
 
-    memcpy(attr+1,content,size);
+        attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
-    add(attr);
+        memcpy(attr+1,buffer,target_data_size);
 
+        add(attr);
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(1992,attr_type == content_type);
+
+        BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+size));
+        ASSERT_NO_RET_NULL(1993,attr != nullptr);
+
+        attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+
+        memcpy(attr+1,content,size);
+
+        add(attr);
+    }
     return this;
 
 }
@@ -1624,8 +1646,8 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
         // 2. Create if missing
         if (element2 == nullptr)
         {
-            element2 = tag(element->name);
-            ASSERT_NO_RET_NULL(0,element2->CopyKeys(xb,element) != nullptr);
+            dst->add(element2 = tag(element->name));
+            ASSERT_NO_RET_NULL(1994,element2->CopyKeys(xb,element) != nullptr);
         }
         src = element;
         dst = element2;
