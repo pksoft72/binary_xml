@@ -627,6 +627,16 @@ BW_element  *BW_element::findAttr(int16_t attr_id)
 BW_element*  BW_element::CopyAll(const XB_reader &xb,const XML_Item *src)
 {
 // this should recursively copy whole subtree of src
+// must be empty element
+    ASSERT_NO_RET_NULL(1997,first_child == 0);
+    ASSERT_NO_RET_NULL(1998,first_attribute == 0);
+    ASSERT_NO_RET_NULL(1999,identification == (int16_t)src->name); // must be the same element type
+
+    for(int i = 0;i < src->paramcount;i++)
+    {
+        const XML_Param_Description *PD = src->getParamByIndex(i);
+        ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,src,PD) == this);
+    }
     return this;
 }
 
@@ -641,7 +651,7 @@ BW_element*  BW_element::CopyKeys(const XB_reader &xb,const XML_Item *src)
     {
         const XML_Param_Description *PD = src->getParamByIndex(i);
         if (!xb.ParamIsKey(PD->name)) continue; // skip this param - it is not 
-        ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,src,PD) == this);
+        ASSERT_NO_RET_NULL(2000,this->attrCopy(xb,src,PD) == this);
     }
     return this;
 }
@@ -1601,16 +1611,18 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
 
 // destination root
     BW_element* root2;
+    bool copy;
     if (pool->root == 0) // no root element -> create one
     {
         setRoot(root2 = tag(root->name));
-        ASSERT_NO_RET_NULL(1977,root2->CopyKeys(xb,root) != nullptr);
+        copy = true;
     }
     else
     {
         root2 = BWE(pool->root);
         ASSERT_NO_RET_NULL(1974,root2->identification == root->name); // root element must be the same
         ASSERT_NO_RET_NULL(1976,root2->EqualKeys(xb,root));
+        copy = false;
     }
 
     va_list ap;
@@ -1626,7 +1638,14 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
     for(;;)
     {
         const XML_Item *element = va_arg(ap,XML_Item *);
-        if (element == nullptr) break;
+        if (element == nullptr) 
+        {
+            // Recursive copy of last element
+            if (copy) ASSERT_NO_RET_NULL(1977,dst->CopyAll(xb,src) != nullptr);
+            break;
+        }
+        if (copy) ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
+    //---------------------------------------------------------------------------------------------
         BW_element *element2 = nullptr;
         // 1. Find element in dst
         if (dst->first_child != 0)
@@ -1647,12 +1666,14 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
         if (element2 == nullptr)
         {
             dst->add(element2 = tag(element->name));
-            ASSERT_NO_RET_NULL(1994,element2->CopyKeys(xb,element) != nullptr);
+            copy = true;
         }
+        else copy = false;
         src = element;
         dst = element2;
     }
 //-----------
+
     va_end(ap);
     return dst;
 }
