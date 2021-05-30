@@ -41,7 +41,7 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST] = {
     "UINT32"
 };
 
-bool XML_Item::Check(XB_reader *R,bool recursive) const
+bool XML_Item::Check(XB_reader *R,bool recursive) 
 // I want to check everything to be 100% sure, data are ok
 {
     if (this == nullptr) return false;  // NULL is not ok
@@ -68,7 +68,7 @@ bool XML_Item::Check(XB_reader *R,bool recursive) const
 // params check
     for(int p = 0;p < paramcount;p++)
     {
-        const XML_Param_Description *PD = getParamByIndex(p);
+        XML_Param_Description *PD = getParamByIndex(p);
         if (PD->name <= XPNR_LAST) return false; // too low
         if (PD->name >= R->param_symbols.count) return false; // too high
         if (PD->type < XBT_NULL) return false;
@@ -119,7 +119,7 @@ bool XML_Item::Check(XB_reader *R,bool recursive) const
     if (recursive)
         for(int i = 0;i < childcount;i++)
         {
-            const XML_Item *X = getChildByIndex(i);
+            XML_Item *X = getChildByIndex(i);
             if (X == nullptr) return false;
             if (!X->Check(R,true)) return false;
         }
@@ -197,6 +197,27 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
     return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
 }
 
+XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X) 
+{
+    XML_Binary_Data_Ref D = {type: XBT_UNKNOWN, data: nullptr, size: 0}; // D as Data
+    if (this == nullptr || X == nullptr) return D;
+    D.type = static_cast<XML_Binary_Type>(type);
+    if (XBT_IS_4(type)) 
+    {
+        D.data = reinterpret_cast<char*>(&data);
+        D.size = 4;
+    }
+    else
+    {
+        D.data = reinterpret_cast<char*>(X) + data;
+        if (type == XBT_STRING) D.size = 1+strlen(D.data);
+        else if (XBT_IS_VARSIZE(type)) D.size = 4 + *reinterpret_cast<int32_t*>(D.data);
+        else D.size = XBT_FIXEDSIZE(type);
+    }
+    return D;
+}
+    
+/*
 int XML_Param_Description::getData(const XML_Item *X,const char *&content) const
 {
     if (this == nullptr || X == nullptr) 
@@ -215,23 +236,23 @@ int XML_Param_Description::getData(const XML_Item *X,const char *&content) const
     if (XBT_IS_VARSIZE(type)) return 4 + *reinterpret_cast<const int32_t*>(content);
     return XBT_FIXEDSIZE(type);
 }
-
+*/
 //-------------------------------------------------------------------------------------------------
 
-const XML_Param_Description *XML_Item::getParamByIndex(int i) const
+XML_Param_Description *XML_Item::getParamByIndex(int i)
 {
     if (this == nullptr) return nullptr;
     if (i < 0) return nullptr;
     if (i >= paramcount) return nullptr;
-    const XML_Param_Description *params = reinterpret_cast<const XML_Param_Description*>(this+1);
+    XML_Param_Description *params = reinterpret_cast<XML_Param_Description*>(this+1);
     return params+i;
 }
 
-const XML_Param_Description *XML_Item::getParamByName(XML_Param_Names code) const
+XML_Param_Description *XML_Item::getParamByName(XML_Param_Names code)
 {
     if (this == nullptr) return nullptr;
     if (paramcount == 0) return nullptr;
-    const XML_Param_Description *params = reinterpret_cast<const XML_Param_Description*>(this+1);
+    XML_Param_Description *params = reinterpret_cast<XML_Param_Description*>(this+1);
     for(int p = 0;p < paramcount;p++)
         if (params[p].name == code) return params+p;
     return nullptr;
@@ -244,28 +265,28 @@ const relative_ptr_t *XML_Item::getChildren() const
     return reinterpret_cast<const relative_ptr_t*>(reinterpret_cast<const char*>(this+1)+paramcount*sizeof(XML_Param_Description));
 }
 
-const XML_Item *XML_Item::getChildByIndex(int i) const
+XML_Item *XML_Item::getChildByIndex(int i) 
 {
     if (this == nullptr) return nullptr;
     if (i < 0 || i >= childcount) return nullptr;
     
-    return reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+getChildren()[i]);
+    return reinterpret_cast<XML_Item*>(reinterpret_cast<char*>(this)+getChildren()[i]);
 }
 
-const XML_Item *XML_Item::getChildByName(XML_Tag_Names code) const
+XML_Item *XML_Item::getChildByName(XML_Tag_Names code) 
 {
     if (this == nullptr) return nullptr;
     if (childcount == 0) return nullptr;
-    const relative_ptr_t *children = reinterpret_cast<const relative_ptr_t*>(reinterpret_cast<const char*>(this+1)+paramcount*sizeof(XML_Param_Description));
+    relative_ptr_t *children = reinterpret_cast<relative_ptr_t*>(reinterpret_cast<char*>(this+1)+paramcount*sizeof(XML_Param_Description));
     for(int ch = 0;ch < childcount;ch++)
     {
-        const XML_Item *child = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+children[ch]);
+        XML_Item *child = reinterpret_cast<XML_Item*>(reinterpret_cast<char*>(this)+children[ch]);
         if (child->name == code) return child;
     }
     return nullptr;
 }
 
-const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this method can show even extented xb elements
+XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) // this method can show even extented xb elements
 // this method can show even extented xb elements
 {
     if (this == nullptr) return nullptr;
@@ -274,7 +295,7 @@ const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this met
 
     if (i >= 0)
     {
-        const XML_Item *X = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(this)+getChildren()[i++]);
+        XML_Item *X = reinterpret_cast<XML_Item*>(reinterpret_cast<char*>(this)+getChildren()[i++]);
     
         if (X->name != XTNR_ET_TECERA) // OK, standard child
             return X;
@@ -287,7 +308,7 @@ const XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) const    // this met
     AA(offset);
     
     if (offset + (int)sizeof(XML_Item) > (int)R.size) return nullptr; // end of data -> no more can fit
-    const XML_Item *X = reinterpret_cast<const XML_Item*>(reinterpret_cast<const char*>(R.doc) + offset);
+    XML_Item *X = reinterpret_cast<XML_Item*>(reinterpret_cast<char*>(R.doc) + offset);
     if (offset + X->length > (int)R.size) return nullptr; // something is strange - no whole XML_Item is stored in file        
     // must find the first extended record
     offset += X->length;
@@ -488,7 +509,7 @@ const int64_t *XML_Item::getInt64Ptr() const
     return nullptr;
 }
 
-const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
+void XML_Item::write(std::ostream& os,XB_reader &R,int deep) 
 {
     if (this == nullptr) return;
     if (R.verbosity > 0)
@@ -501,7 +522,7 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
     TAB;os << "<" << R.getNodeName(name);
     for(int p = 0;p < paramcount;p++)
     {
-        const XML_Param_Description *param = getParamByIndex(p);
+        XML_Param_Description *param = getParamByIndex(p);
         os << " " << R.getParamName(param->name) << "=\"";
     
 
@@ -526,7 +547,7 @@ const void XML_Item::write(std::ostream& os,XB_reader &R,int deep) const
         int idx = 0;
         for(;;)
         {
-            const XML_Item *child = this->getNextChild(R,idx);
+            XML_Item *child = this->getNextChild(R,idx);
             if (child == nullptr) break;
             child->write(os,R,deep+1);
             
@@ -606,7 +627,7 @@ _XB_symbol_table::~_XB_symbol_table()
     type_array = nullptr;
 }
 
-bool _XB_symbol_table::Load(const XML_Item *container)
+bool _XB_symbol_table::Load(XML_Item *container)
 // this will load=link symbol table to data in .xb
 // symbol table is in <tag_symbols count="999">link[0],link[1],...,link[count-1]|linked strings</tag_symbols>
 // or in <param_symbols ...> element
@@ -771,7 +792,7 @@ bool XB_reader::Initialize()
     // check only root element
     if (!doc->Check(this,false)) return false;
 
-    const XML_Item *X = doc->getChildByName(XTNR_TAG_SYMBOLS);
+    XML_Item *X = doc->getChildByName(XTNR_TAG_SYMBOLS);
     if (!X->Check(this,false)) return false;
     if (!tag_symbols.Load(X)) return false;
 

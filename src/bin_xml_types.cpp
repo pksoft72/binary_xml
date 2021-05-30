@@ -557,6 +557,37 @@ void XBT_ToXMLStream(XML_Binary_Type type,const char *data,std::ostream &os)
     }
 }
 
+bool XBT_Equal(XML_Binary_Data_Ref A,XML_Binary_Data_Ref B)
+{
+    if (A.type != B.type)
+    {
+        if (A.type == XBT_STRING)
+        {
+            char *buffer = reinterpret_cast<char*>(alloca(A.size+64));
+            char *buffer_limit = buffer+A.size+64;
+            char *p = buffer;
+            if (!XBT_FromString(A.data,B.type,&p,buffer_limit)) return false; // cannot convert
+
+            A.data = buffer;
+            A.size = p - buffer;
+        }
+        else if (B.type == XBT_STRING)
+        {
+            char *buffer = reinterpret_cast<char*>(alloca(B.size+64));
+            char *buffer_limit = buffer+B.size+64;
+            char *p = buffer;
+            if (!XBT_FromString(B.data,A.type,&p,buffer_limit)) return false; // cannot convert
+
+            B.data = buffer;
+            B.size = p - buffer;
+        }
+        else
+            return false; // no compare of any types
+    }
+    if (A.size != B.size) return false;
+    return memcmp(A.data,B.data,A.size) == 0;
+}
+
 char *g_output_buffer = nullptr;
 int   g_output_buffer_size = 0;
 char* XBT_Buffer(int size)

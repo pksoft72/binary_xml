@@ -87,16 +87,16 @@ public:
     int32_t     length;     // =0 will signalize infinite object
 
 //--- Manipulation
-    bool                Check(XB_reader *R,bool recursive) const;
+    bool                Check(XB_reader *R,bool recursive);
 
-    const XML_Param_Description *getParamByIndex(int i) const;
-    const XML_Param_Description *getParamByName(XML_Param_Names code) const;
+    XML_Param_Description *getParamByIndex(int i);
+    XML_Param_Description *getParamByName(XML_Param_Names code);
 
     const relative_ptr_t        *getChildren() const;
-    const XML_Item          *getChildByIndex(int i) const;
-    const XML_Item          *getChildByName(XML_Tag_Names code) const;
+    XML_Item          *getChildByIndex(int i);
+    XML_Item          *getChildByName(XML_Tag_Names code);
 
-    const XML_Item          *getNextChild(XB_reader &R,int &i) const;    // this method can show even extented xb elements
+    XML_Item          *getNextChild(XB_reader &R,int &i);    // this method can show even extented xb elements
 
     void  ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep) const;
     void  ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep) const;
@@ -111,7 +111,7 @@ public:
     const int64_t       *getInt64Ptr() const;
 
 //--- write as text to stream
-    const void write(std::ostream& os,XB_reader &R,int deep) const;
+    void write(std::ostream& os,XB_reader &R,int deep);
 };
 
 class XML_Symbol_Info   // element of symbol table contains name and type of value
@@ -145,7 +145,7 @@ public:
     const char *getString(const XML_Item *X) const;
     const int   getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const;
 
-    int getData(const XML_Item *X,const char *&content) const;
+    XML_Binary_Data_Ref getData(XML_Item *X);
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ struct _XB_symbol_table
     _XB_symbol_table();
     virtual ~_XB_symbol_table();
 
-    bool Load(const XML_Item *container);
+    bool Load(XML_Item *container);
     const char *            getSymbol(tag_name_id_t name_id) const;
     XML_Binary_Type_Stored  getType(tag_name_id_t name_id) const;
     int                     getID(const char *name) const;
@@ -175,8 +175,8 @@ public:
     char  *filename;
     size_t      size;
     int     fd; // file descriptor
-    const XML_Item  *doc;   // doc element
-    const XML_Item  *data;  // user data element
+    XML_Item  *doc;   // doc element
+    XML_Item  *data;  // user data element
 
     _XB_symbol_table    tag_symbols;
     _XB_symbol_table    param_symbols;

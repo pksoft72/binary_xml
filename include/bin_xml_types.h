@@ -58,6 +58,15 @@ enum XML_Binary_Type
 #define XBT_IS_VARSIZE(type) ((type) == XBT_BLOB || (type) == XBT_HEX)
 #define XBT_FIXEDSIZE(type)  ((type) == XBT_NULL ? 0 : ((type) == XBT_INT64 || (type) == XBT_DOUBLE || (type) == XBT_UINT64 || (type) == XBT_UNIX_TIME64_MSEC ? 8 : ((type) == XBT_GUID ? 16 : ((type) == XBT_SHA1 ? 20 : ((type) == XBT_IPv6 ? 16 : -1)))))
 
+struct XML_Binary_Data_Ref
+// I have a problem with const char * vs. char * variant of code!
+// I need char data for xbw
+{
+    XML_Binary_Type type;
+    char            *data;
+    int             size;
+};
+
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes
 extern const char *XML_BINARY_TYPE_NAMES[XBT_LAST];
 
@@ -73,6 +82,8 @@ int             XBT_Size    (XML_Binary_Type type,int size);
 int             XBT_Align   (XML_Binary_Type type);
 bool            XBT_Copy    (const char *src,XML_Binary_Type type,int size,char **_wp,char *limit);
 bool            XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
+
+bool            XBT_Equal   (XML_Binary_Data_Ref A,XML_Binary_Data_Ref B);
 
 const char     *XBT_ToString(XML_Binary_Type type,const char *data);
 int             XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *dst,int dst_size);

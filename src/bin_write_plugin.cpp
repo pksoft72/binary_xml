@@ -447,21 +447,21 @@ BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
     return this;
 }
 
-BW_element*     BW_element::attrData(int16_t id,XML_Binary_Type content_type,const char *content,int size)
+BW_element*     BW_element::attrData(int16_t id,XML_Binary_Data_Ref &data)
 {
     if (this == nullptr) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
 
-    if (content_type == XBT_STRING && attr_type != XBT_STRING)
+    if (data.type == XBT_STRING && attr_type != XBT_STRING)
     { // default conversion
         // this is not so easy
         // I must know the size of target representation before I start
-        char *buffer = reinterpret_cast<char*>(alloca(size+64)); // binary representation should fit into it's string representation size
+        char *buffer = reinterpret_cast<char*>(alloca(data.size+64)); // binary representation should fit into it's string representation size
         char *p = buffer;
         //bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
-        ASSERT_NO_RET_NULL(1995,XBT_FromString(content,attr_type,&p,buffer+size+64));
+        ASSERT_NO_RET_NULL(1995,XBT_FromString(data.data,attr_type,&p,buffer+data.size+64));
         int target_data_size = p - buffer;
 
         BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+target_data_size));
@@ -475,14 +475,14 @@ BW_element*     BW_element::attrData(int16_t id,XML_Binary_Type content_type,con
     }
     else
     {
-        ASSERT_NO_RET_NULL(1992,attr_type == content_type);
+        ASSERT_NO_RET_NULL(1992,attr_type == data.type);
 
-        BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+size));
+        BW_element* attr      = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+data.size));
         ASSERT_NO_RET_NULL(1993,attr != nullptr);
 
         attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
-        memcpy(attr+1,content,size);
+        memcpy(attr+1,data.data,data.size);
 
         add(attr);
     }
@@ -490,12 +490,11 @@ BW_element*     BW_element::attrData(int16_t id,XML_Binary_Type content_type,con
 
 }
 
-BW_element*     BW_element::attrCopy(const XB_reader &xb,const XML_Item *X,const XML_Param_Description *param_desc)
+BW_element*     BW_element::attrCopy(const XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc)
 {
     if (this == nullptr) return nullptr;
-    const char *content;
-    int size = param_desc->getData(X,content);
-    return attrData(param_desc->name,static_cast<XML_Binary_Type>(param_desc->type),content,size);
+    XML_Binary_Data_Ref data = param_desc->getData(X);
+    return attrData(param_desc->name,data);
 }
 
 
@@ -533,18 +532,20 @@ char *BW_element::getStr()
     return reinterpret_cast<char*>(this+1);
 }
 
-int BW_element::getData(char *&content)
+XML_Binary_Data_Ref BW_element::getData() 
 {
-    if (this == nullptr) 
-    {
-        content = nullptr;
-        return 0; // no data
-    }
-    content = reinterpret_cast<char*>(this+1);
-    if (value_type == XBT_STRING) return 1+strlen(content);
-    if (XBT_IS_4(value_type)) return 4;
-    if (XBT_IS_VARSIZE(value_type)) return 4 + *reinterpret_cast<int32_t*>(content);
-    return XBT_FIXEDSIZE(value_type);
+    XML_Binary_Data_Ref R = {type:XBT_UNKNOWN,data:nullptr,size:0};
+    if (this == nullptr) return R;
+    R.data = reinterpret_cast<char*>(this+1);
+    if (value_type == XBT_STRING) 
+        R.size = 1+strlen(R.data);
+    else if (XBT_IS_4(value_type)) 
+        R.size = 4;
+    else if (XBT_IS_VARSIZE(value_type)) 
+        R.size = 4 + *reinterpret_cast<int32_t*>(R.data);
+    else 
+        R.size = XBT_FIXEDSIZE(value_type);
+    return R;
 }
 
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
@@ -624,7 +625,7 @@ BW_element  *BW_element::findAttr(int16_t attr_id)
     return nullptr;
 }
 
-BW_element*  BW_element::CopyAll(const XB_reader &xb,const XML_Item *src)
+BW_element*  BW_element::CopyAll(const XB_reader &xb,XML_Item *src)
 {
 // this should recursively copy whole subtree of src
 // must be empty element
@@ -634,13 +635,18 @@ BW_element*  BW_element::CopyAll(const XB_reader &xb,const XML_Item *src)
 
     for(int i = 0;i < src->paramcount;i++)
     {
-        const XML_Param_Description *PD = src->getParamByIndex(i);
+        XML_Param_Description *PD = src->getParamByIndex(i);
         ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,src,PD) == this);
+    }
+    for(int i = 0;i < src->childcount;i++)
+    {
+        const XML_Item *child = src->getChildByIndex(i);
+        
     }
     return this;
 }
 
-BW_element*  BW_element::CopyKeys(const XB_reader &xb,const XML_Item *src)
+BW_element*  BW_element::CopyKeys(const XB_reader &xb,XML_Item *src)
 {
 // must be empty element
     ASSERT_NO_RET_NULL(1978,first_child == 0);
@@ -649,14 +655,14 @@ BW_element*  BW_element::CopyKeys(const XB_reader &xb,const XML_Item *src)
 
     for(int i = 0;i < src->paramcount;i++)
     {
-        const XML_Param_Description *PD = src->getParamByIndex(i);
+        XML_Param_Description *PD = src->getParamByIndex(i);
         if (!xb.ParamIsKey(PD->name)) continue; // skip this param - it is not 
         ASSERT_NO_RET_NULL(2000,this->attrCopy(xb,src,PD) == this);
     }
     return this;
 }
 
-bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
+bool         BW_element::EqualKeys(const XB_reader &xb,XML_Item *src)
 // This should compare all key values from src and this
 // when some element miss, it should return false
 {
@@ -669,7 +675,7 @@ bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
     // O(n*n)
     for(int p = 0;p < src->paramcount;p++)
     {
-        const XML_Param_Description *pd = src->getParamByIndex(p);
+        XML_Param_Description *pd = src->getParamByIndex(p);
         if (!xb.ParamIsKey(pd->name)) continue;
         
         // for all params
@@ -679,18 +685,14 @@ bool         BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
         {
             if (child->identification == pd->name)
             {
-                if (child->value_type != pd->type) return false; // key must have exact the same type
-                
-                const char *pd_data;
-                int pd_size = pd->getData(src,pd_data);
-                if (pd_data == nullptr) return false;
+                XML_Binary_Data_Ref pd_data = pd->getData(src); 
+                if (pd_data.data == nullptr) return false;
 
-                char *bw_data;
-                int bw_size = child->getData(bw_data);
-                if (pd_data == nullptr) return false;
+                XML_Binary_Data_Ref bw_data = child->getData(); 
+                if (bw_data.data == nullptr) return false;
+    
+                if (!XBT_Equal(pd_data,bw_data)) return false;            
 
-                if (pd_size != bw_size) return false; // different size -> not equal
-                if (memcmp(pd_data,bw_data,pd_size) != 0) return false;
 
                 // OK, equal
                 break; // found and equal
@@ -1603,7 +1605,7 @@ BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1138,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
+BW_element* BW_plugin::CopyPath(const XB_reader &xb,XML_Item *root,...)
 {
 // source root
     if (root == nullptr) return nullptr; // nothing? OK
@@ -1632,12 +1634,12 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,const XML_Item *root,...)
 
     // have I destination root?
 
-    const XML_Item  *src = root;
-    BW_element      *dst = root2;
+    XML_Item   *src = root;
+    BW_element *dst = root2;
 
     for(;;)
     {
-        const XML_Item *element = va_arg(ap,XML_Item *);
+        XML_Item *element = va_arg(ap,XML_Item *);
         if (element == nullptr) 
         {
             // Recursive copy of last element
