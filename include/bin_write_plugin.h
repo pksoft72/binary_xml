@@ -92,7 +92,7 @@ public:
     BW_element  *attrIPv4(int16_t id,const char *value);
     BW_element  *attrIPv6(int16_t id,const char *value);
     BW_element  *attrData(int16_t id,XML_Binary_Data_Ref &data);
-    BW_element  *attrCopy(const XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc);
+    BW_element  *attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc);
 
     BW_element  *attrGet(int16_t id);
     int32_t     *getInt32();
@@ -102,9 +102,8 @@ public:
     BW_element  *findChildByTag(int16_t tag_id);
     BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
     BW_element  *findAttr(int16_t attr_id);
-    BW_element*  CopyAll(const XB_reader &xb,XML_Item *src);
-    BW_element*  CopyKeys(const XB_reader &xb,XML_Item *src);
-    bool         EqualKeys(const XB_reader &xb,XML_Item *src);
+    BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);
+    bool         EqualKeys(XB_reader &xb,XML_Item *src);
 
 };
 
@@ -215,8 +214,10 @@ public: // tag creation
     BW_element*     tagTime64(int16_t id,int64_t value);
     BW_element*     tagIPv4(int16_t id,const char *value);
     BW_element*     tagIPv6(int16_t id,const char *value);
+    BW_element*     tagData(int16_t id,XML_Binary_Data_Ref &data);
     
-    BW_element*     CopyPath(const XB_reader &xb,XML_Item *root,...);
+    BW_element*     CopyPath(XB_reader &xb,XML_Item *root,...);
+    BW_element*     CopyAll(BW_element *dst,XB_reader &xb,XML_Item *src);
 public: // Bin_src_plugin
     virtual void *getRoot();
     virtual const char *getNodeName(void *element);

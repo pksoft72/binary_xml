@@ -72,14 +72,14 @@ enum XML_Param_Names
 class XML_Param_Description;
 class XB_reader;
 class XML_Item;
-typedef const XML_Item *XML_Item_Array[XML_MAX_DEEP];
+typedef XML_Item *XML_Item_Array[XML_MAX_DEEP];
 
 
 class XML_Item 
 {
 public:
-    typedef void (*OnItem_t)(const XML_Item *item,void *userdata,int deep);
-    typedef void (*OnItemA_t)(const XML_Item *item,void *userdata,int deep,const XML_Item **root);
+    typedef void (*OnItem_t)(XML_Item *item,void *userdata,int deep);
+    typedef void (*OnItemA_t)(XML_Item *item,void *userdata,int deep,XML_Item **root);
 public:
     tag_name_id_t   name;
     int16_t     paramcount; // XML_Param_Description[]
@@ -98,9 +98,9 @@ public:
 
     XML_Item          *getNextChild(XB_reader &R,int &i);    // this method can show even extented xb elements
 
-    void  ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep) const;
-    void  ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep) const;
-    void  ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,const XML_Item **root) const;
+    void  ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep);
+    void  ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep);
+    void  ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,XML_Item **root);
 
 //--- Get data values
     const char          *getString() const;
@@ -109,6 +109,7 @@ public:
     int32_t             getInt() const;         
     const int32_t       *getIntPtr() const;         
     const int64_t       *getInt64Ptr() const;
+    XML_Binary_Data_Ref getData();
 
 //--- write as text to stream
     void write(std::ostream& os,XB_reader &R,int deep);
@@ -152,7 +153,7 @@ public:
 
 struct _XB_symbol_table
 {
-    const XML_Item                  *item_container;
+    XML_Item                  *item_container;
     
     const relative_ptr_t            *reference_array;
     int                             count;
@@ -195,7 +196,7 @@ public:
     inline const char *getParamName(tag_name_id_t name_id) const    { return param_symbols.getSymbol(name_id);}
     inline tag_name_id_t getNodeID(const char *name) const          { return static_cast<tag_name_id_t>(tag_symbols.getID(name));}
     inline param_name_id_t getParamID(const char *name) const       { return static_cast<param_name_id_t>(param_symbols.getID(name));}
-    inline const XML_Item *getRoot() const                          { return (this == nullptr ? nullptr : data);}
+    inline XML_Item *getRoot() const                          { return (this == nullptr ? nullptr : data);}
 
     friend std::ostream& operator<<(std::ostream& os,  XB_reader& R);
 

@@ -490,7 +490,7 @@ BW_element*     BW_element::attrData(int16_t id,XML_Binary_Data_Ref &data)
 
 }
 
-BW_element*     BW_element::attrCopy(const XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc)
+BW_element*     BW_element::attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc)
 {
     if (this == nullptr) return nullptr;
     XML_Binary_Data_Ref data = param_desc->getData(X);
@@ -625,28 +625,7 @@ BW_element  *BW_element::findAttr(int16_t attr_id)
     return nullptr;
 }
 
-BW_element*  BW_element::CopyAll(const XB_reader &xb,XML_Item *src)
-{
-// this should recursively copy whole subtree of src
-// must be empty element
-    ASSERT_NO_RET_NULL(1997,first_child == 0);
-    ASSERT_NO_RET_NULL(1998,first_attribute == 0);
-    ASSERT_NO_RET_NULL(1999,identification == (int16_t)src->name); // must be the same element type
-
-    for(int i = 0;i < src->paramcount;i++)
-    {
-        XML_Param_Description *PD = src->getParamByIndex(i);
-        ASSERT_NO_RET_NULL(1984,this->attrCopy(xb,src,PD) == this);
-    }
-    for(int i = 0;i < src->childcount;i++)
-    {
-        const XML_Item *child = src->getChildByIndex(i);
-        
-    }
-    return this;
-}
-
-BW_element*  BW_element::CopyKeys(const XB_reader &xb,XML_Item *src)
+BW_element*  BW_element::CopyKeys(XB_reader &xb,XML_Item *src)
 {
 // must be empty element
     ASSERT_NO_RET_NULL(1978,first_child == 0);
@@ -662,7 +641,7 @@ BW_element*  BW_element::CopyKeys(const XB_reader &xb,XML_Item *src)
     return this;
 }
 
-bool         BW_element::EqualKeys(const XB_reader &xb,XML_Item *src)
+bool         BW_element::EqualKeys(XB_reader &xb,XML_Item *src)
 // This should compare all key values from src and this
 // when some element miss, it should return false
 {
@@ -1605,7 +1584,35 @@ BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1138,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::CopyPath(const XB_reader &xb,XML_Item *root,...)
+BW_element* BW_plugin::tagData(int16_t id,XML_Binary_Data_Ref &data)
+{
+    ASSERT_NO_RET_NULL(0,this != nullptr);
+    ASSERT_NO_RET_NULL(2002,makeSpace(BW2_INITIAL_FILE_SIZE+8+data.size));
+
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    if (tag_type != data.type)
+    {
+        ASSERT_NO_RET_NULL(2001,data.type == XBT_STRING); // only supported conversion
+        char *buffer = reinterpret_cast<char*>(alloca(data.size+64));
+        char *p = buffer;
+        char *p_limit = buffer + data.size + 64;
+        // bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
+        ASSERT_NO_RET_NULL(0,XBT_FromString(data.data,tag_type,&p,p_limit));
+        data.data = buffer;
+        data.size = p - buffer;
+    }
+
+    BW_element* result = reinterpret_cast<BW_element*>(pool->allocate8(sizeof(BW_element)+data.size));
+    if (result == nullptr) return nullptr; // error message already shown in allocate
+    result->init(pool,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
+    
+    memcpy(result+1,data.data,data.size); // copy content
+    
+    return result;
+}
+//-------------------------------------------------------------------------------------------------
+
+BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
 {
 // source root
     if (root == nullptr) return nullptr; // nothing? OK
@@ -1643,7 +1650,7 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,XML_Item *root,...)
         if (element == nullptr) 
         {
             // Recursive copy of last element
-            if (copy) ASSERT_NO_RET_NULL(1977,dst->CopyAll(xb,src) != nullptr);
+            if (copy) ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
             break;
         }
         if (copy) ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
@@ -1677,6 +1684,29 @@ BW_element* BW_plugin::CopyPath(const XB_reader &xb,XML_Item *root,...)
 //-----------
 
     va_end(ap);
+    return dst;
+}
+
+BW_element*     BW_plugin::CopyAll(BW_element *dst,XB_reader &xb,XML_Item *src)
+{
+// this should recursively copy whole subtree of src
+// must be empty element
+    ASSERT_NO_RET_NULL(1997,dst->first_child == 0);
+    ASSERT_NO_RET_NULL(1998,dst->first_attribute == 0);
+    ASSERT_NO_RET_NULL(1999,dst->identification == (int16_t)src->name); // must be the same element type
+
+    for(int i = 0;i < src->paramcount;i++)
+    {
+        XML_Param_Description *PD = src->getParamByIndex(i);
+        ASSERT_NO_RET_NULL(1984,dst->attrCopy(xb,src,PD) == dst);
+    }
+    for(int i = 0;i < src->childcount;i++)
+    {
+        XML_Item *child = src->getChildByIndex(i);
+        XML_Binary_Data_Ref data = child->getData();
+        BW_element *child2 = CopyAll(tagData(child->name,data),xb,child);
+        dst->add(child2);
+    }
     return dst;
 }
 

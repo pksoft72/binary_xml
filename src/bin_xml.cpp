@@ -318,16 +318,14 @@ XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) // this method can show ev
     return X;
 }
 
-void XML_Item::ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep) const
+void XML_Item::ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep)
 {
     if (this == nullptr) return;
     ASSERT_NO_EXIT_1(1031,on_item != nullptr);
     for(int i = 0;i < childcount;i++)
     {
-        const XML_Item *child = reinterpret_cast<const XML_Item*>(
-                reinterpret_cast<const char*>(
-                    this
-                )+getChildren()[i]);
+        XML_Item *child = reinterpret_cast<XML_Item*>(
+                reinterpret_cast<char*>(this)+getChildren()[i]);
 
         on_item(child,userdata,deep);
 
@@ -335,23 +333,21 @@ void XML_Item::ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int dee
     }
 }
 
-void  XML_Item::ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep) const
+void  XML_Item::ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep) 
 {
     if (this == nullptr) return;
     ASSERT_NO_EXIT_1(1032,on_item != nullptr);
     for(int i = 0;i < childcount;i++)
     {
-        const XML_Item *child = reinterpret_cast<const XML_Item*>(
-                reinterpret_cast<const char*>(
-                    this
-                )+getChildren()[i]);
+        XML_Item *child = reinterpret_cast<XML_Item*>(
+                reinterpret_cast<char*>(this)+getChildren()[i]);
 
         child->ForAllChildrenRecursively_PostOrder(on_item,userdata,deep+1);
         on_item(child,userdata,deep);
     }
 }
 
-void  XML_Item::ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,const XML_Item **root) const
+void  XML_Item::ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,XML_Item **root)
 {
     if (this == nullptr) return;
     ASSERT_NO_EXIT_1(1175,on_item != nullptr);
@@ -361,10 +357,8 @@ void  XML_Item::ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *use
 
     for(int i = 0;i < childcount;i++)
     {
-        const XML_Item *child = reinterpret_cast<const XML_Item*>(
-                reinterpret_cast<const char*>(
-                    this
-                )+getChildren()[i]);
+        XML_Item *child = reinterpret_cast<XML_Item*>(
+                reinterpret_cast<char*>(this)+getChildren()[i]);
 
         child->ForAllChildrenRecursively_PostOrderA(on_item,userdata,deep+1,root);
         on_item(child,userdata,deep,root);
@@ -507,6 +501,48 @@ const int64_t *XML_Item::getInt64Ptr() const
         return &p_result;
     }
     return nullptr;
+}
+
+XML_Binary_Data_Ref XML_Item::getData()
+{
+    XML_Binary_Data_Ref R = {type: XBT_UNKNOWN,data: nullptr,size: 0};
+    if (this == nullptr) return R;
+    CHECK_AA_THIS;
+
+    char *p = reinterpret_cast<char*>(this+1)
+        +paramcount * sizeof(XML_Param_Description)
+        +childcount * sizeof(relative_ptr_t);
+    R.type = static_cast<XML_Binary_Type>(*(p++));
+
+    if (XBT_IS_4(R.type)) 
+    {
+        AA(p);
+        R.data = p;
+        R.size = 4;
+    }
+    else if (XBT_IS_8(R.type))
+    {
+        AA8(p);
+        R.data = p;
+        R.size = 8;
+    }
+    if (R.type == XBT_STRING) 
+    {
+        R.data = p;
+        R.size = strlen(p)+1;
+    }
+    else if (XBT_IS_VARSIZE(R.type)) 
+    {
+        AA(p);
+        R.data = p;
+        R.size = 4 + *reinterpret_cast<int32_t*>(R.data);
+    }
+    else 
+    {
+        R.data = p;
+        R.size = XBT_FIXEDSIZE(R.type);
+    }
+    return R;
 }
 
 void XML_Item::write(std::ostream& os,XB_reader &R,int deep) 
