@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 
+const char HEX[16+1] = "0123456789abcdef";
 
 bool WriteToFile(const char *filename,const char *fmt,...)
 {

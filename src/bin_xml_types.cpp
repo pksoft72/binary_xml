@@ -301,6 +301,12 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             strcpy(*_wp,src);
             *_wp += strlen(src)+1;
             return true;
+        case XBT_SHA1:
+            {
+                AA(*_wp);
+                int scanned = ScanHex(src,reinterpret_cast<uint8_t *>(*_wp),20);
+                return scanned == 20;
+            }
         default:
             fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
             return false;
@@ -516,6 +522,18 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
 
                 offset += chunk;
                 return strlen(dst);
+            }
+        case XBT_SHA1:
+            {
+                const uint8_t *p = reinterpret_cast<const uint8_t *>(data);
+                for(int i = 0;i < 20;i++)   
+                {
+                    dst[i*2] = HEX[*p >> 4];
+                    dst[i*2+1] = HEX[*p & 0xf];
+                    p++;
+                }
+                dst[40] = '\0';
+                return 40;
             }
         default:
             assert(false);

@@ -753,7 +753,11 @@ const char *Bin_xml_creator::WriteNode(char **_wp,void *element)
         {
             type = XBT_Detect(value);
             *((*_wp)++) = type;
-            ASSERT_NO_RET_NULL(1202,XBT_FromString(value,type,_wp,data+data_size_allocated));
+            if (!XBT_FromString(value,type,_wp,data+data_size_allocated))
+            {   
+                LOG_ERROR("[A1202] XBT_FromString(%s,%s,...) failed",value,XML_BINARY_TYPE_NAMES[type]);
+                return nullptr;
+            }
         }
     }
 //-----------------------------------------------

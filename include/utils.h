@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
+extern const char HEX[16+1];
+
 off_t FileGetSizeByFd(int fd);
 
 bool WriteToFile(const char *filename,const char *fmt,...);
