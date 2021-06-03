@@ -72,7 +72,10 @@ XML_Binary_Type XBT_Detect(const char *value)
         else return XBT_FLOAT;
     }
     if (digits+hexadigits == 40 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
+    {
+        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
+    }
 // DISABLED - not fully supported yet
 //  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
 //      return XBT_HEX;

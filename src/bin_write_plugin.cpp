@@ -1429,8 +1429,8 @@ int  BW_plugin::getDataSize()
 
 BW_element* BW_plugin::tag(int16_t id)
 {
-    XML_Binary_Type tag_type = pool->getTagType(id);
-    assert(tag_type == XBT_NULL || tag_type == XBT_VARIANT);
+//    XML_Binary_Type tag_type = pool->getTagType(id);
+//    assert(tag_type == XBT_NULL || tag_type == XBT_VARIANT);
 
     ASSERT_NO_RET_NULL(1145,makeSpace(BW2_INITIAL_FILE_SIZE));
 
@@ -1586,8 +1586,11 @@ BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
 
 BW_element* BW_plugin::tagData(int16_t id,XML_Binary_Data_Ref &data)
 {
-    ASSERT_NO_RET_NULL(0,this != nullptr);
+    ASSERT_NO_RET_NULL(2003,this != nullptr);
     ASSERT_NO_RET_NULL(2002,makeSpace(BW2_INITIAL_FILE_SIZE+8+data.size));
+
+    if (data.type == XBT_NULL)
+        return tag(id);
 
     XML_Binary_Type tag_type = pool->getTagType(id);
     if (tag_type != data.type)
@@ -1597,7 +1600,7 @@ BW_element* BW_plugin::tagData(int16_t id,XML_Binary_Data_Ref &data)
         char *p = buffer;
         char *p_limit = buffer + data.size + 64;
         // bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
-        ASSERT_NO_RET_NULL(0,XBT_FromString(data.data,tag_type,&p,p_limit));
+        ASSERT_NO_RET_NULL(2004,XBT_FromString(data.data,tag_type,&p,p_limit));
         data.data = buffer;
         data.size = p - buffer;
     }
@@ -1691,6 +1694,7 @@ BW_element*     BW_plugin::CopyAll(BW_element *dst,XB_reader &xb,XML_Item *src)
 {
 // this should recursively copy whole subtree of src
 // must be empty element
+    ASSERT_NO_RET_NULL(2005,dst != nullptr);
     ASSERT_NO_RET_NULL(1997,dst->first_child == 0);
     ASSERT_NO_RET_NULL(1998,dst->first_attribute == 0);
     ASSERT_NO_RET_NULL(1999,dst->identification == (int16_t)src->name); // must be the same element type

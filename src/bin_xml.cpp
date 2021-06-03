@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include "utils.h"
+#include <assert.h>
 
 #include "bin_xml_packer.h" // for autoconversion
 
@@ -20,7 +21,7 @@
 namespace pklib_xml
 {
 
-const char *XML_BINARY_TYPE_NAMES[XBT_LAST] = {
+const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "NULL",
     "VARIANT",
     "STRING",
@@ -38,7 +39,8 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST] = {
     "Unknown??",
     "UINT64",
     "UNIX_TIME64_MSEC",
-    "UINT32"
+    "UINT32",
+    "!!!!"
 };
 
 bool XML_Item::Check(XB_reader *R,bool recursive) 
@@ -526,7 +528,7 @@ XML_Binary_Data_Ref XML_Item::getData()
         R.data = p;
         R.size = 8;
     }
-    if (R.type == XBT_STRING) 
+    else if (R.type == XBT_STRING) 
     {
         R.data = p;
         R.size = strlen(p)+1;
@@ -542,6 +544,7 @@ XML_Binary_Data_Ref XML_Item::getData()
         R.data = p;
         R.size = XBT_FIXEDSIZE(R.type);
     }
+    assert(R.size >= 0);
     return R;
 }
 

@@ -69,7 +69,7 @@ struct XML_Binary_Data_Ref
 };
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes
-extern const char *XML_BINARY_TYPE_NAMES[XBT_LAST];
+extern const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1];
 
 XML_Binary_Type XBT_Detect(const char *value);
 XML_Binary_Type XBT_Detect2(const char *value,XML_Binary_Type expected);
