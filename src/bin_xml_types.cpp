@@ -73,7 +73,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     }
     if (digits+hexadigits == 40 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
     {
-        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
+//        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
 // DISABLED - not fully supported yet
@@ -105,7 +105,7 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
         const XML_Binary_Type number_types[] = {XBT_INT32,XBT_FLOAT,XBT_INT64,XBT_DOUBLE};
         return number_types[det_mask | exp_mask];
     }
-
+//    std::cout << ANSI_MAGENTA_DARK "Join types " << XML_BINARY_TYPE_NAMES[A] << " + " << XML_BINARY_TYPE_NAMES[B] << " --> VARIANT" ANSI_RESET_LF;
     return XBT_VARIANT;
     
 }
@@ -312,6 +312,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             }
         default:
             fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+//            assert(false);
             return false;
     // TODO: support all types!
     }
@@ -528,15 +529,18 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
             }
         case XBT_SHA1:
             {
+                if (offset >= 20) return 0;
                 const uint8_t *p = reinterpret_cast<const uint8_t *>(data);
-                for(int i = 0;i < 20;i++)   
+                for(int i = offset;i < 20;i++)   
                 {
                     dst[i*2] = HEX[*p >> 4];
                     dst[i*2+1] = HEX[*p & 0xf];
                     p++;
                 }
                 dst[40] = '\0';
-                return 40;
+                int ret = 20-offset;
+                offset = 20;
+                return ret;
             }
         default:
             assert(false);

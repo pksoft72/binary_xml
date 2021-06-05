@@ -537,6 +537,7 @@ XML_Binary_Data_Ref BW_element::getData()
     XML_Binary_Data_Ref R = {type:XBT_UNKNOWN,data:nullptr,size:0};
     if (this == nullptr) return R;
     R.data = reinterpret_cast<char*>(this+1);
+    R.type = static_cast<XML_Binary_Type>(value_type);
     if (value_type == XBT_STRING) 
         R.size = 1+strlen(R.data);
     else if (XBT_IS_4(value_type)) 
