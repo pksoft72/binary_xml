@@ -21,27 +21,6 @@
 namespace pklib_xml
 {
 
-const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
-    "NULL",
-    "VARIANT",
-    "STRING",
-    "BLOB",
-    "INT32",
-    "INT64",
-    "FLOAT",
-    "DOUBLE",
-    "HEX",
-    "GUID",
-    "SHA1",
-    "UNIX_TIME",
-    "IPv4",
-    "IPv6",
-    "Unknown??",
-    "UINT64",
-    "UNIX_TIME64_MSEC",
-    "UINT32",
-    "!!!!"
-};
 
 bool XML_Item::Check(XB_reader *R,bool recursive) 
 // I want to check everything to be 100% sure, data are ok
