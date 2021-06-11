@@ -7,6 +7,28 @@
 namespace pklib_xml
 {
 
+const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
+    "NULL",
+    "VARIANT",
+    "STRING",
+    "BLOB",
+    "INT32",
+    "INT64",
+    "FLOAT",
+    "DOUBLE",
+    "HEX",
+    "GUID",
+    "SHA1",
+    "UNIX_TIME",
+    "IPv4",
+    "IPv6",
+    "Unknown??",
+    "UINT64",
+    "UNIX_TIME64_MSEC",
+    "UINT32",
+    "!!!!"
+};
+
 XML_Binary_Type XBT_Detect(const char *value)
 {
     if (value == nullptr) return XBT_NULL;
@@ -285,6 +307,11 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
 {
     switch (type)
     {
+        case XBT_NULL:
+            if (strlen(src) == 0) return true;
+            fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+            break;
+            
         case XBT_INT32:
             AA(*_wp);
             *reinterpret_cast<int32_t*>(*_wp) = atoi(src);
@@ -308,6 +335,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             {
                 AA(*_wp);
                 int scanned = ScanHex(src,reinterpret_cast<uint8_t *>(*_wp),20);
+                *_wp += scanned;
                 return scanned == 20;
             }
         default:
@@ -631,6 +659,70 @@ void XBT_Free()
     delete [] g_output_buffer;
     g_output_buffer = nullptr;
     g_output_buffer_size = 0;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = nullptr)
+{
+    int failures = 0;
+    XML_Binary_Type type_detected = XBT_Detect(src);
+    if (type != type_detected)
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Value \"" << src << "\" was detected as " << XML_BINARY_TYPE_NAMES[type_detected] << ANSI_RESET_LF;
+
+    const int buffer_len = strlen(src)*2;
+    char buffer[buffer_len]; // -std=c++1y 
+    char *p = buffer;
+    char *p_limit = buffer + buffer_len;
+
+    
+    if (!XBT_FromString(src,type,&p,p_limit))
+    {
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Cannot convert value \"" << src << "\" to binary representation." << ANSI_RESET_LF;
+        failures++;
+    }
+    
+    int dst_size = p - buffer;
+    char hex_image[dst_size*2+1];
+
+    for(int i = 0;i < dst_size;i++)   
+    {
+        uint8_t V = buffer[i];
+        hex_image[i*2] = HEX[V >> 4];
+        hex_image[i*2+1] = HEX[V & 0xf];
+    }
+    hex_image[dst_size*2] = '\0';
+
+    if (hex != nullptr)
+    {
+        if (strcmp(hex,hex_image) != 0)
+        {
+            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Unexpected image " << hex_image << "\n should be " ANSI_GREEN_BRIGHT << hex  << ANSI_RESET_LF;
+            failures++;
+        }
+    }
+    else
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_MAGENTA_BRIGHT "Please check image of " << src << " --(" << dst_size << ")--> " << hex_image << ANSI_RESET_LF;
+
+    return failures;
+}
+
+bool XBT_Test()
+{
+    bool ok;
+    ok = XBT_TestType(XBT_STRING,"Petr Kundrata","50657472204b756e647261746100") && ok;
+    ok = XBT_TestType(XBT_NULL,"","") && ok;
+
+    ok = XBT_TestType(XBT_INT32,"125","7d000000") && ok;
+    ok = XBT_TestType(XBT_INT32,"2147483647","ffffff7f") && ok;
+    ok = XBT_TestType(XBT_INT32,"-2147483648","00000080") && ok;
+   
+    ok = XBT_TestType(XBT_INT64,"-2147483648000","000000000cfeffff") && ok;
+    
+
+    ok = XBT_TestType(XBT_SHA1,"9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c","9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c") && ok;
+    
+    return ok;
 }
 
 }

@@ -1,6 +1,7 @@
 #include "bin_xml.h"
 #include "bin_xml_creator.h"
 #include "bin_xml_packer.h"
+#include "bin_xml_types.h"
 
 #include <stdio.h>
 #include <string.h> // strcpy...
@@ -14,6 +15,9 @@ int main(int argc,char **argv)
     
     for(int i = 1;i < argc;i++)
     {
+        if (strcmp(argv[i],"--test") == 0)
+            return (pklib_xml::XBT_Test() ? 0 : 1);
+
         char dst[PATH_MAX];
         strcpy(dst,argv[i]);
         char *dot = strrchr(dst,'.');

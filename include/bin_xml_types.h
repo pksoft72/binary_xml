@@ -95,5 +95,5 @@ void            XBT_ToXMLStream(XML_Binary_Type type,const char *data,std::ostre
 char*           XBT_Buffer(int size);
 void            XBT_Free();
 
-
+bool            XBT_Test();
 } // pklib_xml::
