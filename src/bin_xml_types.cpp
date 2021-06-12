@@ -670,7 +670,9 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
     if (type != type_detected)
         std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Value \"" << src << "\" was detected as " << XML_BINARY_TYPE_NAMES[type_detected] << ANSI_RESET_LF;
 
-    const int buffer_len = strlen(src)*2;
+    int src_size = strlen(src);
+
+    const int buffer_len = src_size*2;
     char buffer[buffer_len]; // -std=c++1y 
     char *p = buffer;
     char *p_limit = buffer + buffer_len;
@@ -703,6 +705,31 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
     }
     else
         std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_MAGENTA_BRIGHT "Please check image of " << src << " --(" << dst_size << ")--> " << hex_image << ANSI_RESET_LF;
+
+    
+    int offset = 0;
+    int str_offset = 0;
+    for(;;)
+    {
+        char str_buffer[4096+1];
+        MEMSET(str_buffer,0);
+
+        int size = XBT_ToStringChunk(type,buffer,offset,str_buffer,sizeof(str_buffer)-1);
+        if (size <= 0) break;
+
+        if (size + str_offset > src_size)
+        {
+            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Source " << src << " with length " << src_size << " is converted to length " << (size + str_offset) << "!!!"  ANSI_RESET_LF;
+            failures++;
+        }        
+        else if (memcmp(src+str_offset,str_buffer,size) != 0)
+        {
+            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Conversion of " << src+str_offset << " failed with part " << str_buffer << " at offset " << str_offset << "!!!"  ANSI_RESET_LF;
+            failures++;
+        }
+        
+        str_offset += size;
+    }
 
     return failures;
 }
