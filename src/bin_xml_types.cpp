@@ -566,7 +566,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                     p++;
                 }
                 dst[40] = '\0';
-                int ret = 20-offset;
+                int ret = 2*(20-offset);
                 offset = 20;
                 return ret;
             }
@@ -729,6 +729,12 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
         }
         
         str_offset += size;
+    }
+    if (str_offset != src_size)
+    {
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Conversion of " << src+str_offset 
+            << " results to length " << str_offset << " and not not " << src_size << "!!!"  ANSI_RESET_LF;
+        failures++;
     }
 
     return failures;

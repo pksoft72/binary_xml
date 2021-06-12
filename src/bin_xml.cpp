@@ -198,26 +198,6 @@ XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X)
     return D;
 }
     
-/*
-int XML_Param_Description::getData(const XML_Item *X,const char *&content) const
-{
-    if (this == nullptr || X == nullptr) 
-    {
-        content = nullptr;
-        return 0;
-    }
-    
-    if (XBT_IS_4(type)) 
-    {
-        content = reinterpret_cast<const char*>(&data);
-        return 4;
-    }
-    content = reinterpret_cast<const char*>(X) + data;
-    if (type == XBT_STRING) return 1+strlen(content);
-    if (XBT_IS_VARSIZE(type)) return 4 + *reinterpret_cast<const int32_t*>(content);
-    return XBT_FIXEDSIZE(type);
-}
-*/
 //-------------------------------------------------------------------------------------------------
 
 XML_Param_Description *XML_Item::getParamByIndex(int i)
@@ -520,6 +500,7 @@ XML_Binary_Data_Ref XML_Item::getData()
     }
     else 
     {
+        AA(p);
         R.data = p;
         R.size = XBT_FIXEDSIZE(R.type);
     }
