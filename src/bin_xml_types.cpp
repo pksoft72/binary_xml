@@ -110,10 +110,12 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
     if (A == XBT_VARIANT) return A; // non compatible types
     if (A == XBT_NULL) return B;
     if (A == XBT_LAST) return B; // not used yet
+    if (A == XBT_UNKNOWN) return B;
     
     if (B == XBT_VARIANT) return B; // non compatible types
     if (B == XBT_NULL) return A;
     if (B == XBT_LAST) return A; // not used yet
+    if (B == XBT_UNKNOWN) return A;
 
     if (B == A) return B;
 
@@ -127,7 +129,7 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
         const XML_Binary_Type number_types[] = {XBT_INT32,XBT_FLOAT,XBT_INT64,XBT_DOUBLE};
         return number_types[det_mask | exp_mask];
     }
-//    std::cout << ANSI_MAGENTA_DARK "Join types " << XML_BINARY_TYPE_NAMES[A] << " + " << XML_BINARY_TYPE_NAMES[B] << " --> VARIANT" ANSI_RESET_LF;
+    //std::cout << ANSI_MAGENTA_DARK "Join types " << XML_BINARY_TYPE_NAMES[A] << " + " << XML_BINARY_TYPE_NAMES[B] << " --> VARIANT" ANSI_RESET_LF;
     return XBT_VARIANT;
     
 }
@@ -371,6 +373,8 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_FLOAT:
         case XBT_UNIX_TIME:
         case XBT_UNIX_TIME64_MSEC:
+        case XBT_SHA1:
+        case XBT_GUID:
             {
                 
                 int offset = 0;
