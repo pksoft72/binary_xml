@@ -33,6 +33,7 @@ XML_Binary_Type XBT_Detect(const char *value)
 {
     if (value == nullptr) return XBT_NULL;
     if (*value == '\0') return XBT_NULL;
+    int str_len = strlen(value);
     int digits = 0;
     int hexadigits = 0;
     int negative = 0;
@@ -41,6 +42,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     int colons = 0;
     int others = 0;
     int exponent = 0;
+    int spaces = 0;
     int exponent_pos = -1;
     bool overflow64 = false;
     
@@ -75,6 +77,8 @@ XML_Binary_Type XBT_Detect(const char *value)
             dots++;
         else if (*p == ':')
             colons++;
+        else if (*p == ' ')
+            spaces++;
         else
             others++;
     }
@@ -98,6 +102,10 @@ XML_Binary_Type XBT_Detect(const char *value)
 //        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
+// 2021-06-15 22:41:40
+    if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
+        value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')
+        return XBT_UNIX_TIME;
 // DISABLED - not fully supported yet
 //  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
 //      return XBT_HEX;
@@ -311,7 +319,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
     {
         case XBT_NULL:
             if (strlen(src) == 0) return true;
-            fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+            fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
             break;
             
         case XBT_INT32:
@@ -341,7 +349,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 return scanned == 20;
             }
         default:
-            fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+            fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
 //            assert(false);
             return false;
     // TODO: support all types!
@@ -758,6 +766,9 @@ bool XBT_Test()
     
 
     ok = XBT_TestType(XBT_SHA1,"9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c","9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c") && ok;
+
+    ok = XBT_TestType(XBT_UNIX_TIME,"1970-01-01 00:00:00") && ok;
+    ok = XBT_TestType(XBT_UNIX_TIME,"2021-06-15 22:41:40") && ok;
     
     return ok;
 }

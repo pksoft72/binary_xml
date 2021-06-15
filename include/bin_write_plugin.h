@@ -30,6 +30,8 @@
 
 #define BIN_WRITE_CFG_ALWAYS_CREATE_NEW     1
 
+#define MAX_BW_PLUGINS              32
+
 namespace pklib_xml {
 
 // BW = Bin Write
@@ -93,8 +95,11 @@ public:
     BW_element  *attrIPv6(int16_t id,const char *value);
     BW_element  *attrData(int16_t id,XML_Binary_Data_Ref &data);
     BW_element  *attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc);
-
     BW_element  *attrGet(int16_t id);
+    
+    BW_element  *tagGet(int16_t id);
+    BW_element  *tagSetTime(int16_t id,time_t value);
+
     int32_t     *getInt32();
     char        *getStr();
     XML_Binary_Data_Ref getData();
@@ -151,6 +156,8 @@ public:
     char*           allocate(int size);
     char*           allocate8(int size);        // 64 bit aligned value
     BW_element*     new_element(XML_Binary_Type type,int size = 0);
+
+    BW_element*     tagTime(int16_t id,time_t value);
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -178,6 +185,7 @@ public:
         bool CheckExistingFile(int file_size);
     virtual bool Finalize();
 
+    BW_pool*    getPool() { return pool; }
     bool makeSpace(int size);
 
     bool registerTag(int16_t id,const char *name,XML_Binary_Type type);
