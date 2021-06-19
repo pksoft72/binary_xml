@@ -14,6 +14,7 @@ bool Scan(const char *&p,const char *beg);
 bool ScanInt(const char *&p,int &value);
 bool ScanInt64(const char *&p,int64_t &value);
 bool ScanUInt64(const char *&p,uint64_t &value);
+bool ScanUnixTime(const char *&p,uint32_t &value);
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size);
 void SkipSpaces(const char *&p);
 bool SkipLine(const char *&p);
