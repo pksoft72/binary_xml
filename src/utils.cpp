@@ -394,6 +394,19 @@ int ScanHex(const char *&p,uint8_t *dst,int dst_size)
     return dst_size;
 }
 
+const char *Hex2Str(const char *src,int src_size,char *dst)
+{
+    if (src_size < 0) src_size = 0; // don't write to negative indexes!
+    for(int i = 0;i < src_size;i++)
+    {
+        uint8_t value = static_cast<uint8_t>(src[i]);
+        dst[(i << 1)]   = HEX[value >> 4];
+        dst[(i << 1)+1] = HEX[value & 0xf];
+    }
+    dst[src_size << 1] = '\0';
+    return dst;
+}
+
 //-------------------------------------------------------------------------------------------------
 
 bool ScanW(char *&p,const char *beg)

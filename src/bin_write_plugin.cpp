@@ -1695,6 +1695,24 @@ BW_element* BW_plugin::tagData(int16_t id,XML_Binary_Data_Ref &data)
 
 BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
 {
+    va_list ap;
+    va_start(ap,root);
+    BW_element *result = CopyPath_(true,xb,root,ap);
+    va_end(ap);
+    return result;
+}
+
+BW_element* BW_plugin::CopyPathOnly(XB_reader &xb,XML_Item *root,...)
+{
+    va_list ap;
+    va_start(ap,root);
+    BW_element *result = CopyPath_(false,xb,root,ap);
+    va_end(ap);
+    return result;
+}
+
+BW_element* BW_plugin::CopyPath_(bool copy_whole_last_node,XB_reader &xb,XML_Item *root,va_list ap)
+{
 // source root
     if (root == nullptr) return nullptr; // nothing? OK
     ASSERT_NO_RET_NULL(1975,root == xb.getRoot());
@@ -1715,8 +1733,6 @@ BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
         copy = false;
     }
 
-    va_list ap;
-    va_start(ap,root);
 
 //-----------
 
@@ -1731,7 +1747,11 @@ BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
         if (element == nullptr) 
         {
             // Recursive copy of last element
-            if (copy) ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
+            if (copy)
+                if (copy_whole_last_node)
+                    ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
+                else
+                    ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
             break;
         }
         if (copy) ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
@@ -1764,7 +1784,6 @@ BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
     }
 //-----------
 
-    va_end(ap);
     return dst;
 }
 

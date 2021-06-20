@@ -225,7 +225,10 @@ public: // tag creation
     BW_element*     tagData(int16_t id,XML_Binary_Data_Ref &data);
     
     BW_element*     CopyPath(XB_reader &xb,XML_Item *root,...);
+    BW_element*     CopyPathOnly(XB_reader &xb,XML_Item *root,...);
     BW_element*     CopyAll(BW_element *dst,XB_reader &xb,XML_Item *src);
+private:
+    BW_element*     CopyPath_(bool copy_whole_last_node,XB_reader &xb,XML_Item *root,va_list ap);
 public: // Bin_src_plugin
     virtual void *getRoot();
     virtual const char *getNodeName(void *element);

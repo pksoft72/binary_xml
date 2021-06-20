@@ -583,14 +583,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
         case XBT_SHA1:
             {
                 if (offset >= 20) return 0;
-                const uint8_t *p = reinterpret_cast<const uint8_t *>(data);
-                for(int i = offset;i < 20;i++)   
-                {
-                    dst[i*2] = HEX[*p >> 4];
-                    dst[i*2+1] = HEX[*p & 0xf];
-                    p++;
-                }
-                dst[40] = '\0';
+                Hex2Str(data+offset,20-offset,dst);
                 int ret = 2*(20-offset);
                 offset = 20;
                 return ret;
