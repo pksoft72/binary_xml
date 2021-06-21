@@ -33,6 +33,7 @@ XML_Binary_Type XBT_Detect(const char *value)
 {
     if (value == nullptr) return XBT_NULL;
     if (*value == '\0') return XBT_NULL;
+    int str_len = strlen(value);
     int digits = 0;
     int hexadigits = 0;
     int negative = 0;
@@ -41,6 +42,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     int colons = 0;
     int others = 0;
     int exponent = 0;
+    int spaces = 0;
     int exponent_pos = -1;
     bool overflow64 = false;
     
@@ -75,6 +77,8 @@ XML_Binary_Type XBT_Detect(const char *value)
             dots++;
         else if (*p == ':')
             colons++;
+        else if (*p == ' ')
+            spaces++;
         else
             others++;
     }
@@ -98,6 +102,10 @@ XML_Binary_Type XBT_Detect(const char *value)
 //        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
+// 2021-06-15 22:41:40
+    if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
+        value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')
+        return XBT_UNIX_TIME;
 // DISABLED - not fully supported yet
 //  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
 //      return XBT_HEX;
@@ -110,10 +118,12 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
     if (A == XBT_VARIANT) return A; // non compatible types
     if (A == XBT_NULL) return B;
     if (A == XBT_LAST) return B; // not used yet
+    if (A == XBT_UNKNOWN) return B;
     
     if (B == XBT_VARIANT) return B; // non compatible types
     if (B == XBT_NULL) return A;
     if (B == XBT_LAST) return A; // not used yet
+    if (B == XBT_UNKNOWN) return A;
 
     if (B == A) return B;
 
@@ -127,7 +137,7 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
         const XML_Binary_Type number_types[] = {XBT_INT32,XBT_FLOAT,XBT_INT64,XBT_DOUBLE};
         return number_types[det_mask | exp_mask];
     }
-//    std::cout << ANSI_MAGENTA_DARK "Join types " << XML_BINARY_TYPE_NAMES[A] << " + " << XML_BINARY_TYPE_NAMES[B] << " --> VARIANT" ANSI_RESET_LF;
+    //std::cout << ANSI_MAGENTA_DARK "Join types " << XML_BINARY_TYPE_NAMES[A] << " + " << XML_BINARY_TYPE_NAMES[B] << " --> VARIANT" ANSI_RESET_LF;
     return XBT_VARIANT;
     
 }
@@ -309,7 +319,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
     {
         case XBT_NULL:
             if (strlen(src) == 0) return true;
-            fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+            fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
             break;
             
         case XBT_INT32:
@@ -338,8 +348,21 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 *_wp += scanned;
                 return scanned == 20;
             }
+        case XBT_UNIX_TIME:
+            {
+                AA(*_wp);
+                uint32_t tm0;
+                if (!ScanUnixTime(src,tm0))
+                {
+                    fprintf(stderr,"UNIX_TIME: Conversion of value '%s' to binary representation failed!" ANSI_RESET_LF,src);
+                    return false;
+                }
+                *reinterpret_cast<uint32_t*>(*_wp) = tm0;
+                *_wp += sizeof(uint32_t);
+                return true;
+            }
         default:
-            fprintf(stderr,"Conversion of value '%s' (type %s) to binary representation is not defined!",src,XML_BINARY_TYPE_NAMES[type]);
+            fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
 //            assert(false);
             return false;
     // TODO: support all types!
@@ -371,6 +394,8 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_FLOAT:
         case XBT_UNIX_TIME:
         case XBT_UNIX_TIME64_MSEC:
+        case XBT_SHA1:
+        case XBT_GUID:
             {
                 
                 int offset = 0;
@@ -516,7 +541,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 memset(dst,0,dst_size);
 
                 gmtime_r(&tm0,&tm1);
-                snprintf(dst,dst_size,"%04d-%02d-%02d %2d:%02d:%02d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec);
+                snprintf(dst,dst_size,"%04d-%02d-%02d %02d:%02d:%02d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec);
                 return strlen(dst);
             }
         case XBT_UNIX_TIME64_MSEC:
@@ -558,15 +583,8 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
         case XBT_SHA1:
             {
                 if (offset >= 20) return 0;
-                const uint8_t *p = reinterpret_cast<const uint8_t *>(data);
-                for(int i = offset;i < 20;i++)   
-                {
-                    dst[i*2] = HEX[*p >> 4];
-                    dst[i*2+1] = HEX[*p & 0xf];
-                    p++;
-                }
-                dst[40] = '\0';
-                int ret = 20-offset;
+                Hex2Str(data+offset,20-offset,dst);
+                int ret = 2*(20-offset);
                 offset = 20;
                 return ret;
             }
@@ -668,9 +686,11 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
     int failures = 0;
     XML_Binary_Type type_detected = XBT_Detect(src);
     if (type != type_detected)
-        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Value \"" << src << "\" was detected as " << XML_BINARY_TYPE_NAMES[type_detected] << ANSI_RESET_LF;
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T1 " ANSI_RED_BRIGHT "Value \"" << src << "\" was detected as " << XML_BINARY_TYPE_NAMES[type_detected] << ANSI_RESET_LF;
 
-    const int buffer_len = strlen(src)*2;
+    int src_size = strlen(src);
+
+    const int buffer_len = src_size*2;
     char buffer[buffer_len]; // -std=c++1y 
     char *p = buffer;
     char *p_limit = buffer + buffer_len;
@@ -678,7 +698,7 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
     
     if (!XBT_FromString(src,type,&p,p_limit))
     {
-        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Cannot convert value \"" << src << "\" to binary representation." << ANSI_RESET_LF;
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T2 " ANSI_RED_BRIGHT "Cannot convert value \"" << src << "\" to binary representation." << ANSI_RESET_LF;
         failures++;
     }
     
@@ -697,12 +717,43 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
     {
         if (strcmp(hex,hex_image) != 0)
         {
-            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_RED_BRIGHT "Unexpected image " << hex_image << "\n should be " ANSI_GREEN_BRIGHT << hex  << ANSI_RESET_LF;
+            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T3 " ANSI_RED_BRIGHT "Unexpected image " << hex_image << "\n should be " ANSI_GREEN_BRIGHT << hex  << ANSI_RESET_LF;
             failures++;
         }
     }
     else
-        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": " ANSI_MAGENTA_BRIGHT "Please check image of " << src << " --(" << dst_size << ")--> " << hex_image << ANSI_RESET_LF;
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T4 " ANSI_MAGENTA_BRIGHT "Please check image of " << src << " --(" << dst_size << ")--> " << hex_image << ANSI_RESET_LF;
+
+    
+    int offset = 0;
+    int str_offset = 0;
+    for(;;)
+    {
+        char str_buffer[4096+1];
+        MEMSET(str_buffer,0);
+
+        int size = XBT_ToStringChunk(type,buffer,offset,str_buffer,sizeof(str_buffer)-1);
+        if (size <= 0) break;
+
+        if (size + str_offset > src_size)
+        {
+            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T5 " ANSI_RED_BRIGHT "Source " << src << " with length " << src_size << " is converted to length " << (size + str_offset) << "!!!"  ANSI_RESET_LF;
+            failures++;
+        }        
+        else if (memcmp(src+str_offset,str_buffer,size) != 0)
+        {
+            std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T6 " ANSI_RED_BRIGHT "Conversion of " << src+str_offset << " failed with part " << str_buffer << " at offset " << str_offset << "!!!"  ANSI_RESET_LF;
+            failures++;
+        }
+        
+        str_offset += size;
+    }
+    if (str_offset != src_size)
+    {
+        std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T7 " ANSI_RED_BRIGHT "Conversion of " << src+str_offset 
+            << " results to length " << str_offset << " and not not " << src_size << "!!!"  ANSI_RESET_LF;
+        failures++;
+    }
 
     return failures;
 }
@@ -721,6 +772,9 @@ bool XBT_Test()
     
 
     ok = XBT_TestType(XBT_SHA1,"9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c","9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c") && ok;
+
+    ok = XBT_TestType(XBT_UNIX_TIME,"1970-01-01 00:00:00", "00000000") && ok;
+    ok = XBT_TestType(XBT_UNIX_TIME,"2021-06-15 22:41:40", "a42cc960") && ok;
     
     return ok;
 }

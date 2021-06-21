@@ -34,6 +34,24 @@
 
 namespace pklib_xml {
 
+class BW_plugins
+{
+private:
+    BW_plugin *plugins[MAX_BW_PLUGINS];
+    int        plugins_count;
+public:
+    BW_plugins();
+    virtual ~BW_plugins();
+
+    bool registerPlugin(BW_plugin *plugin);
+    bool unregisterPlugin(BW_plugin *plugin);
+    BW_plugin *getPlugin(BW_pool *pool);
+};
+
+BW_plugins plugins;
+
+//-------------------------------------------------------------------------------------------------
+
 void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags)
 {
     assert(sizeof(*this) == 24);
@@ -497,7 +515,6 @@ BW_element*     BW_element::attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Descrip
     return attrData(param_desc->name,data);
 }
 
-
 BW_element  *BW_element::attrGet(int16_t id)
 {
     if (this == nullptr) return nullptr;
@@ -513,6 +530,44 @@ BW_element  *BW_element::attrGet(int16_t id)
     }
     return nullptr;
 }
+
+//-------------------------------------------------------------------------------------------------
+
+BW_element  *BW_element::tagGet(int16_t id)
+{
+    if (this == nullptr) return nullptr;
+    if (first_child == 0) return nullptr;
+
+    BW_element *A = BWE(first_child);
+    for(;;)
+    {
+        if (A->identification == id)
+            return A;
+        if (A->next == first_child) break; // not found
+        A = BWE(A->next);
+    }
+    return nullptr;
+}
+
+BW_element  *BW_element::tagSetTime(int16_t id,time_t value)
+{
+    if (this == nullptr) return nullptr;
+    BW_element *target = tagGet(id);
+    if (target != nullptr)
+    {
+        time_t *tm = reinterpret_cast<time_t*>(target+1);
+        *tm = value;
+    }
+    else
+    {
+        target = getPool()->tagTime(id,value);
+        add(target);
+    }
+
+    return target;
+}
+
+//-------------------------------------------------------------------------------------------------
 
 int32_t *BW_element::getInt32()
 {
@@ -939,7 +994,14 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
     int size2 = XBT_Size(type,size);
     if (size2 < 0) return nullptr;
     BW_element* result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
-    if (result == nullptr) return nullptr; // error message already shown in allocate
+    if (result == nullptr) // need makeSpace
+    {
+        BW_plugin *plugin = plugins.getPlugin(this);
+        ASSERT_NO_RET_NULL(2012,plugin != nullptr);
+        ASSERT_NO_RET_NULL(2013,plugin->makeSpace(sizeof(BW_element)+size2));
+        result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
+        if (result == nullptr) return nullptr; // error message already shown in allocate
+    }
     result->value_type = type;
     switch(type)
     {
@@ -951,6 +1013,19 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
         default:
             break;
     }
+    return result;
+}
+
+BW_element* BW_pool::tagTime(int16_t id,time_t value)
+{
+    XML_Binary_Type tag_type = getTagType(id);
+    ASSERT_NO_RET_NULL(2006,tag_type == XBT_UNIX_TIME);
+
+    BW_element* result = new_element(XBT_UNIX_TIME,0);
+    
+    result->init(this,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
+    
+    *reinterpret_cast<uint32_t*>(result+1) = (uint32_t)value;
     return result;
 }
 
@@ -970,10 +1045,12 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     
 
     Bin_src_plugin::setFilename(filename,".xbw"); // will allocate copy of filename
+    ASSERT_NO_DO_NOTHING(2011,plugins.registerPlugin(this));
 }
  
 BW_plugin::~BW_plugin()
 {
+    ASSERT_NO_DO_NOTHING(2008,plugins.unregisterPlugin(this));
     ASSERT_NO_DO_NOTHING(1965,Finalize());
 }
 
@@ -1618,6 +1695,24 @@ BW_element* BW_plugin::tagData(int16_t id,XML_Binary_Data_Ref &data)
 
 BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
 {
+    va_list ap;
+    va_start(ap,root);
+    BW_element *result = CopyPath_(true,xb,root,ap);
+    va_end(ap);
+    return result;
+}
+
+BW_element* BW_plugin::CopyPathOnly(XB_reader &xb,XML_Item *root,...)
+{
+    va_list ap;
+    va_start(ap,root);
+    BW_element *result = CopyPath_(false,xb,root,ap);
+    va_end(ap);
+    return result;
+}
+
+BW_element* BW_plugin::CopyPath_(bool copy_whole_last_node,XB_reader &xb,XML_Item *root,va_list ap)
+{
 // source root
     if (root == nullptr) return nullptr; // nothing? OK
     ASSERT_NO_RET_NULL(1975,root == xb.getRoot());
@@ -1638,8 +1733,6 @@ BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
         copy = false;
     }
 
-    va_list ap;
-    va_start(ap,root);
 
 //-----------
 
@@ -1654,7 +1747,11 @@ BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
         if (element == nullptr) 
         {
             // Recursive copy of last element
-            if (copy) ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
+            if (copy)
+                if (copy_whole_last_node)
+                    ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
+                else
+                    ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
             break;
         }
         if (copy) ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
@@ -1687,7 +1784,6 @@ BW_element* BW_plugin::CopyPath(XB_reader &xb,XML_Item *root,...)
     }
 //-----------
 
-    va_end(ap);
     return dst;
 }
 
@@ -1874,6 +1970,45 @@ const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type 
 }
 
 //-------------------------------------------------------------------------------------------------
+
+BW_plugins::BW_plugins()
+{
+    MEMSET(plugins,0);
+    plugins_count = 0;
+}
+
+BW_plugins::~BW_plugins()
+{
+    for(int i = 0;i < plugins_count;i++)
+        std::cerr << ANSI_RED_BRIGHT "BW_plugin " << plugins[i]->getFilename() << " was not correctly unregistered!" ANSI_RESET_LF;
+}
+
+bool BW_plugins::registerPlugin(BW_plugin *plugin)
+{
+    ASSERT_NO_RET_FALSE(2009,plugin != nullptr);
+    ASSERT_NO_RET_FALSE(2010,plugins_count < MAX_BW_PLUGINS);
+    plugins[plugins_count++] = plugin;
+    return true;
+}
+
+bool BW_plugins::unregisterPlugin(BW_plugin *plugin)
+{
+    for(int i = 0;i < plugins_count;i++)
+        if (plugins[i] == plugin)
+        {   
+            memmove(plugins+i,plugins+i+1,--plugins_count - i);
+            return true;
+        }
+    return false;
+}
+
+BW_plugin *BW_plugins::getPlugin(BW_pool *pool)
+{
+    for(int i = 0;i < plugins_count;i++)
+        if (plugins[i]->getPool() == pool)
+            return plugins[i];
+    return nullptr;
+}
 
 }
 #endif // BIN_WRITE_PLUGIN

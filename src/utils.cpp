@@ -219,6 +219,98 @@ bool ScanUInt64(const char *&p,uint64_t &value)
     return true;
 }
 
+const int MONTH_OFFSET[12] = {
+    0,
+    31,
+    31+28,
+    31+28+31,
+    31+28+31+30,
+    31+28+31+30+31,
+    31+28+31+30+31+30,
+    31+28+31+30+31+30+31,
+    31+28+31+30+31+30+31+31,
+    31+28+31+30+31+30+31+31+30,
+    31+28+31+30+31+30+31+31+30+31,
+    31+28+31+30+31+30+31+31+30+31+30,
+    //    31+28+31+30+31+30+31+31+30+31+30+31,
+};
+
+const int LEAP_MONTH_OFFSET[12] = {
+    0,
+    31,
+    31+29,
+    31+29+31,
+    31+29+31+30,
+    31+29+31+30+31,
+    31+29+31+30+31+30,
+    31+29+31+30+31+30+31,
+    31+29+31+30+31+30+31+31,
+    31+29+31+30+31+30+31+31+30,
+    31+29+31+30+31+30+31+31+30+31,
+    31+29+31+30+31+30+31+31+30+31+30,
+    //    31+29+31+30+31+30+31+31+30+31+30+31,
+};
+
+const int MAX_DAY = 0xffffffff/(24*60*60);
+
+bool ScanUnixTime(const char *&p,uint32_t &value)
+{
+    int year,month,day,hour,minute,second;
+
+    const char *beg = p;
+
+    if (!ScanInt(p,year)) return false;    
+    if (*(p++) != '-') return false;
+    if (!ScanInt(p,month)) return false;    
+    if (month < 1 || month > 12) return false; // I dont know months out of range
+    if (*(p++) != '-') return false;
+    if (!ScanInt(p,day)) return false;    
+
+    if (year < 1970) 
+    { 
+        fprintf(stderr,"Unsupported year %d! Unix epoch starts at 1970.",year);
+        return false;
+    }
+
+    value = (year - 1970) * 365;
+    value += (year - 1968 - 1) / 4;   // -1 don't add 1 day for this year now
+    value -= (year - 1900 - 1) / 100;
+    value += (year - 1600 - 1) / 400;
+
+    bool is_leap_year = 
+        ((year % 4) == 0) && !((year % 100) == 0) 
+        || ((year % 400) == 0);
+    if (is_leap_year)   
+        value += LEAP_MONTH_OFFSET[month-1];
+    else
+        value += MONTH_OFFSET[month-1];
+    value += day - 1;
+
+    if (value > MAX_DAY)
+    {
+        fprintf(stderr,"Date %s exceed 32 bit unsigned int! Please use different type.",beg);
+        return false;
+    }
+
+    value *= 24*60*60;
+
+    if (*p == '\0') return true; // end of string
+    if (*(p++) != ' ') return false;
+    
+    if (!ScanInt(p,hour)) return false;    
+    value += hour*3600;
+    if (*p == '\0') return true; // end of string
+    if (*(p++) != ':') return false;
+
+    if (!ScanInt(p,minute)) return false;    
+    value += minute*60;
+    if (*(p++) != ':') return false;
+
+    if (!ScanInt(p,second)) return false;    
+    value += second;
+    return true;
+}
+
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size)
 {
     while (isspace(*p)) p++;
@@ -300,6 +392,19 @@ int ScanHex(const char *&p,uint8_t *dst,int dst_size)
         *(dst++) = value;
     }
     return dst_size;
+}
+
+const char *Hex2Str(const char *src,int src_size,char *dst)
+{
+    if (src_size < 0) src_size = 0; // don't write to negative indexes!
+    for(int i = 0;i < src_size;i++)
+    {
+        uint8_t value = static_cast<uint8_t>(src[i]);
+        dst[(i << 1)]   = HEX[value >> 4];
+        dst[(i << 1)+1] = HEX[value & 0xf];
+    }
+    dst[src_size << 1] = '\0';
+    return dst;
 }
 
 //-------------------------------------------------------------------------------------------------

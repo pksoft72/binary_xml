@@ -40,6 +40,7 @@
 
 
 #define STRCPY(dst,src) do {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';} while(0)
+#define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
 #define LOG_ERROR(fmt,...) fprintf(stderr,ANSI_RED_BRIGHT "Error:" fmt ANSI_RESET_LF,__VA_ARGS__)
 #define LOG(fmt,...) fprintf(stderr,ANSI_BLACK_BRIGHT "%s\t" ANSI_RESET fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__)
