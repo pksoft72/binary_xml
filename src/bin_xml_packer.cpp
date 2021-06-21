@@ -66,7 +66,7 @@ Bin_src_plugin *Bin_src_plugin_selector(const char *filename,Bin_xml_creator *bi
 {
     const char *dot = strrchr(filename,'.');
     if (dot == nullptr) return nullptr; // no extension
-    if (strcmp(dot,".xml") == 0)
+    if (strcmp(dot,".xml") == 0 || strcmp(dot,".xsd") == 0 || strcmp(dot,".wsdl") == 0)
         return new Bin_xml_plugin(filename,bin_xml_creator);
     if (strcmp(dot,".json") == 0)
         return new Bin_json_plugin(filename,bin_xml_creator);
@@ -349,11 +349,19 @@ bool Bin_xml_packer::GetXB(const char *xml_filename,char *xb_filename,const char
 {
     *err_message = nullptr;
 
+    const char *dot = strrchr(xml_filename,'.');
+    if (dot == nullptr)
+    {	
+        *err_message = "expected '.' in filename!";
+        return false;
+    }
+	
     int len = strlen(xml_filename);
     // XML extension check
-    if (len < 4 || strcmp(xml_filename+len-4,".xml") != 0)
+    if (strcmp(dot,".wsdl") == 0) len--; // shorted!
+    else if (strcmp(dot,".xml") != 0 && strcmp(dot,".xsd") != 0)
     {
-        *err_message = "expected file with .xml extension!";
+        *err_message = "expected file with .xml (or .xsd or .wsdl) extension!";
         return false;
     }
     // XB creation

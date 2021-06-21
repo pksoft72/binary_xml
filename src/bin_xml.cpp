@@ -742,7 +742,10 @@ bool XB_reader::Initialize()
 
 // conversion
     char *last_dot = strrchr(this->filename,'.');
-    if (last_dot != nullptr && strcmp(last_dot,".xml") == 0) // it is xml!
+    if (last_dot != nullptr && (
+            strcmp(last_dot,".xml") == 0 || 
+            strcmp(last_dot,".xsd") == 0 || 
+            strcmp(last_dot,".wsdl") == 0)) // it is xml!
     {
         char xml_filename[PATH_MAX];
         STRCPY(xml_filename,this->filename);
