@@ -126,6 +126,25 @@ BW_element* BW_element::add(BW_element *tag)
     return this;
 }
 
+BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
+{
+    if (this == nullptr) return nullptr; // no where to add
+    if (old_value == nullptr) return nullptr; // failure
+
+    ASSERT_NO_RET_NULL(2016,new_value->next == new_value->offset);
+    ASSERT_NO_RET_NULL(2017,new_value->prev == new_value->offset);
+    ASSERT_NO_RET_NULL(2018,new_value->getPool() == old_value->getPool());
+
+    new_value->next = old_value->next;
+    new_value->prev = old_value->prev;
+
+    BWE(new_value->next)->prev = new_value->offset;
+    BWE(new_value->prev)->next = new_value->offset;
+    
+    old_value->flags |= BIN_DELETED;
+    old_value->next = old_value->prev = old_value->offset;
+    return this;
+}
 
 
 
@@ -549,6 +568,51 @@ BW_element  *BW_element::tagGet(int16_t id)
     return nullptr;
 }
 
+BW_element  *BW_element::tag(int16_t id) // find or create
+{
+    if (this == nullptr) return nullptr;
+    BW_element *target = tagGet(id);
+    if (target != nullptr) return target;
+    target = getPool()->tag(id);
+    add(target);
+
+    return target;
+}
+
+BW_element  *BW_element::tagSetString(int16_t id,const char *value)
+{
+    if (this == nullptr) return nullptr;
+
+    BW_element *target = tagGet(id);
+    if (target == nullptr) // no previous value - ok, create new
+    {
+        target = getPool()->tagString(id,value);
+        add(target);
+    }
+    else
+    {
+        bool to_replace = (target->value_type != XBT_STRING);
+        if (!to_replace) // check size
+        {
+            int value_len = (value != nullptr ? strlen(value) : 0);
+            char *dst = reinterpret_cast<char*>(target+1);
+            int target_size = strlen(dst);
+            if (((value_len+1+3) >> 2) <= (target_size+1+3) >> 2)
+                strcpy(dst,value); // shorter or in the same allocation size
+            else
+                to_replace = true;
+        }
+        if (to_replace)
+        {
+            BW_element *new_item = getPool()->tagString(id,value);
+            replace(target,new_item);
+        }
+         
+    }
+
+    return target;
+}
+
 BW_element  *BW_element::tagSetTime(int16_t id,time_t value)
 {
     if (this == nullptr) return nullptr;
@@ -561,6 +625,27 @@ BW_element  *BW_element::tagSetTime(int16_t id,time_t value)
     else
     {
         target = getPool()->tagTime(id,value);
+        add(target);
+    }
+
+    return target;
+}
+
+BW_element  *BW_element::tagSetSHA1(int16_t id,const uint8_t *value)
+{
+    if (this == nullptr) return nullptr;
+    BW_element *target = tagGet(id);
+    if (target != nullptr)
+    {
+        ASSERT_NO_RET_NULL(2019,target->value_type == XBT_SHA1);
+        if (value == nullptr)
+            memset(target+1,0,20);
+        else
+            memcpy(target+1,value,20);
+    }
+    else
+    {
+        target = getPool()->tagSHA1(id,value);
         add(target);
     }
 
@@ -1016,6 +1101,30 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
     return result;
 }
 
+BW_element* BW_pool::tag(int16_t id)
+{
+    XML_Binary_Type tag_type = getTagType(id);
+    ASSERT_NO_RET_NULL(2014,tag_type == XBT_NULL);
+    BW_element* result = new_element(XBT_NULL,0);
+    
+    result->init(this,id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG);
+    return result;
+}
+
+BW_element* BW_pool::tagString(int16_t id,const char *value)
+{
+    XML_Binary_Type tag_type = getTagType(id);
+    ASSERT_NO_RET_NULL(2015,tag_type == XBT_STRING);
+
+    int value_len = (value != nullptr ? strlen(value) : 0);
+
+    BW_element* result = new_element(XBT_STRING,value_len+1);
+    
+    result->init(this,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
+    strcpy(reinterpret_cast<char*>(result+1),value);
+    return result;
+}
+
 BW_element* BW_pool::tagTime(int16_t id,time_t value)
 {
     XML_Binary_Type tag_type = getTagType(id);
@@ -1026,6 +1135,19 @@ BW_element* BW_pool::tagTime(int16_t id,time_t value)
     result->init(this,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
     
     *reinterpret_cast<uint32_t*>(result+1) = (uint32_t)value;
+    return result;
+}
+
+BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
+{
+    XML_Binary_Type tag_type = getTagType(id);
+    ASSERT_NO_RET_NULL(0,tag_type == XBT_SHA1);
+
+    BW_element* result = new_element(XBT_SHA1,0);
+    
+    result->init(this,id,XBT_SHA1,BIN_WRITE_ELEMENT_FLAG);
+    
+    memcpy(result+1,value,20);
     return result;
 }
 
@@ -1608,12 +1730,20 @@ BW_element* BW_plugin::tagGUID(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1134,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagSHA1(int16_t id,const char *value)
+BW_element* BW_plugin::tagSHA1(int16_t id,const uint8_t *value)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1135,NOT_IMPLEMENTED);
-}
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(1135,tag_type == XBT_SHA1);
 
+    ASSERT_NO_RET_NULL(1958,makeSpace(BW2_INITIAL_FILE_SIZE+4));
+
+    BW_element* result = pool->new_element(XBT_SHA1,0);
+    
+    result->init(pool,id,XBT_SHA1,BIN_WRITE_ELEMENT_FLAG);
+   
+    memcpy(result+1,value,20); 
+    return result;
+}
 
 
 
@@ -1622,7 +1752,7 @@ BW_element* BW_plugin::tagTime(int16_t id,time_t value)
     XML_Binary_Type tag_type = pool->getTagType(id);
     ASSERT_NO_RET_NULL(1957,tag_type == XBT_UNIX_TIME || tag_type == XBT_VARIANT);
 
-    ASSERT_NO_RET_NULL(1958,makeSpace(BW2_INITIAL_FILE_SIZE+4));
+    ASSERT_NO_RET_NULL(2020,makeSpace(BW2_INITIAL_FILE_SIZE+4));
 
     BW_element* result = pool->new_element(XBT_UNIX_TIME,0);
     

@@ -27,6 +27,7 @@
 #define BIN_WRITE_ELEMENT_FLAG      1  // element (1) or attribute (0)
 #define BIN_WRITE_REMOTE_VALUE      2  // for sharing big values with stable pointers ouf of pool
 #define BIN_WRITTEN                 4  // this element and all of it's children is written
+#define BIN_DELETED                 8
 
 #define BIN_WRITE_CFG_ALWAYS_CREATE_NEW     1
 
@@ -74,6 +75,7 @@ public:
 
     BW_element* join(BW_element *B);    // this will connect two circles
     BW_element* add(BW_element *tag);
+    BW_element* replace(BW_element *old_value,BW_element *new_value);
 
 
     BW_element  *attrNull(int16_t id);
@@ -98,7 +100,10 @@ public:
     BW_element  *attrGet(int16_t id);
     
     BW_element  *tagGet(int16_t id);
+    BW_element  *tag(int16_t id); // find or create
+    BW_element  *tagSetString(int16_t id,const char *value);
     BW_element  *tagSetTime(int16_t id,time_t value);
+    BW_element  *tagSetSHA1(int16_t id,const uint8_t *value);
 
     int32_t     *getInt32();
     char        *getStr();
@@ -157,7 +162,10 @@ public:
     char*           allocate8(int size);        // 64 bit aligned value
     BW_element*     new_element(XML_Binary_Type type,int size = 0);
 
+    BW_element*     tag(int16_t id);
+    BW_element*     tagString(int16_t id,const char *value);
     BW_element*     tagTime(int16_t id,time_t value);
+    BW_element*     tagSHA1(int16_t id,const uint8_t *value);
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -217,7 +225,7 @@ public: // tag creation
     BW_element*     tagFloat(int16_t id,float value);
     BW_element*     tagDouble(int16_t id,double value);
     BW_element*     tagGUID(int16_t id,const char *value);
-    BW_element*     tagSHA1(int16_t id,const char *value);
+    BW_element*     tagSHA1(int16_t id,const uint8_t *value);
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagTime64(int16_t id,int64_t value);
     BW_element*     tagIPv4(int16_t id,const char *value);
