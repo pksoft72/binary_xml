@@ -40,7 +40,8 @@ enum XML_Binary_Type
     XBT_UINT64  = 15,    // stores as binary int64_t
     XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
     XBT_UINT32  = 17,    // stores as binary int64_t
-    XBT_LAST    = 18,
+    XBT_UNIX_DATE = 18,  // time() / (24*60*60) -> 32 bit
+    XBT_LAST    = 19,
 
 #if 0
 // Array types are not supported now

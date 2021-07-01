@@ -26,6 +26,7 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "UINT64",
     "UNIX_TIME64_MSEC",
     "UINT32",
+    "UNIX_DATE",
     "!!!!"
 };
 
@@ -82,6 +83,8 @@ XML_Binary_Type XBT_Detect(const char *value)
         else
             others++;
     }
+    if (str_len == 10 && digits == 8 && value[4] == '-' && value[7] == '-')
+        return XBT_UNIX_DATE;
     if (digits > 0 && digits <= 19 && hexadigits == 0 && negative <= 1 
         && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     {
@@ -162,8 +165,10 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
         switch (A_type)
         {
             case XBT_INT32:     RETURN_COMPARE_OF_TYPE(int32_t);
+            case XBT_UNIX_DATE: RETURN_COMPARE_OF_TYPE(int32_t);
             case XBT_UINT32:    RETURN_COMPARE_OF_TYPE(uint32_t);
             case XBT_UNIX_TIME: RETURN_COMPARE_OF_TYPE(uint32_t);
+            case XBT_UNIX_TIME64_MSEC: RETURN_COMPARE_OF_TYPE(int64_t); 
             case XBT_INT64:     RETURN_COMPARE_OF_TYPE(int64_t);
             case XBT_UINT64:    RETURN_COMPARE_OF_TYPE(uint64_t);
             case XBT_FLOAT:     RETURN_COMPARE_OF_TYPE(float);
@@ -235,6 +240,9 @@ int XBT_Size(XML_Binary_Type type,int size)
         case XBT_UNIX_TIME:
             ASSERT_NO_RET_N1(1076,size == 0);
             return sizeof(uint32_t);
+        case XBT_UNIX_DATE:
+            ASSERT_NO_RET_N1(0,size == 0);
+            return sizeof(int32_t);
         case XBT_IPv4:
             ASSERT_NO_RET_N1(1077,size == 0);
             return 4;
@@ -268,6 +276,7 @@ int XBT_Align(XML_Binary_Type type)
         case XBT_GUID:
         case XBT_SHA1:
         case XBT_UNIX_TIME:
+        case XBT_UNIX_DATE:
         case XBT_IPv4:
             return 4;
         case XBT_UINT64:
@@ -361,6 +370,19 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 *_wp += sizeof(uint32_t);
                 return true;
             }
+        case XBT_UNIX_DATE:
+            {
+                AA(*_wp);
+                int32_t dt0;
+                if (!ScanUnixDate(src,dt0))
+                {
+                    fprintf(stderr,"UNIX_DATE: Conversion of value '%s' to binary representation failed!" ANSI_RESET_LF,src);
+                    return false;
+                }
+                *reinterpret_cast<int32_t*>(*_wp) = dt0;
+                *_wp += sizeof(int32_t);
+                return true;
+            }
         default:
             fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
 //            assert(false);
@@ -393,6 +415,7 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_UINT64:
         case XBT_FLOAT:
         case XBT_UNIX_TIME:
+        case XBT_UNIX_DATE:
         case XBT_UNIX_TIME64_MSEC:
         case XBT_SHA1:
         case XBT_GUID:
@@ -542,6 +565,15 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
 
                 gmtime_r(&tm0,&tm1);
                 snprintf(dst,dst_size,"%04d-%02d-%02d %02d:%02d:%02d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday,tm1.tm_hour,tm1.tm_min,tm1.tm_sec);
+                return strlen(dst);
+            }
+        case XBT_UNIX_DATE:
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+
+                int32_t value = *reinterpret_cast<const int32_t*>(data);
+                if (UnixDate2Str(value,dst) == nullptr) return 0; // FAIL
                 return strlen(dst);
             }
         case XBT_UNIX_TIME64_MSEC:
@@ -775,6 +807,10 @@ bool XBT_Test()
 
     ok = XBT_TestType(XBT_UNIX_TIME,"1970-01-01 00:00:00", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_TIME,"2021-06-15 22:41:40", "a42cc960") && ok;
+    
+    ok = XBT_TestType(XBT_UNIX_DATE,"1970-01-01", "00000000") && ok;
+    ok = XBT_TestType(XBT_UNIX_DATE,"1969-12-31", "ffffffff") && ok;
+    ok = XBT_TestType(XBT_UNIX_DATE,"2000-01-01", "cd2a0000") && ok; // 10957
     
     return ok;
 }

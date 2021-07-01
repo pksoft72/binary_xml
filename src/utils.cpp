@@ -311,6 +311,138 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
     return true;
 }
 
+bool ScanUnixDate(const char *&p,int32_t &value)
+{
+    int year,month,day;
+
+    const char *beg = p;
+
+    if (!ScanInt(p,year)) return false;    
+    if (*(p++) != '-') return false;
+    if (!ScanInt(p,month)) return false;    
+    if (month < 1 || month > 12) return false; // I dont know months out of range
+    if (*(p++) != '-') return false;
+    if (!ScanInt(p,day)) return false;    
+
+    if (year < -365749 || year > 369689) 
+    { 
+        fprintf(stderr,"Unsupported year %d! Only dates in range -365749 .. 369689 is allowed.",year);
+        return false;
+    }
+
+    value = (year - 1970) * 365;
+    value += (year - 1968 - 1) / 4;   // -1 don't add 1 day for this year now
+    value -= (year - 1900 - 1) / 100;
+    value += (year - 1600 - 1) / 400;
+
+    bool is_leap_year = 
+        ((year % 4) == 0) && !((year % 100) == 0) 
+        || ((year % 400) == 0);
+    if (is_leap_year)   
+        value += LEAP_MONTH_OFFSET[month-1];
+    else
+        value += MONTH_OFFSET[month-1];
+    value += day - 1;
+
+    return true;
+}
+
+#define YEARS400_TO_DAYS (400 * 365 + 100 - 4 + 1) // 400 year + 100 leap days each 4th day - 4 leap day per century + 1 leap day per 400
+#define YEARS100_TO_DAYS (100 * 365 + 25 - 1) // 100 years + 100 leap days each 4th day - 4 leap day per century + 1 leap day per 400
+#define YEARS4_TO_DAYS (4*365 + 1)
+#define YEAR_TO_DAYS 365
+
+const uint8_t DAY2MONTH[365] = {
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12};
+const uint8_t DAY2MONTH_LEAP[366] = {
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12};
+
+char *UnixDate2Str(int32_t value,char *dst)
+{
+    value -= 10957; // 1.1.1970 base to 1.1.2000
+    int year = 2000;
+
+    int y400 = value / YEARS400_TO_DAYS;
+    value -= y400 * YEARS400_TO_DAYS;
+
+
+    year += y400*400;
+
+    // I have value in range 0 .. YEARS400_TO_DAYS - 1
+    // year 0 is leap
+    bool is_leap;
+    if (value < 366)    // 0..365 = 366 days
+        is_leap = true;
+    else
+    {
+        value--; // as if it is not leap
+        int y100 = value / YEARS100_TO_DAYS;
+        value -= y100 * YEARS100_TO_DAYS;
+        
+        year += y100 * 100;
+        // value is 0..YEARS100_TO_DAYS-1
+        if (value < 365)
+            is_leap = false; // first year is not leap
+        else
+        {
+            value++; // add as if 100 was leap year
+            int y4 = value / YEARS4_TO_DAYS;
+            value -= y4 * YEARS400_TO_DAYS;
+
+            year += y4 * 4;
+            if (value < 366) // 1st of it is leap
+                is_leap = true;
+            else
+            {
+                value--;
+                int y1 = value / YEAR_TO_DAYS;
+                value -= y1 * YEAR_TO_DAYS;
+                year += y1;
+                is_leap = false;
+            }
+            
+        }
+    }
+    int month,day;
+    if (is_leap)
+    {
+        ASSERT_NO_RET_NULL(0,value >= 0 && value < 365);
+        month = DAY2MONTH_LEAP[value];
+        day = 1+value - LEAP_MONTH_OFFSET[month-1];
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(0,value >= 0 && value < 366);
+        month = DAY2MONTH[value];
+        day = 1+value - MONTH_OFFSET[month-1];
+    }
+    sprintf(dst,"%04d-%02d-%02d",year,month,day);
+
+    return dst;
+}
+
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size)
 {
     while (isspace(*p)) p++;
