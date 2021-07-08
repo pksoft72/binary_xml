@@ -385,6 +385,7 @@ char *UnixDate2Str(int32_t value,char *dst)
     int year = 2000;
 
     int y400 = value / YEARS400_TO_DAYS;
+    if (value < 0) y400--; // 1999 -> 1600..1999
     value -= y400 * YEARS400_TO_DAYS;
 
 
@@ -409,7 +410,7 @@ char *UnixDate2Str(int32_t value,char *dst)
         {
             value++; // add as if 100 was leap year
             int y4 = value / YEARS4_TO_DAYS;
-            value -= y4 * YEARS400_TO_DAYS;
+            value -= y4 * YEARS4_TO_DAYS;
 
             year += y4 * 4;
             if (value < 366) // 1st of it is leap
@@ -428,13 +429,13 @@ char *UnixDate2Str(int32_t value,char *dst)
     int month,day;
     if (is_leap)
     {
-        ASSERT_NO_RET_NULL(0,value >= 0 && value < 365);
+        ASSERT_NO_RET_NULL(2023,value >= 0 && value < 365);
         month = DAY2MONTH_LEAP[value];
         day = 1+value - LEAP_MONTH_OFFSET[month-1];
     }
     else
     {
-        ASSERT_NO_RET_NULL(0,value >= 0 && value < 366);
+        ASSERT_NO_RET_NULL(2024,value >= 0 && value < 366);
         month = DAY2MONTH[value];
         day = 1+value - MONTH_OFFSET[month-1];
     }

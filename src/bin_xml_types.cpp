@@ -241,7 +241,7 @@ int XBT_Size(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1076,size == 0);
             return sizeof(uint32_t);
         case XBT_UNIX_DATE:
-            ASSERT_NO_RET_N1(0,size == 0);
+            ASSERT_NO_RET_N1(2021,size == 0);
             return sizeof(int32_t);
         case XBT_IPv4:
             ASSERT_NO_RET_N1(1077,size == 0);
@@ -339,7 +339,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
         case XBT_INT64:
             {
                 int64_t v;
-                ASSERT_NO_RET_FALSE(0,ScanInt64(src,v));
+                ASSERT_NO_RET_FALSE(2022,ScanInt64(src,v));
                 AA8(*_wp);
                 *reinterpret_cast<int64_t*>(*_wp) = v;
                 *_wp += sizeof(int64_t);
@@ -753,7 +753,7 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
             failures++;
         }
     }
-    else
+    else if (type != XBT_UNIX_DATE)
         std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T4 " ANSI_MAGENTA_BRIGHT "Please check image of " << src << " --(" << dst_size << ")--> " << hex_image << ANSI_RESET_LF;
 
     
@@ -808,9 +808,20 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_TIME,"1970-01-01 00:00:00", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_TIME,"2021-06-15 22:41:40", "a42cc960") && ok;
     
+    ok = XBT_TestType(XBT_UNIX_DATE,"2000-01-01", "cd2a0000") && ok; // 10957
+    ok = XBT_TestType(XBT_UNIX_DATE,"1999-12-31", "cc2a0000") && ok;
+    for(int i = 0/*10957*/;ok && i < (2 << 30);i++)
+    {
+        time_t tm0 = i;
+        struct tm tm1;
+        gmtime_r(&tm0,&tm1);
+        char buffer[40];
+        snprintf(buffer,sizeof(buffer),"%04d-%02d-%02d",1900+tm1.tm_year,1+tm1.tm_mon,tm1.tm_mday);
+        
+        ok = XBT_TestType(XBT_UNIX_DATE,buffer, nullptr) && ok;
+    }
     ok = XBT_TestType(XBT_UNIX_DATE,"1970-01-01", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_DATE,"1969-12-31", "ffffffff") && ok;
-    ok = XBT_TestType(XBT_UNIX_DATE,"2000-01-01", "cd2a0000") && ok; // 10957
     
     return ok;
 }
