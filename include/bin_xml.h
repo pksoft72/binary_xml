@@ -44,7 +44,8 @@ enum XML_Tag_Names
     XTNR_REFERENCE      = -7,       // this is reference tag!! - it is exact copy of other tag
     XTNR_PROCESSED      = -8,       // this tag was processed and in .reference field is it's new address
     XTNR_ET_TECERA      = -9,       // this tag is last tag in file and is placeholder for other tags appended to the file later without modification of core
-    XTNR_LAST       = -10        // last
+    XTNR_TRANSACTION    = -10,
+    XTNR_LAST       = -11        // last
 };
 
 enum XML_Param_Names
@@ -57,7 +58,10 @@ enum XML_Param_Names
     XPNR_COUNT      = -5,       // count : XBT_INT32
     XPNR_FORMAT_VERSION = -6,       // version decimal : XBT_INT32
     XPNR_TYPE_COUNT = -7,       // type_count : XBT_INT32
-    XPNR_LAST       = -8
+    XPNR_ID         = -8,       // id : XBT_INT32 - this is collision with other - user values
+    XPNR_AUTHOR     = -9,       // author : XBT_INT64 - who made transaction
+    XPNR_TIME_MS    = -10,      // time_ms : XBT_UNIX_TIME64_MSEC
+    XPNR_LAST       = -11
 };
 
 //-------------------------------------------------------------------------------------------------

@@ -951,6 +951,7 @@ const char*     BW_pool::getTagName(int16_t id)
     if (id < 0) return XTNR2str(id);
     ASSERT_NO_RET_NULL(1055,id >=0 && id <= tags.max_id);    // id out of range - should be in range, because range is defined by writing application
     BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+tags.index);
+    
     BW_offset_t offset = elements[id];
     ASSERT_NO_RET_NULL(1056,offset != 0);                                       // tag id should be correctly registered!
     return reinterpret_cast<const char *>(THIS+ offset + 3);  
@@ -961,6 +962,23 @@ XML_Binary_Type BW_pool::getAttrType(int16_t id)
 {
     ASSERT_NO_(1065,this != nullptr,return XBT_UNKNOWN);
     ASSERT_NO_(1057,params.index != 0,return XBT_UNKNOWN);                // index not initialized 
+    if (id < 0)
+    {
+        switch (id)
+        {
+            case XPNR_NULL : return XBT_NULL;
+            case XPNR_NAME : return XBT_STRING;
+            case XPNR_HASH : return XBT_SHA1;
+            case XPNR_MODIFIED : return XBT_UNIX_TIME;
+            case XPNR_COUNT : return XBT_INT32;
+            case XPNR_FORMAT_VERSION : return XBT_INT32;
+            case XPNR_TYPE_COUNT : return XBT_INT32;
+            case XPNR_ID         : return XBT_INT32;
+            case XPNR_AUTHOR     : return XBT_INT64;
+            case XPNR_TIME_MS    : return XBT_UNIX_TIME64_MSEC;
+            default: break;
+        }
+    }
     ASSERT_NO_(1058,id >=0 && id <= params.max_id,return XBT_UNKNOWN);    // id out of range - should be in range, because range is defined by writing application
     BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+params.index);
     BW_offset_t offset = elements[id];
@@ -984,6 +1002,9 @@ const char*     BW_pool::getAttrName(int16_t id)
         case XPNR_COUNT : return "count";
         case XPNR_FORMAT_VERSION : return "version";
         case XPNR_TYPE_COUNT : return "type_count";
+        case XPNR_ID : return "id";
+        case XPNR_AUTHOR : return "author";
+        case XPNR_TIME_MS : return "time_ms";
 
         default:
         {
@@ -1857,10 +1878,24 @@ BW_element* BW_plugin::CopyPath_(bool copy_whole_last_node,XB_reader &xb,XML_Ite
     }
     else
     {
-        root2 = BWE(pool->root);
-        ASSERT_NO_RET_NULL(1974,root2->identification == root->name); // root element must be the same
-        ASSERT_NO_RET_NULL(1976,root2->EqualKeys(xb,root));
         copy = false;
+        
+        root2 = BWE(pool->root);
+        if (root2->identification == XTNR_TRANSACTION && root->name != XTNR_TRANSACTION)
+        {
+            if (root2->first_child == 0)
+            {
+                // content encapsulated in <transaction>
+                root2->first_child = tag(root->name)->offset;
+                copy = true;
+            }
+            root2 = BWE(root2->first_child);
+        }
+        if (!copy)
+        {
+            ASSERT_NO_RET_NULL(1974,root2->identification == root->name); // root element must be the same
+            ASSERT_NO_RET_NULL(1976,root2->EqualKeys(xb,root));
+        }
     }
 
 

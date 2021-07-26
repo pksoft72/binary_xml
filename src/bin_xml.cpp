@@ -881,6 +881,7 @@ const char *XTNR2str(int16_t name)
         case XTNR_REFERENCE: return "reference";
         case XTNR_PROCESSED: return "processed";
         case XTNR_ET_TECERA: return "et-tecera";
+        case XTNR_TRANSACTION: return "transaction";
         default:            return "__reserved__";
     }
 }

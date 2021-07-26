@@ -33,6 +33,8 @@ bool ScanStrW(char *&p,char separator,char *value,unsigned value_size);
 void SkipSpacesW(char *&p);
 bool SkipLineW(char *&p);
 
+int64_t GetCurrentTime64();
+
 
 char *AllocFilenameChangeExt(const char *filename,const char *extension);
 

@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <time.h> // clock_gettime()
 
 const char HEX[16+1] = "0123456789abcdef";
 
@@ -100,6 +101,16 @@ off_t FileGetSizeByFd(int fd)
         return -1; // directory
     }
     return file_info.st_size;
+}
+
+int64_t GetCurrentTime64()
+{
+    struct timespec tm0;
+    int ok = clock_gettime(CLOCK_REALTIME,&tm0);
+    if (ok < 0) return (int64_t)1000 * time(nullptr);
+
+    return (int64_t)tm0.tv_sec*1000 +
+           (int64_t)tm0.tv_nsec / 1000000;
 }
 
 char *AllocFilenameChangeExt(const char *filename,const char *extension)
