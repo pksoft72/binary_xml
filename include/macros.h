@@ -54,6 +54,8 @@
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 #ifdef __cplusplus
     #define BEGIN_EXTERN_C extern "C" {
     #define END_EXTERN_C }
