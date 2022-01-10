@@ -134,7 +134,7 @@ void Bin_src_plugin::s_PrintElement(void *element,void *userdata)
     const char *value = _this->getNodeValue(element);
     if (value != nullptr)
     {
-        printf("%s",value);
+        printf("%s",value); // TODO: htmlencode
         if (current_counter < _this->print_node_counter)
             printf("\n%*s",_this->print_deep*TAB_SIZE,"");
     }
@@ -223,7 +223,7 @@ void Bin_src_plugin::s_On2Stream(void *element,void *userdata)
             CTX->os << ">";
             // void XBT_ToStringStream(XML_Binary_Type type,const char *data,std::ostream &os)
             XBT_ToXMLStream(value_type,value,CTX->os);
-            CTX->os << "<" << CTX->src->getNodeName(element) << ">\n";
+            CTX->os << "</" << CTX->src->getNodeName(element) << ">\n";
         }
     else
     {
@@ -411,7 +411,7 @@ bool Bin_xml_creator::DoAll()
 
     // 3. allocate and fill--------------------------
     src->updateFileSize();
-    this->data_size_allocated = 1024 + src->getFileSize()*2;
+    this->data_size_allocated = 1024 + src->getFileSize()*4;
     this->data = reinterpret_cast<char *>(malloc(data_size_allocated)); // some reserve
 
     DBG(std::cout << "DBG:Buffer: " << (void *)this->data << "\n");
@@ -813,7 +813,7 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
         char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
         // bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
         
-        if (size <= 4 && XBT_Copy(param_value,type,0/*size*/,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
+        if (type != XBT_STRING && size <= 4 && XBT_Copy(param_value,type,0/*size*/,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
         { // store parameter value directly to params.data
             ASSERT_NO_DO_NOTHING(1207,in_place_wp == reinterpret_cast<char*>(&xstore_data->params->data) + 4);
             xstore_data->params->type = type;

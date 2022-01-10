@@ -56,6 +56,8 @@
 
 #define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 #ifdef __cplusplus
     #define BEGIN_EXTERN_C extern "C" {
     #define END_EXTERN_C }
