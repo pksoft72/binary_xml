@@ -752,9 +752,9 @@ const char *MakeIdent(const char *Source,const char *style)
                 *(d++) = *(Source++);
             len++;
         }
-        else if (isspace(*Source))
+        else if (isspace(*Source) || *Source == '-')
         {
-            if (space_to_underscore)
+            if (space_to_underscore || *Source == '-')
             {
                 *(d++) = '_';
                 len++;
@@ -763,7 +763,7 @@ const char *MakeIdent(const char *Source,const char *style)
             {
                 need_uppercase = true;
             }
-            while (isspace(*Source)) Source++;
+            while (isspace(*Source) || *Source == '-') Source++;
         }
         else
             Source++; // bad char for id
