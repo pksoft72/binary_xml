@@ -54,6 +54,8 @@
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 
+#define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
+
 #ifdef __cplusplus
     #define BEGIN_EXTERN_C extern "C" {
     #define END_EXTERN_C }
