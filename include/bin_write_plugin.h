@@ -1,8 +1,10 @@
-#pragma once
+#ifndef _BIN_WRITE_PLUGIN_H_
+#define _BIN_WRITE_PLUGIN_H_
+
 
 #ifdef BIN_WRITE_PLUGIN
 
-#include "bin_xml_creator.h"
+#include <binary_xml/bin_xml_creator.h>
 
 // Basic idea
 // ==========
@@ -259,3 +261,4 @@ public: // Bin_src_plugin
 } // namespace pklib_xml
 
 #endif // BIN_WRITE_PLUGIN
+#endif

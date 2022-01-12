@@ -1,11 +1,13 @@
-#pragma once
+#ifndef _BIN_XML_H_
+#define _BIN_XML_H_
+
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 
-#include "bin_xml_types.h"
+#include <binary_xml/bin_xml_types.h>
 
 #ifndef nullptr
 #define nullptr NULL
@@ -213,3 +215,4 @@ std::ostream& operator<<(std::ostream& os, const hash192_t& h);
 const char *XTNR2str(int16_t name);
 
 } // pklib_xml::
+#endif

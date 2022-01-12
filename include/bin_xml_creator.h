@@ -1,7 +1,9 @@
-#pragma once
+#ifndef _BIN_XML_CREATOR_H_
+#define _BIN_XML_CREATOR_H_
 
-#include "files.h"
-#include "bin_xml.h"
+
+#include <binary_xml/files.h>
+#include <binary_xml/bin_xml.h>
 
 namespace pklib_xml {
 
@@ -139,3 +141,4 @@ public: //---------------------------------------
 extern const Bin_src_plugin_selector_t BIN_SRC_PLUGIN_SELECTOR;
 
 }   // pklib_xml::
+#endif

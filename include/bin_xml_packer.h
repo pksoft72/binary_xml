@@ -1,5 +1,7 @@
-#pragma once
-#include "bin_xml_creator.h"
+#ifndef _BIN_XML_PACKER_H_
+#define _BIN_XML_PACKER_H_
+
+#include <binary_xml/bin_xml_creator.h>
 
 namespace pklib_xml {
 
@@ -22,3 +24,5 @@ public: //---------------------------------------
 }
 
 
+
+#endif // _BIN_XML_PACKER_H_

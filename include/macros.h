@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _MACROS_H_
+#define _MACROS_H_
+
 
 #ifdef __cplusplus
     #include <iostream>
@@ -69,3 +71,4 @@
 #define elementsof(X) (sizeof(X) / sizeof(X[0]))
 
 //#define exit _exit
+#endif
