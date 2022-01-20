@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _BIN_XML_TYPES_H_
+#define _BIN_XML_TYPES_H_
+
 
 #include <stdint.h>
 #include <iostream>
@@ -98,3 +100,4 @@ void            XBT_Free();
 
 bool            XBT_Test();
 } // pklib_xml::
+#endif

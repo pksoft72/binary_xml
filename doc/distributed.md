@@ -11,7 +11,7 @@ Each commited object snapshot will produce set of differences to connected strea
 
 It would be nice to be able to work in disconnected environment.
 
-We will have to fill some transaction log - to be able to replay all changes on remote sites. But these transaction logs will need merge.
+We will have to fill some transaction log - to be able to replay all changes on remote sites. But these transaction logs will need merge. And it has risk of conflicts.
 
 
 ## Priorities

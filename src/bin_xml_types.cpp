@@ -118,6 +118,10 @@ XML_Binary_Type XBT_Detect(const char *value)
 
 XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
 {
+// string accumulates all like variant
+    if (A == XBT_STRING) return A;
+    if (B == XBT_STRING) return B;
+
     if (A == XBT_VARIANT) return A; // non compatible types
     if (A == XBT_NULL) return B;
     if (A == XBT_LAST) return B; // not used yet

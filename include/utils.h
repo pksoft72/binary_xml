@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _UTILS_H_
+#define _UTILS_H_
+
 #include <stdint.h>
 #include <sys/stat.h>
 
@@ -49,3 +51,4 @@ int GetIdentLen(const char *p);
 char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size);
 /* This function will decode binary data into base64 encoded string */
 int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size);
+#endif

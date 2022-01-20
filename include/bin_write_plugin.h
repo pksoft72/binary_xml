@@ -1,8 +1,10 @@
-#pragma once
+#ifndef _BIN_WRITE_PLUGIN_H_
+#define _BIN_WRITE_PLUGIN_H_
+
 
 #ifdef BIN_WRITE_PLUGIN
 
-#include "bin_xml_creator.h"
+#include <binary_xml/bin_xml_creator.h>
 
 // Basic idea
 // ==========
@@ -101,6 +103,7 @@ public:
     
     BW_element  *tagGet(int16_t id);
     BW_element  *tag(int16_t id); // find or create
+    BW_element  *tagSetInt32(int16_t id,int32_t value);
     BW_element  *tagSetString(int16_t id,const char *value);
     BW_element  *tagSetTime(int16_t id,time_t value);
     BW_element  *tagSetSHA1(int16_t id,const uint8_t *value);
@@ -163,6 +166,7 @@ public:
     BW_element*     new_element(XML_Binary_Type type,int size = 0);
 
     BW_element*     tag(int16_t id);
+    BW_element*     tagInt32(int16_t id,int32_t value);
     BW_element*     tagString(int16_t id,const char *value);
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagSHA1(int16_t id,const uint8_t *value);
@@ -187,6 +191,8 @@ protected:
 public:
     BW_plugin(const char *filename = nullptr,Bin_xml_creator *bin_xml_creator = nullptr,int max_pool_size = 0x20000,uint32_t config_flags = 0);
     virtual ~BW_plugin();
+
+    void        setFlags(uint32_t flags);
     
     virtual bool Initialize();
         bool InitEmptyFile();
@@ -255,3 +261,4 @@ public: // Bin_src_plugin
 } // namespace pklib_xml
 
 #endif // BIN_WRITE_PLUGIN
+#endif

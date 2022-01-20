@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _MACROS_H_
+#define _MACROS_H_
+
 
 #ifdef __cplusplus
     #include <iostream>
@@ -54,6 +56,10 @@
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 
+#define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 #ifdef __cplusplus
     #define BEGIN_EXTERN_C extern "C" {
     #define END_EXTERN_C }
@@ -65,3 +71,4 @@
 #define elementsof(X) (sizeof(X) / sizeof(X[0]))
 
 //#define exit _exit
+#endif
