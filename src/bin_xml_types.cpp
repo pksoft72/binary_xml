@@ -796,7 +796,7 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
 
 bool XBT_Test()
 {
-    bool ok;
+    bool ok = true;
     ok = XBT_TestType(XBT_STRING,"Petr Kundrata","50657472204b756e647261746100") && ok;
     ok = XBT_TestType(XBT_NULL,"","") && ok;
 

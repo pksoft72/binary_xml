@@ -147,7 +147,7 @@ bool file_getsha1(const char *filename,unsigned char *hash)
             return false;
         }
         blk_SHA1_Update(&ctx,buffer,size);
-        if (size < sizeof(buffer))
+        if (size < (int)sizeof(buffer))
             break; // finished
     }
     blk_SHA1_Final(hash,&ctx);    

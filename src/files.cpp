@@ -1,6 +1,6 @@
 #include "files.h"
 
-#include "macros.h"
+#include "macros.h" // xb variant
 #include "strings.h"
 
 #include <string.h>
