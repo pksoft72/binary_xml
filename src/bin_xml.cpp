@@ -151,7 +151,7 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
 
     if (type == XBT_STRING) 
         return reinterpret_cast<const char *>(X)+data;
-    if (type == XBT_INT32)
+    if (XBT_IS_4(type))
         return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char*>(&data));
     return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char *>(X)+data);
 
@@ -173,9 +173,7 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
 /*    if (R.verbosity > 0)
         std::cerr << ANSI_GREEN_BRIGHT << "+" << (reinterpret_cast<const char *>(this) - reinterpret_cast<const char *>(X)) << " [" << name << ":" << XML_BINARY_TYPE_NAMES[type] << "/" << offset << ":@" << data << "]" ANSI_RESET_LF;
 */
-    if (static_cast<XML_Binary_Type>(type) == XBT_INT32)
-        return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
-    else if (static_cast<XML_Binary_Type>(type) == XBT_UNIX_TIME)
+    if (XBT_IS_4(type))
         return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
     else return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
 }
