@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <time.h> // clock_gettime()
+#include <limits.h>
 
 const char HEX[16+1] = "0123456789abcdef";
 
@@ -113,9 +114,29 @@ int64_t GetCurrentTime64()
            (int64_t)tm0.tv_nsec / 1000000;
 }
 
-char *AllocFilenameChangeExt(const char *filename,const char *extension)
+char *AllocFilenameChangeExt(const char *filename,const char *extension,const char *target_dir)
+// I have filename - example            src/common/test.xml
+// optional new extension - example     .xb
+// optional target directory - example  build/temp
+// result:                              build/temp/src/common/test.xb
+// want to process some shortcuts       build/test/.. --> build
+// but these shortcuts cannot go out of target_dir
 {
     if (filename == nullptr) return nullptr; // it is correct to send empty filename
+
+// removing ./ prefixes
+    while (filename[0] == '.' && filename[1] == '/') 
+        filename += 2;
+// removing / root reference
+    if (filename[0] == '/') 
+        filename += 2; 
+
+    char directory[PATH_MAX] = "";
+    if (target_dir != nullptr)
+    {
+        STRCPY(directory,target_dir);
+
+    }
     if (extension == nullptr)
     {
         char *new_name = new char[strlen(filename)+1];
@@ -129,7 +150,7 @@ char *AllocFilenameChangeExt(const char *filename,const char *extension)
     char *new_name = new char[len+ext_len+1];
     strncpy(new_name,filename,len);
     strcpy(new_name+len,extension);
-    
+
     return new_name;
 }
 

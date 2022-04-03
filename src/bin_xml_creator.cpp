@@ -56,11 +56,11 @@ void Bin_src_plugin::updateFileSize()
     this->file_size = file_getsize(filename);
 }
 
-void Bin_src_plugin::setFilename(const char *filename,const char *extension)
+void Bin_src_plugin::setFilename(const char *filename,const char *extension,const char *target_dir)
 {
     if (this->filename)
         delete [] this->filename;
-    this->filename = AllocFilenameChangeExt(filename,extension);
+    this->filename = AllocFilenameChangeExt(filename,extension,target_dir);
 }
 
 void Bin_src_plugin::setFilenameFmt(const char *filename,...)
@@ -471,15 +471,15 @@ bool Bin_xml_creator::Append(void *element)
         }
     }
 // I should continue in the same alignement as in original file
-	struct stat file_info;
-	int err = fstat(dst_file,&file_info);
-	if (err != 0)
+    struct stat file_info;
+    int err = fstat(dst_file,&file_info);
+    if (err != 0)
     {
 
-        ERRNO_SHOW(0,"fstat",dst);	
+        ERRNO_SHOW(0,"fstat",dst);  
         return false;
     }
-	int file_align = file_info.st_size & 0xf; // use alignemenet like length of file
+    int file_align = file_info.st_size & 0xf; // use alignemenet like length of file
 
     char *wp = data+file_align;
     AA(wp);

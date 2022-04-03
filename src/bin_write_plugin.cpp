@@ -1279,7 +1279,7 @@ bool BW_plugin::Initialize()
                     // Don't perform read-ahead: create page tables entries only for pages that are already present in RAM.  
                     // Since Linux 2.6.23, this flag causes MAP_POPULATE to do nothing.  One day, the combination of MAP_POPULATE and MAP_NONBLOCK may be reimplemented.
                     fd, 0));
-        if (pool == nullptr)
+        if (pool == MAP_FAILED)
         {
             ERRNO_SHOW(1049,"mmap",filename);
             return false;

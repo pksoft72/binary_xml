@@ -38,7 +38,7 @@ bool SkipLineW(char *&p);
 int64_t GetCurrentTime64();
 
 
-char *AllocFilenameChangeExt(const char *filename,const char *extension);
+char *AllocFilenameChangeExt(const char *filename,const char *extension,const char *target_dir = nullptr);
 
 bool EatEnd(char *p,const char *end);
 int  GetInt(const char *p);
