@@ -82,6 +82,11 @@ bool scan_dir(const char *base_dir,void *userdata,on_file_event on_file)
         if (dirent == nullptr) break;
 
         // typedef bool (*on_file_event)(const char *directory,const char *filename,void *username,uint8_t d_type);
+        if (dirent->d_name[0] == '.')
+        {
+            if (dirent->d_name[1] == '\0') continue; // skip .
+            else if (dirent->d_name[1] == '.' && dirent->d_name[2] == '\0') continue; // skip ..
+        }
         if (!on_file(base_dir,dirent->d_name,userdata,dirent->d_type)) break;
 
 /*        if (*dirent->d_name == '.') continue; // hidden files .*, current dir and upper dir

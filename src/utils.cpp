@@ -127,28 +127,36 @@ char *AllocFilenameChangeExt(const char *filename,const char *extension,const ch
 // removing ./ prefixes
     while (filename[0] == '.' && filename[1] == '/') 
         filename += 2;
-// removing / root reference
-    if (filename[0] == '/') 
-        filename += 2; 
 
-    char directory[PATH_MAX] = "";
+    char filepath[PATH_MAX] = "";
+    filepath[PATH_MAX-1] = '\0'; // terminator
+
     if (target_dir != nullptr)
     {
-        STRCPY(directory,target_dir);
+        // removing / root reference
+        if (filename[0] == '/') 
+            filename++; 
 
+        STRCPY(filepath,target_dir);
+        int len = strlen(filepath);
+        filepath[len++] = '/';
+        strncpy(filepath+len,filename,PATH_MAX-len-1);
     }
+    else 
+        STRCPY(filepath,filename);
+
     if (extension == nullptr)
     {
-        char *new_name = new char[strlen(filename)+1];
-        strcpy(new_name,filename);
+        char *new_name = new char[strlen(filepath)+1];
+        strcpy(new_name,filepath);
         return new_name;
     }
-    const char *dot = strrchr(filename,'.');
-    int len = (dot != nullptr ? dot - filename : strlen(filename));
+    const char *dot = strrchr(filepath,'.');
+    int len = (dot != nullptr ? dot - filepath : strlen(filepath));
     int ext_len = strlen(extension);
 
     char *new_name = new char[len+ext_len+1];
-    strncpy(new_name,filename,len);
+    strncpy(new_name,filepath,len);
     strcpy(new_name+len,extension);
 
     return new_name;

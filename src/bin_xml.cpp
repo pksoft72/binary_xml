@@ -175,7 +175,9 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
 */
     if (static_cast<XML_Binary_Type>(type) == XBT_INT32)
         return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
-    return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
+    else if (static_cast<XML_Binary_Type>(type) == XBT_UNIX_TIME)
+        return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
+    else return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
 }
 
 XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X) 
