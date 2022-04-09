@@ -104,11 +104,13 @@ public:
     BW_element  *tagGet(int16_t id);
     BW_element  *tag(int16_t id); // find or create
     BW_element  *tagSetInt32(int16_t id,int32_t value);
+    BW_element  *tagSetInt64(int16_t id,int64_t value);
     BW_element  *tagSetString(int16_t id,const char *value);
     BW_element  *tagSetTime(int16_t id,time_t value);
     BW_element  *tagSetSHA1(int16_t id,const uint8_t *value);
 
     int32_t     *getInt32();
+    int64_t     *getInt64();
     char        *getStr();
     XML_Binary_Data_Ref getData();
 
@@ -167,6 +169,7 @@ public:
 
     BW_element*     tag(int16_t id);
     BW_element*     tagInt32(int16_t id,int32_t value);
+    BW_element*     tagInt64(int16_t id,int64_t value);
     BW_element*     tagString(int16_t id,const char *value);
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagSHA1(int16_t id,const uint8_t *value);

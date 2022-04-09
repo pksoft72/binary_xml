@@ -607,6 +607,34 @@ BW_element  *BW_element::tagSetInt32(int16_t id,int32_t value)
     return target;
 }
 
+BW_element  *BW_element::tagSetInt64(int16_t id,int64_t value)
+{
+    if (this == nullptr) return nullptr;
+
+    BW_element *target = tagGet(id);
+    if (target == nullptr) // no previous value - ok, create new
+    {
+        target = getPool()->tagInt64(id,value);
+        add(target);
+    }
+    else
+    {
+        bool to_replace = (target->value_type != XBT_INT64);
+        if (!to_replace) // check size
+        {
+            int64_t *dst = reinterpret_cast<int64_t*>(target+1);
+            *dst = value;
+        }
+        else
+        {
+            BW_element *new_item = getPool()->tagInt64(id,value);
+            replace(target,new_item);
+        }
+         
+    }
+    return target;
+}
+
 BW_element  *BW_element::tagSetString(int16_t id,const char *value)
 {
     if (this == nullptr) return nullptr;
@@ -687,10 +715,25 @@ int32_t *BW_element::getInt32()
     if (this == nullptr) return nullptr;
 
     BW_pool             *pool = getPool();    
-    XML_Binary_Type     attr_type = pool->getAttrType(identification);
+    XML_Binary_Type     attr_type = (flags & BIN_WRITE_ATTR_FLAG ? 
+                            pool->getAttrType(identification) :
+                            pool->getTagType(identification));
     ASSERT_NO_RET_NULL(1173,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
 
     return reinterpret_cast<int32_t*>(this+1); // just after this element
+}
+
+int64_t *BW_element::getInt64()
+{
+    if (this == nullptr) return nullptr;
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = (flags & BIN_WRITE_ATTR_FLAG ? 
+                            pool->getAttrType(identification) :
+                            pool->getTagType(identification));
+    ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64);// || attr_type == XBT_VARIANT);
+
+    return reinterpret_cast<int64_t*>(this+1); // just after this element
 }
 
 char *BW_element::getStr()
@@ -1163,7 +1206,7 @@ BW_element* BW_pool::tag(int16_t id)
 BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
 {
     XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(0,tag_type == XBT_INT32);
+    ASSERT_NO_RET_NULL(2027,tag_type == XBT_INT32);
 
     BW_element* result = new_element(XBT_INT32,sizeof(value));
     
@@ -1172,6 +1215,20 @@ BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
     *reinterpret_cast<int32_t*>(result+1) = value;
     return result;
 }
+
+BW_element* BW_pool::tagInt64(int16_t id,int64_t value)
+{
+    XML_Binary_Type tag_type = getTagType(id);
+    ASSERT_NO_RET_NULL(2029,tag_type == XBT_INT64);
+
+    BW_element* result = new_element(XBT_INT64,sizeof(value));
+    
+    result->init(this,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int64_t*>(result+1) = value;
+    return result;
+}
+
 BW_element* BW_pool::tagString(int16_t id,const char *value)
 {
     XML_Binary_Type tag_type = getTagType(id);
@@ -1202,7 +1259,7 @@ BW_element* BW_pool::tagTime(int16_t id,time_t value)
 BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
 {
     XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(0,tag_type == XBT_SHA1);
+    ASSERT_NO_RET_NULL(2028,tag_type == XBT_SHA1);
 
     BW_element* result = new_element(XBT_SHA1,0);
     
@@ -1767,9 +1824,19 @@ BW_element* BW_plugin::tagUInt32(int16_t id,uint32_t value)
 
 BW_element* BW_plugin::tagInt64(int16_t id,int64_t value)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1131,NOT_IMPLEMENTED);
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(2030,tag_type == XBT_INT64 || tag_type == XBT_VARIANT);
+
+    ASSERT_NO_RET_NULL(2031,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int64_t)));
+
+    BW_element* result = pool->new_element(XBT_INT64,0);
+    
+    result->init(pool,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int64_t*>(result+1) = value;
+    return result;
 }
+
 
 BW_element* BW_plugin::tagUInt64(int16_t id,uint64_t value)
 {
