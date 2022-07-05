@@ -62,6 +62,8 @@ enum XML_Binary_Type
 #define XBT_IS_VARSIZE(type) ((type) == XBT_BLOB || (type) == XBT_HEX)
 #define XBT_FIXEDSIZE(type)  ((type) == XBT_NULL ? 0 : ((type) == XBT_INT64 || (type) == XBT_DOUBLE || (type) == XBT_UINT64 || (type) == XBT_UNIX_TIME64_MSEC ? 8 : ((type) == XBT_GUID ? 16 : ((type) == XBT_SHA1 ? 20 : ((type) == XBT_IPv6 ? 16 : -1)))))
 
+#define XBT2STR(type) ((type) == XBT_NULL    ? "XBT_NULL" : ((type) == XBT_VARIANT ? "XBT_VARIANT" : ((type) == XBT_STRING  ? "XBT_STRING" : ((type) == XBT_BLOB  ? "XBT_BLOB" : ((type) == XBT_INT32   ? "XBT_INT32" : ((type) == XBT_INT64   ? "XBT_INT64" : ((type) == XBT_FLOAT   ? "XBT_FLOAT" : ((type) == XBT_DOUBLE  ? "XBT_DOUBLE" : ((type) == XBT_HEX     ? "XBT_HEX" : ((type) == XBT_GUID    ? "XBT_GUID" : ((type) == XBT_SHA1    ? "XBT_SHA1" : ((type) == XBT_UNIX_TIME   ? "XBT_UNIX_TIME" : ((type) == XBT_IPv4    ? "XBT_IPv4" : ((type) == XBT_IPv6    ? "XBT_IPv6" : ((type) == XBT_UNKNOWN ? "XBT_UNKNOWN" : ((type) == XBT_UINT64  ? "XBT_UINT64" : ((type) == XBT_UNIX_TIME64_MSEC ? "XBT_UNIX_TIME64_MSEC" : ((type) == XBT_UINT32  ? "XBT_UINT32" : ((type) == XBT_UNIX_DATE ? "XBT_UNIX_DATE" : ((type) == XBT_LAST    ? "XBT_LAST   " : "XBT_???"))))))))))))))))))))
+
 struct XML_Binary_Data_Ref
 // I have a problem with const char * vs. char * variant of code!
 // I need char data for xbw

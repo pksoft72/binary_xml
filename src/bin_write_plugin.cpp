@@ -54,6 +54,13 @@ BW_plugins plugins;
 
 void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags)
 {
+    if (this == nullptr)
+    {
+        LOG_ERROR("BW_element::init(NULL,id:%d=%s,value_type:%d=%s,flags:%u) called!",identification,
+            (flags & BIN_WRITE_ELEMENT_FLAG ? pool->getTagName(identification) : pool->getAttrName(identification)),
+            value_type,XBT2STR(value_type),flags);
+        return;
+    }
     assert(sizeof(*this) == 24);
     assert(pool != nullptr);
 
@@ -980,6 +987,47 @@ int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_
     return -1; // not found
 }
 
+const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
+{
+    ASSERT_NO_RET_NULL(2032,pool != nullptr);
+    ASSERT_NO_RET_NULL(2033,search_id >= 0 && search_id <= max_id); // TODO: some negative ID are supported
+
+    char *POOL = reinterpret_cast<char*>(pool);
+
+    if (index == 0) // sequential search
+    {
+        int id = 0;
+        // ID:word|Type:byte|string|NUL:byte
+        const char *p =       POOL+names_offset;
+        const char *p_limit = POOL+pool->allocator;
+
+        while (id < max_id)
+        { 
+            const char *start = p;
+            id = *(p++);
+            id |= *(p++) << 8;
+
+            XML_Binary_Type element_type = static_cast<XML_Binary_Type>(*(p++));
+
+            if (id == search_id) return p; // found
+
+            // compare symbol and name
+            while(p < p_limit && *p != '\0') p++;
+            // result?
+            if (p >= p_limit) return nullptr; // not found
+            p++; // skip ASCII.NUL
+
+            AA(p); // round 4B
+            // next id
+            id++;
+        }
+        return nullptr;
+    }
+    // OK, i have indexed access and this should be faster
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
+    const char *start = POOL+elements[search_id]; 
+    return start+3;
+}
 //-------------------------------------------------------------------------------------------------
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
@@ -1198,6 +1246,7 @@ BW_element* BW_pool::tag(int16_t id)
     XML_Binary_Type tag_type = getTagType(id);
     ASSERT_NO_RET_NULL(2014,tag_type == XBT_NULL);
     BW_element* result = new_element(XBT_NULL,0);
+    ASSERT_NO_RET_NULL(2034,result != nullptr);
     
     result->init(this,id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG);
     return result;
@@ -1208,7 +1257,8 @@ BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
     XML_Binary_Type tag_type = getTagType(id);
     ASSERT_NO_RET_NULL(2027,tag_type == XBT_INT32);
 
-    BW_element* result = new_element(XBT_INT32,sizeof(value));
+    BW_element* result = new_element(XBT_INT32,0);
+    ASSERT_NO_RET_NULL(2035,result != nullptr);
     
     result->init(this,id,XBT_INT32,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1222,6 +1272,7 @@ BW_element* BW_pool::tagInt64(int16_t id,int64_t value)
     ASSERT_NO_RET_NULL(2029,tag_type == XBT_INT64);
 
     BW_element* result = new_element(XBT_INT64,sizeof(value));
+    ASSERT_NO_RET_NULL(2036,result != nullptr);
     
     result->init(this,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1237,6 +1288,7 @@ BW_element* BW_pool::tagString(int16_t id,const char *value)
     int value_len = (value != nullptr ? strlen(value) : 0);
 
     BW_element* result = new_element(XBT_STRING,value_len+1);
+    ASSERT_NO_RET_NULL(2037,result != nullptr);
     
     result->init(this,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
     strcpy(reinterpret_cast<char*>(result+1),value);
@@ -1249,6 +1301,7 @@ BW_element* BW_pool::tagTime(int16_t id,time_t value)
     ASSERT_NO_RET_NULL(2006,tag_type == XBT_UNIX_TIME);
 
     BW_element* result = new_element(XBT_UNIX_TIME,0);
+    ASSERT_NO_RET_NULL(2038,result != nullptr);
     
     result->init(this,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1262,6 +1315,7 @@ BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
     ASSERT_NO_RET_NULL(2028,tag_type == XBT_SHA1);
 
     BW_element* result = new_element(XBT_SHA1,0);
+    ASSERT_NO_RET_NULL(2039,result != nullptr);
     
     result->init(this,id,XBT_SHA1,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1757,6 +1811,7 @@ BW_element* BW_plugin::tag(int16_t id)
     ASSERT_NO_RET_NULL(1145,makeSpace(BW2_INITIAL_FILE_SIZE));
 
     BW_element* result = pool->new_element(XBT_NULL);
+    ASSERT_NO_RET_NULL(2040,result != nullptr);
 
     result->init(pool,id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1772,6 +1827,7 @@ BW_element* BW_plugin::tagStr(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1146,makeSpace(BW2_INITIAL_FILE_SIZE+value_len));
 
     BW_element* result = pool->new_element(XBT_STRING,value_len);
+    ASSERT_NO_RET_NULL(2041,result != nullptr);
     
     result->init(pool,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1793,6 +1849,7 @@ BW_element* BW_plugin::tagBLOB(int16_t id,const void *value,int32_t size)
     ASSERT_NO_RET_NULL(1955,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
 
     BW_element* result = pool->new_element(XBT_BLOB,size);
+    ASSERT_NO_RET_NULL(2042,result != nullptr);
     
     result->init(pool,id,XBT_BLOB,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1809,6 +1866,7 @@ BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
     ASSERT_NO_RET_NULL(1956,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
 
     BW_element* result = pool->new_element(XBT_INT32,0);
+    ASSERT_NO_RET_NULL(2043,result != nullptr);
     
     result->init(pool,id,XBT_INT32,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1830,6 +1888,7 @@ BW_element* BW_plugin::tagInt64(int16_t id,int64_t value)
     ASSERT_NO_RET_NULL(2031,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int64_t)));
 
     BW_element* result = pool->new_element(XBT_INT64,0);
+    ASSERT_NO_RET_NULL(2044,result != nullptr);
     
     result->init(pool,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1870,6 +1929,7 @@ BW_element* BW_plugin::tagSHA1(int16_t id,const uint8_t *value)
     ASSERT_NO_RET_NULL(1958,makeSpace(BW2_INITIAL_FILE_SIZE+4));
 
     BW_element* result = pool->new_element(XBT_SHA1,0);
+    ASSERT_NO_RET_NULL(2045,result != nullptr);
     
     result->init(pool,id,XBT_SHA1,BIN_WRITE_ELEMENT_FLAG);
    
@@ -1887,6 +1947,7 @@ BW_element* BW_plugin::tagTime(int16_t id,time_t value)
     ASSERT_NO_RET_NULL(2020,makeSpace(BW2_INITIAL_FILE_SIZE+4));
 
     BW_element* result = pool->new_element(XBT_UNIX_TIME,0);
+    ASSERT_NO_RET_NULL(2046,result != nullptr);
     
     result->init(pool,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1902,6 +1963,7 @@ BW_element* BW_plugin::tagTime64(int16_t id,int64_t value)
     ASSERT_NO_RET_NULL(1960,makeSpace(BW2_INITIAL_FILE_SIZE+8));
 
     BW_element* result = pool->new_element(XBT_UNIX_TIME64_MSEC,0);
+    ASSERT_NO_RET_NULL(2047,result != nullptr);
     
     result->init(pool,id,XBT_UNIX_TIME64_MSEC,BIN_WRITE_ELEMENT_FLAG);
     

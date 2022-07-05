@@ -132,6 +132,7 @@ public:
     uint32_t        flags;                  // BW_SYMBOLS_FAST_REG | ....
 
     int16_t         getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type);
+    const char      *getName(BW_pool *pool,int search_id);
 };
 
 class BW_pool // this is flat pointer-less structure mapped directly to the first position of shared memory
