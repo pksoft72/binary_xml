@@ -197,6 +197,7 @@ public:
     virtual ~BW_plugin();
 
     void        setFlags(uint32_t flags);
+    bool        setMaxPoolSize(int max_pool_size);
     
     virtual bool Initialize();
         bool InitEmptyFile();

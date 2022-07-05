@@ -1,9 +1,9 @@
 #ifdef BIN_WRITE_PLUGIN
-#include "bin_write_plugin.h"
+#include <binary_xml/bin_write_plugin.h>
 
-#include "bin_xml.h"
-#include "bin_xml_types.h"
-#include "macros.h"
+#include <binary_xml/bin_xml.h>
+#include <binary_xml/bin_xml_types.h>
+#include <binary_xml/macros.h>
 
 #include <string.h>
 #include <stdio.h>     // perror
@@ -1351,6 +1351,13 @@ BW_plugin::~BW_plugin()
 void BW_plugin::setFlags(uint32_t flags)
 {
     this->config_flags = flags;
+}
+
+bool BW_plugin::setMaxPoolSize(int max_pool_size)
+{
+    ASSERT_NO_RET_FALSE(2048,!initialized);
+    this->max_pool_size = max_pool_size;
+    return true;
 }
 
 bool BW_plugin::Initialize()
