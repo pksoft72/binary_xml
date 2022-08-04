@@ -29,3 +29,16 @@ Features:
 ## Full history
 
 We can think about data not only as a current snapshot but about whole history and snapshots at any time. This may be less effective and only sometimes it is needed.
+
+
+
+
+## binary_xml place in IT
+
+There is very fast data processing in code, when data are stored in fixed positions in memory and has native binary format.
+
+There is slow big data transactional storage (typically SQL database), which can provide storing great amount of data and it's transaction safety.
+
+Binary_xml is method to join both worlds on fast solution, where all compromises can be reevaluated on application level.
+
+
