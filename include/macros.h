@@ -40,21 +40,27 @@
 #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
 
-
-#define STRCPY(dst,src) do {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';} while(0)
+#ifndef STRCPY
+    #define STRCPY(dst,src) do {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';} while(0)
+#endif
 #define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
 #define LOG_ERROR(fmt,...) fprintf(stderr,ANSI_RED_BRIGHT "Error:" fmt ANSI_RESET_LF,__VA_ARGS__)
 #define LOG(fmt,...) fprintf(stderr,ANSI_BLACK_BRIGHT "%s\t" ANSI_RESET fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__)
 
 
-#define MINIMIZE(x,y) do{if ((y) < (x)) (x) = (y);}while(0)
-#define MAXIMIZE(x,y) do{if ((y) > (x)) (x) = (y);}while(0)
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
-
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#ifndef MINIMIZE
+    #define MINIMIZE(x,y) do{if ((y) < (x)) (x) = (y);}while(0)
+#endif
+#ifndef MAXIMIZE
+    #define MAXIMIZE(x,y) do{if ((y) > (x)) (x) = (y);}while(0)
+#endif
+#ifndef MAX
+    #define MAX(x,y) ((x) > (y) ? (x) : (y))
+#endif
+#ifndef MIN
+    #define MIN(x,y) ((x) < (y) ? (x) : (y))
+#endif
 
 #define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
 
@@ -69,6 +75,12 @@
 #endif
 
 #define elementsof(X) (sizeof(X) / sizeof(X[0]))
+
+#define HEX2VALUE(x) ((x) >= '0' && (x) <= '9' ? (x) - '0' :\
+                        ((x) >= 'a' && (x) <= 'f' ? (x) - 'a' + 10 :\
+                        ((x) >= 'A' && (x) <= 'F' ? (x) - 'A' + 10 :\
+                        -1)))
+                       
 
 //#define exit _exit
 #endif
