@@ -2179,6 +2179,7 @@ const char *BW_plugin::getNodeValue(void *element)
 
 const char *BW_plugin::getNodeBinValue(void *element,XML_Binary_Type &type,int &size)
 {
+    if (element == nullptr) return nullptr; // no attributes
     BW_element *E = reinterpret_cast<BW_element*>(element);
     type = static_cast<XML_Binary_Type>(E->value_type);
     
@@ -2206,6 +2207,8 @@ BW_element* BW_plugin::BWE(BW_offset_t offset)
 
 void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
 {
+    if (parent == nullptr) return; // nothing
+
     BW_element *E = reinterpret_cast<BW_element*>(parent);
     if (E->first_child == 0) return; // no elements
     BW_element *child = BWE(E->first_child);
@@ -2219,6 +2222,7 @@ void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdat
 
 void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)
 {
+    if (parent == nullptr) return; // no attributes
     BW_element *E = reinterpret_cast<BW_element*>(parent);
     on_element(E,userdata,deep);
     if (E->first_child == 0) return; // no elements
@@ -2234,9 +2238,9 @@ void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent
 
 void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
 {
+    if (element == nullptr) return; // no attributes
+
     BW_element *E = reinterpret_cast<BW_element*>(element);
-    if (E->first_attribute == 0) return; // no attributes
-    
     BW_element *child = BWE(E->first_attribute);
     for(;;)
     {
@@ -2251,6 +2255,7 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
 
 bool BW_plugin::ForAllBinParams(OnBinParam_t on_param,void *element,void *userdata)
 {
+    if (element == nullptr) return true; // nothing
     BW_element *E = reinterpret_cast<BW_element*>(element);
     if (E->first_attribute == 0) return true; // no attributes
     
