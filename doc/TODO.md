@@ -1,5 +1,18 @@
 # Binary XML TODO
 
+## Indexes
+
+I have an idea, that it would be possible to make indexes/hash tables directly linked to tag.
+
+    <Controllers _hash_table="">
+        <Controller id="123">...</Controller>
+        <Controller id="124">...</Controller>
+        <Controller id="125">...</Controller>
+        <Controller id="126">...</Controller>
+    </Controllers>
+
+This attribute could be produced by special function = recreating of index/hash table. Standard accessing functions would update such and index/hash table.
+
 ## Write plugin
 
 ### Write plugin - level 0
