@@ -756,7 +756,7 @@ int64_t *BW_element::getInt64()
     XML_Binary_Type     attr_type = (flags & BIN_WRITE_ATTR_FLAG ? 
                             pool->getAttrType(identification) :
                             pool->getTagType(identification));
-    ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64);// || attr_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64 || value_type == XBT_INT64);// || attr_type == XBT_VARIANT);
 
     return reinterpret_cast<int64_t*>(this+1); // just after this element
 }

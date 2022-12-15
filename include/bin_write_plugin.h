@@ -120,7 +120,9 @@ public:
     BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);
     bool         EqualKeys(XB_reader &xb,XML_Item *src);
 
-#define BW_FOREACH(list,element) for(BW_offset_t _idx = 0,BW_element *element = list->NextChild(_idx);element != nullptr;element = list->NextChild(_idx))
+// !!! BW_FOREACH are 2 commands !!! cannot be used like if () BW_FOREACH2(...)
+#define BW_FOREACH2(list,element) BW_offset_t _idx = 0;for(BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
+//#define BW_FOREACH(list,element) for(BW_offset_t _idx = 0,BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
     BW_element*  NextChild(BW_offset_t &offset);
 };
 
