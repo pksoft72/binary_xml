@@ -557,6 +557,24 @@ BW_element  *BW_element::attrGet(int16_t id)
     return nullptr;
 }
 
+BW_element*  BW_element::NextChild(BW_offset_t &offset)
+// Usage:
+// for(BW_offset_t idx = 0,BW_element *X;X != nullptr;X = NextChild(idx))
+// 
+{
+    if (this == nullptr) return nullptr; // empty list -> no children
+
+    if (offset == 0) // first element of loop
+        if (first_child == 0) 
+            return nullptr; // empty list
+        else
+            return BWE(offset = first_child); // first child
+
+    BW_element *prev = BWE(offset); // current element, need next
+    if (prev->next == first_child) return nullptr; // end of loop
+    return BWE(offset = prev->next);
+}
+
 //-------------------------------------------------------------------------------------------------
 
 BW_element  *BW_element::tagGet(int16_t id)

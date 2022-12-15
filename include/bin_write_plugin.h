@@ -120,6 +120,8 @@ public:
     BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);
     bool         EqualKeys(XB_reader &xb,XML_Item *src);
 
+#define BW_FOREACH(list,element) for(BW_offset_t _idx = 0,BW_element *element = list->NextChild(_idx);element != nullptr;element = list->NextChild(_idx))
+    BW_element*  NextChild(BW_offset_t &offset);
 };
 
 #define BW_SYMBOLS_FAST_REG 1
