@@ -150,6 +150,12 @@ BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
     
     old_value->flags |= BIN_DELETED;
     old_value->next = old_value->prev = old_value->offset;
+
+    if (first_child == old_value->offset)
+        first_child = new_value->offset;
+    if (first_attribute == old_value->offset)
+        first_attribute = new_value->offset;
+
     return this;
 }
 
