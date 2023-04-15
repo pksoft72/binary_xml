@@ -14,6 +14,12 @@ enum SymbolTableTypes
     SYMBOL_TABLES_COUNT
 };
 
+enum Bin_xml_creator_target
+{
+    XBTARGET_XB = 0,
+    XBTARGET_XBW
+};
+
 const int MAX_SYMBOL_COUNT = 32768; // symbols are stored into 16bit words, negative values are reserved
 const int TAB_SIZE = 4;
 
@@ -94,13 +100,16 @@ protected:
 // incremental addition
     int     dst_file;
 public:
-    Bin_xml_creator(const char *src,const char *dst);
-    Bin_xml_creator(Bin_src_plugin *src,const char *dst);
-    Bin_xml_creator(Bin_src_plugin *src);
+    Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator_target target = XBTARGET_XB);
+    Bin_xml_creator(Bin_src_plugin *src,const char *dst,Bin_xml_creator_target target = XBTARGET_XB);
+    Bin_xml_creator(Bin_src_plugin *src,Bin_xml_creator_target target = XBTARGET_XB);
     virtual ~Bin_xml_creator();
 
     bool DoAll();
-//        bool PrepareDestination();  
+       bool Make_xb();
+       bool Make_xbw();
+        bool CopySymbolTable();
+        bool MakeSymbolTable();
     bool Append(void *element);
 protected:
         static void FirstPassEvent(void *element,void *userdata,int deep);

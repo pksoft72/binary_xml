@@ -4,7 +4,8 @@ make || exit 1
 cd build/default
 #./test-creating
 rm *.xb*
-gdb --args 2xb test.xml
+gdb --args 2xbw ../../src/tests/test-file-small.xml
+#gdb --args 2xb test.xml
 #gdb test-creating
 #xb2xml -v -v -v test4.xb
 #gdb --args ./xb2xml -v -v -v test4.xb

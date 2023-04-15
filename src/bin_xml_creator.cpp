@@ -18,7 +18,9 @@
 #include <limits.h> // PATH_MAX
 #include <iostream>
 
-#define DBG(x)
+#include "bin_write_plugin.h"
+
+#define DBG(x) x
 
 namespace pklib_xml
 {
@@ -253,13 +255,16 @@ std::ostream& operator<<(std::ostream& os, Bin_src_plugin &src)
 
 //-------------------------------------------------------------------------------------------------
 
-Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
+Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator_target target)
 {
     assert(BIN_SRC_PLUGIN_SELECTOR != nullptr);
 
     this->src = BIN_SRC_PLUGIN_SELECTOR(src,this);
     this->src_allocated = true;
-    this->dst = AllocFilenameChangeExt(dst,".xb");
+    if (target == XBTARGET_XB)
+        this->dst = AllocFilenameChangeExt(dst,".xb");
+    else
+        this->dst = AllocFilenameChangeExt(dst,".xbw");
     this->dst_file = -1; 
     
     this->data = nullptr;
@@ -274,13 +279,17 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
     }
 }
 
-Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
+Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst,Bin_xml_creator_target target)
 {
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
     if (dst == nullptr) dst = src->getFilename();
-    this->dst = AllocFilenameChangeExt(dst,".xb");
+    if (target == XBTARGET_XB)
+        this->dst = AllocFilenameChangeExt(dst,".xb");
+    else
+        this->dst = AllocFilenameChangeExt(dst,".xbw");
+    this->dst_file = -1; 
     this->data = nullptr;
     this->dst_file = -1; 
 
@@ -292,12 +301,16 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
     }
 }
 
-Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src)
+Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,Bin_xml_creator_target target)
 {
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
-    this->dst = AllocFilenameChangeExt(src->getFilename(),".xb");
+    if (target == XBTARGET_XB)
+        this->dst = AllocFilenameChangeExt(dst,".xb");
+    else
+        this->dst = AllocFilenameChangeExt(dst,".xbw");
+    this->dst_file = -1; 
     this->data = nullptr;
     this->dst_file = -1; 
 
@@ -342,6 +355,17 @@ Bin_xml_creator::~Bin_xml_creator()
 
 bool Bin_xml_creator::DoAll()
 {
+    ASSERT_NO_RET_FALSE(2049,dst != nullptr);
+    int dst_len = strlen(dst);
+    ASSERT_NO_RET_FALSE(2050,dst_len > 0);
+    if (dst[dst_len-1] == 'w')
+        return Make_xbw();
+    else
+        return Make_xb();
+}
+
+bool Bin_xml_creator::Make_xb()
+{
     if (!src->Initialize()) return false;
 
     // 1. filling symbol tables----------------------
@@ -353,52 +377,7 @@ bool Bin_xml_creator::DoAll()
     // total_node_count, total_param_count
     src->ForAllChildrenRecursively(FirstPassEvent,root,(void*)this,0);
 
-    if (src->getSymbolCount(SYMBOL_TABLE_NODES) > 0) // has special function for symbol table
-    {
-    // copy of symbol tables where src has some - it's faster and no type detection is needed
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-            int count = /*this->symbol_count[t] = */src->getSymbolCount((SymbolTableTypes)t);
-            this->symbol_table[t] = reinterpret_cast<const char **>(malloc(sizeof(char*)*count));
-            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(sizeof(XML_Binary_Type_Stored)*count));
-            for(int i = 0;i < count;i++)
-            {
-                XML_Binary_Type type;
-                const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
-                if (type != XBT_UNKNOWN)
-                    FindOrAddTyped(name,(SymbolTableTypes)t,type);
-            }
-        }
-    }
-    else
-    {
-        // I don't know final size of array yet, I will allocate more
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-            int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
-            this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
-            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
-            memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
-
-            this->symbol_count[t] = 0;
-        }
-
-        src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
-
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-            const char **table_backup = this->symbol_table[t];
-            XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
-
-            int size1 = sizeof(char*)*symbol_count[t];
-            int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
-            this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
-            memcpy(this->symbol_table[t],table_backup,size1);
-
-            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
-            memcpy(this->symbol_table_types[t],table_types_backup,size2);
-        }
-    }
+    CopySymbolTable() || MakeSymbolTable();
     // 2. show stats---------------------------------
 
     DBG(std::cout << "total elements: " << total_node_count << "\n");
@@ -459,6 +438,58 @@ bool Bin_xml_creator::DoAll()
     return (written == dst_file_size);
 }
 
+bool Bin_xml_creator::CopySymbolTable() 
+{
+    // has special function for symbol table?
+    if (src->getSymbolCount(SYMBOL_TABLE_NODES) <=  0) return false;
+    // copy of symbol tables where src has some - it's faster and no type detection is needed
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        int count = /*this->symbol_count[t] = */src->getSymbolCount((SymbolTableTypes)t);
+        this->symbol_table[t] = reinterpret_cast<const char **>(malloc(sizeof(char*)*count));
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(sizeof(XML_Binary_Type_Stored)*count));
+        for(int i = 0;i < count;i++)
+        {
+            XML_Binary_Type type;
+            const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
+            if (type != XBT_UNKNOWN)
+                FindOrAddTyped(name,(SymbolTableTypes)t,type);
+        }
+    }
+    return true;
+}
+
+bool Bin_xml_creator::MakeSymbolTable() 
+{
+    // I don't know final size of array yet, I will allocate more
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
+        this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
+        memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
+
+        this->symbol_count[t] = 0;
+    }
+
+    src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
+
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        const char **table_backup = this->symbol_table[t];
+        XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
+
+        int size1 = sizeof(char*)*symbol_count[t];
+        int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
+        this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
+        memcpy(this->symbol_table[t],table_backup,size1);
+
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
+        memcpy(this->symbol_table_types[t],table_types_backup,size2);
+    }
+    return true;
+}
+
 bool Bin_xml_creator::Append(void *element)
 {
     if (dst_file == -1)
@@ -476,7 +507,7 @@ bool Bin_xml_creator::Append(void *element)
     if (err != 0)
     {
 
-        ERRNO_SHOW(0,"fstat",dst);  
+        ERRNO_SHOW(2051,"fstat",dst);  
         return false;
     }
     int file_align = file_info.st_size & 0xf; // use alignemenet like length of file
@@ -540,6 +571,57 @@ void Bin_xml_creator::SecondPassParamEvent(const char *param_name,const char *pa
     _this->FindOrAdd(param_name,SYMBOL_TABLE_PARAMS,param_value);
 }
 
+//-------------------------------------------------------------------------------------------------
+
+bool Bin_xml_creator::Make_xbw()
+{
+    if (!src->Initialize()) return false;
+
+    // 1. filling symbol tables----------------------
+    this->total_node_count = 4; // service elements!
+    this->total_param_count = 0;
+
+    void *root = src->getRoot();
+    ASSERT_NO_RET_FALSE(2052,root != nullptr);
+    // total_node_count, total_param_count
+    src->ForAllChildrenRecursively(FirstPassEvent,root,(void*)this,0);
+
+    CopySymbolTable() || MakeSymbolTable();
+    // 2. show stats---------------------------------
+    // I have completed 2x2 arrays
+    const char              **symbol_table[SYMBOL_TABLES_COUNT];
+    XML_Binary_Type_Stored  *symbol_table_types[SYMBOL_TABLES_COUNT];
+    int                     symbol_count[SYMBOL_TABLES_COUNT];
+
+    DBG(std::cout << "total elements: " << total_node_count << "\n");
+    DBG(std::cout << "total params: " << total_param_count << "\n");
+    DBG(std::cout << ANSI_WHITE_HIGH "node names: " ANSI_RESET);
+    DBG(ShowSymbols(SYMBOL_TABLE_NODES));
+    DBG(std::cout << "\n" ANSI_WHITE_HIGH "param names:" ANSI_RESET);
+    DBG(ShowSymbols(SYMBOL_TABLE_PARAMS));
+    DBG(std::cout << "\n");
+
+    // 3. allocate and fill--------------------------
+    src->updateFileSize();
+
+    // 3.1 create
+    BW_plugin W(dst,nullptr,MAX(0x40000,((src->getFileSize() >> 12)+1) << 16)); // 16*more - rounded up to 64kB blocks - should not grow!
+    // 3.2 initialize
+    ASSERT_NO_RET_FALSE(2053,W.Initialize());
+    // 3.3 tags
+    for(int i = 0;i < symbol_count[SYMBOL_TABLE_NODES];i++)
+        W.registerTag(i,symbol_table[SYMBOL_TABLE_NODES][i],static_cast<XML_Binary_Type>(symbol_table_types[SYMBOL_TABLE_NODES][i]));
+    // 3.4 attrs
+    for(int i = 0;i < symbol_count[SYMBOL_TABLE_PARAMS];i++)
+        W.registerAttr(i,symbol_table[SYMBOL_TABLE_PARAMS][i],static_cast<XML_Binary_Type>(symbol_table_types[SYMBOL_TABLE_PARAMS][i]));
+    // 3.5 symbols done
+    ASSERT_NO_RET_FALSE(2054,W.allRegistered());
+
+    // 3.6 fill data
+    
+
+    return false; // not implemented
+}
 //-------------------------------------------------------------------------------------------------
 
 int32_t Bin_xml_creator::Pack()
@@ -1013,13 +1095,11 @@ int Bin_xml_creator::Find(const char *symbol,const int t)
 
 void Bin_xml_creator::ShowSymbols(const int t)
 {
-    std::cout << "[" << symbol_count[t] << "]";
-    if (symbol_count[t] == 0) return;
-    std::cout << " " << symbol_table[t][0];
-    for(int i = 1;i < symbol_count[t];i++)
+    std::cout << "[" << symbol_count[t] << "]: ";
+    for(int i = 0;i < symbol_count[t];i++)
     {
-        std::cout << "," << symbol_table[t][i];
-        std::cout << ":" << XML_BINARY_TYPE_NAMES[symbol_table_types[t][i]];
+        if (i > 0) std::cout << ", ";
+        std::cout << symbol_table[t][i] << ":" << XML_BINARY_TYPE_NAMES[symbol_table_types[t][i]];
     }
 }
 
