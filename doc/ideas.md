@@ -41,4 +41,28 @@ There is slow big data transactional storage (typically SQL database), which can
 
 Binary_xml is method to join both worlds on fast solution, where all compromises can be reevaluated on application level.
 
+## Linking objects
 
+I suppose, objects should have their ID (at least 64bit with GUID features).
+There should be possible to use direct pointer (32bit) - inside single file.
+There should be way to describe reference to another file.
+In header of file there should be table with referenced files - filename & code.
+Code will be used while referencing to remote file.
+
+Code should be Unique in whole application.
+
+Binary representation whould be uint64(guid)+int32(file reference)+int32(in file offset)=128bit.
+
+    <History>
+        <ReferencedFiles>
+            <File Code="H1" File="2023/01/history_1.xbw"/>
+            <File Code="H2" File="2023/02/history_1.xbw"/>
+        </ReferencedFiles>
+
+        <Records>
+            <Event id="134567987541646">
+                <Previous ref="H2-13468764564142"/>
+                <Parent ref="H1-749765464645"/>
+            </Event>
+        </Records>
+    </History>
