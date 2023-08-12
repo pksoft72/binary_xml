@@ -16,6 +16,8 @@ private:
 public: //---------------------------------------
 	Bin_xml_packer(const char *src,const char *dst);
     Bin_xml_packer(Bin_src_plugin *src,const char *dst);
+
+
 	static bool Convert(const char *src,const char *dst);
 	static bool Convert(Bin_src_plugin *src,const char *dst);
     static bool GetXB(const char *xml_filename,char *xb_filename,const char **err_message);

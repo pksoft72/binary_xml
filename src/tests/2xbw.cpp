@@ -31,7 +31,8 @@ int main(int argc,char **argv)
 
         printf("Input:  %s\n",argv[i]);
         printf("Output: %s\n",dst);
-        if (!pklib_xml::Bin_xml_packer::Convert(argv[i],dst))
+        pklib_xml::Bin_xml_creator XC(argv[1],dst,pklib_xml::XBTARGET_XBW);
+        if (!XC.DoAll())
             return 1;
     }
     

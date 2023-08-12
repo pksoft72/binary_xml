@@ -333,6 +333,8 @@ Bin_xml_packer::Bin_xml_packer(Bin_src_plugin *src,const char *dst)
 #endif
 }
 
+//-------------------------------------------------------------------------------------------------
+
 bool Bin_xml_packer::Convert(const char *src,const char *dst)
 {
     Bin_xml_packer XC(src,dst);

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<P4Network>
+	<Nodes>
+		<Node id="120123131313213132" serial="1">
+			<Name>z4</Name>
+			<PublicIp>z4.pksoft.org</PublicIp>
+			<LastRun>2019-04-13 15:50:56</LastRun>
+			<Connections/>
+		
+		</Node>
+		<Node id="1818770230475441511" serial="0">
+			<Name>z1</Name>
+			<PublicIp/>
+			<LastRun>2019-04-13 15:50:56</LastRun>
+			<Description>Main computer</Description>
+			<HardwareInfo>
+				<Architecture>x86_64</Architecture>
+				<CPU cores="6" threads="12" frequency_mhz="100" cache_kb="20" bogomips="3">AMD Ryzen 5 2600 Six-Core Processor</CPU>
+				<MemoryMB>16384</MemoryMB>
+			
+			</HardwareInfo>
+			<SystemInfo>
+				<Hostname>z1</Hostname>
+				<OperatingSystem>Linux 4.15.0-45-generic</OperatingSystem>
+				<Distribution>Ubuntu</Distribution>
+				<Username>petr</Username>
+			
+			</SystemInfo>
+			<SoftwareInfo>
+				<Version>0.1.1.0</Version>
+				<VersionHash>4fe286a6a9f06571ed6baa063f34684130cd380a</VersionHash>
+				<VersionDate>2021-05-19 23:58:21 +0200</VersionDate>
+				<ExeHash>5bc7ca15802f4705b866c6b7948d5568c4959be1</ExeHash>
+			
+			</SoftwareInfo>
+		
+		</Node>
+		<Node id="1231549874654654654" serial="1">
+			<Name>E535U</Name>
+			<PublicIp/>
+			<LastRun>2019-04-13 15:50:56</LastRun>
+			<Connections>
+				<Uplink to="120">
+					<LastConnection>2019-04-24 16:24:33</LastConnection>
+					<Interval>574</Interval>
+					<Quality>5786</Quality>
+					<BandwidthLimit>100000</BandwidthLimit>
+				
+				</Uplink>
+				<Uplink to="121">
+					<LastConnection>2019-04-24 16:24:33</LastConnection>
+					<Interval>574</Interval>
+					<Quality>5786</Quality>
+					<BandwidthLimit>100000</BandwidthLimit>
+				
+				</Uplink>
+			
+			</Connections>
+		
+		</Node>
+	
+	</Nodes>
+
+</P4Network>
