@@ -66,3 +66,15 @@ Binary representation whould be uint64(guid)+int32(file reference)+int32(in file
             </Event>
         </Records>
     </History>
+
+## .xbw version 2
+
+I will need parent link for easy locking.
+
+So I can join first_child and first_attribute pointers into children.
+
+This will allow cleaner interface.
+
+There can be new flag - BIN_WRITE_HAS_ATTR which can indicate, whether some attribute is present.
+
+Also BIN_WRITE_HAS_LOCK will indicate locking node.
