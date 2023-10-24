@@ -45,8 +45,8 @@
 #endif
 #define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
-#define LOG_ERROR(fmt,...) fprintf(stderr,ANSI_RED_BRIGHT "Error:" fmt ANSI_RESET_LF,__VA_ARGS__)
-#define LOG(fmt,...) fprintf(stderr,ANSI_BLACK_BRIGHT "%s\t" ANSI_RESET fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__)
+#define LOG_ERROR(fmt,...) do { fflush(stdout);fprintf(stderr,ANSI_RED_BRIGHT "Error:" fmt ANSI_RESET_LF,__VA_ARGS__);fflush(stderr);} while(0)
+#define LOG(fmt,...) do {fflush(stdout);fprintf(stderr,ANSI_BLACK_BRIGHT "%s\t" ANSI_RESET fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while (0)
 
 
 #ifndef MINIMIZE

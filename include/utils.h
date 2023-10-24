@@ -25,6 +25,7 @@ bool SkipLine(const char *&p);
 
 int ScanHex(const char *&p,uint8_t *dst,int dst_size);
 const char *Hex2Str(const char *src,int src_size,char *dst);
+const char *Hex3Str(const char *src,int src_size,char *dst);
 
 // writeable pointer variants
 bool ScanW(char *&p,const char *beg);
