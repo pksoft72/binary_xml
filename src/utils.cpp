@@ -9,6 +9,7 @@
 #include <limits.h>
 
 const char HEX[16+1] = "0123456789abcdef";
+const char HEX_UP[16+1] = "0123456789ABCDEF";
 
 bool WriteToFile(const char *filename,const char *fmt,...)
 {
@@ -577,6 +578,21 @@ const char *Hex2Str(const char *src,int src_size,char *dst)
         dst[(i << 1)+1] = HEX[value & 0xf];
     }
     dst[src_size << 1] = '\0';
+    return dst;
+}
+
+const char *Hex3Str(const char *src,int src_size,char *dst)
+{
+    if (src_size < 0) src_size = 0; // don't write to negative indexes!
+    char *d = dst;
+    for(int i = 0;i < src_size;i++)
+    {
+        uint8_t value = static_cast<uint8_t>(src[i]);
+        *(d++) = HEX_UP[value >> 4];
+        *(d++) = HEX_UP[value & 0xf];
+        *(d++) = ' ';
+    }
+    *(d++) = '\0';
     return dst;
 }
 
