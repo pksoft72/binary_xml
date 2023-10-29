@@ -36,6 +36,7 @@
 #define ASSERT_NO_RET_1(x,condition)        ASSERT_NO_(x,condition,return 1)
 #define ASSERT_NO_RET_N1(x,condition)        ASSERT_NO_(x,condition,return -1)
 #define ASSERT_NO_RET_(x,condition,retvalue)        ASSERT_NO_((x),(condition),return (retvalue))
+#define ASSERT_NO_RET_TIP_(x,condition,retvalue,tip)        ASSERT_NO_((x),(condition),std::cerr << ANSI_BLUE_BRIGHT << tip << ANSI_RESET_LF;return (retvalue))
 #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
 #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})

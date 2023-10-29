@@ -78,3 +78,14 @@ This will allow cleaner interface.
 There can be new flag - BIN_WRITE_HAS_ATTR which can indicate, whether some attribute is present.
 
 Also BIN_WRITE_HAS_LOCK will indicate locking node.
+
+
+## .xbw binary objects
+
+It is nice to have objects with binary representation of value and type identification via int16\_t, but they are still slow when compared to standard struct.
+
+To boost speed, it is possible to have BLOB value with 32-bit size in first 4 bytes and binary data values with fixed size and without pointers or with relative pointers.
+
+Size field is also usable for some version management, as when structure is extended only on the end, it can be kept compatible (with some additional conditions) with older versions.
+
+Only flaw of this is, that no VMT can be in shared data structures (pointers are not compatible when shared between processes), so no virtual methods can be used.

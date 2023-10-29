@@ -261,6 +261,7 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator
 
     this->src = BIN_SRC_PLUGIN_SELECTOR(src,this);
     this->src_allocated = true;
+    this->target = target;
     if (target == XBTARGET_XB)
         this->dst = AllocFilenameChangeExt(dst,".xb");
     else
@@ -285,6 +286,7 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst,Bin_xml_cre
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
     if (dst == nullptr) dst = src->getFilename();
+    this->target = target;
     if (target == XBTARGET_XB)
         this->dst = AllocFilenameChangeExt(dst,".xb");
     else
@@ -306,6 +308,7 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,Bin_xml_creator_target targ
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
+    this->target = target;
     if (target == XBTARGET_XB)
         this->dst = AllocFilenameChangeExt(dst,".xb");
     else
@@ -573,6 +576,16 @@ void Bin_xml_creator::SecondPassParamEvent(const char *param_name,const char *pa
 
 //-------------------------------------------------------------------------------------------------
 
+struct MakingXBW_1node
+{
+// input
+    Bin_xml_creator *creator;
+    BW_plugin       *bw;
+    void            *src_element;
+// result
+    BW_element      *dst_bw_element;
+};
+
 bool Bin_xml_creator::Make_xbw()
 {
     if (!src->Initialize()) return false;
@@ -618,7 +631,17 @@ bool Bin_xml_creator::Make_xbw()
     ASSERT_NO_RET_FALSE(2054,W.allRegistered());
 
     // 3.6 fill data
-    
+    MakingXBW_1node node_info;
+    node_info.creator = this;
+    node_info.bw      = &W;
+    node_info.src_element = root;
+    node_info.dst_bw_element = nullptr;
+
+    XStore2XBWEvent(root,&node_info);
+    W.setRoot(node_info.dst_bw_element);
+//typedef void (*OnElement_t)(void *element,void *userdata);
+
+
 
     return false; // not implemented
 }
@@ -962,6 +985,42 @@ void Bin_xml_creator::XStoreChildrenEvent(void *element,void *userdata)
 {
     XStoreParamsData *xstore_data = reinterpret_cast<XStoreParamsData*>(userdata);
     *(xstore_data->children++) = xstore_data->creator->WriteNode(xstore_data->_wp,element) - xstore_data->_x;
+}
+
+void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
+{
+    MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
+    ASSERT_NO_RET(2055,node_info->src_element == element);
+    Bin_xml_creator  *this = node_info.creator;
+
+    int tag_id = this->Find(this->src->getNodeName(element),SYMBOL_TABLE_NODES); // SLOW
+    ASSERT_NO_RET(2056,tag_id >= 0);
+
+    XML_Binary_Type tag_type;
+    int value_size = 0;
+    const char *value = this->str->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
+    if (value == nullptr)
+    {
+        value = this->str->getNodeValue(element);
+        tag_type = this->symbol_table_types[SYMBOL_TABLES_NODES][tag_id];
+    // THIS IS BAD: I have value in string but need size of this value as binary value
+    // and this size can be obtained by decoding string. But decoding string is work and
+    // if size of result is only result, it is waste of CPU time.
+    // XBW is based on atomic memory allocation and expect multiple processes to allocate
+    // at the same time. So size must be known at time of allocation.
+    // There are 2 solutions:
+    // 1. when single process - allocate more enough and return unused space later
+    // 2. when multi process - measure size first and then allocate
+    }
+    
+    
+
+
+//    BW_element *bw_root = W.tag(Find(src->getNodeName(root),SYMBOL_TABLE_NODES));
+//    W.setRoot(bw_root);
+//    src->ForAllChildren(,root,
+//void Bin_json_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
+    
 }
 
 //-------------------------------------------------------------------------------------------------
