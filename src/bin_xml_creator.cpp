@@ -991,18 +991,18 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
 {
     MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
     ASSERT_NO_RET(2055,node_info->src_element == element);
-    Bin_xml_creator  *this = node_info.creator;
+    Bin_xml_creator  *_this = node_info->creator;
 
-    int tag_id = this->Find(this->src->getNodeName(element),SYMBOL_TABLE_NODES); // SLOW
+    int tag_id = _this->Find(_this->src->getNodeName(element),SYMBOL_TABLE_NODES); // SLOW
     ASSERT_NO_RET(2056,tag_id >= 0);
 
     XML_Binary_Type tag_type;
     int value_size = 0;
-    const char *value = this->str->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
+    const char *value = _this->src->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
     if (value == nullptr)
     {
-        value = this->str->getNodeValue(element);
-        tag_type = this->symbol_table_types[SYMBOL_TABLES_NODES][tag_id];
+        value = _this->src->getNodeValue(element);
+        tag_type = static_cast<XML_Binary_Type>(_this->symbol_table_types[SYMBOL_TABLE_NODES][tag_id]);
     // THIS IS BAD: I have value in string but need size of this value as binary value
     // and this size can be obtained by decoding string. But decoding string is work and
     // if size of result is only result, it is waste of CPU time.
