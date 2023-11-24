@@ -88,6 +88,7 @@ int             XBT_Size    (XML_Binary_Type type,int size);
 int             XBT_Align   (XML_Binary_Type type);
 bool            XBT_Copy    (const char *src,XML_Binary_Type type,int size,char **_wp,char *limit);
 bool            XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
+int             XBT_SizeFromString(const char *src,XML_Binary_Type type);
 
 bool            XBT_Equal   (XML_Binary_Data_Ref A,XML_Binary_Data_Ref B);
 

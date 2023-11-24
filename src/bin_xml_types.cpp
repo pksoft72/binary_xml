@@ -1,8 +1,8 @@
-#include "bin_xml_types.h"
-#include "macros.h"
-#include "utils.h"
+#include <ac/binary_xml/bin_xml_types.h>
+#include <ac/binary_xml/macros.h>
+#include <ac/binary_xml/utils.h>
 #include <assert.h>
-#include "bin_xml.h"
+#include <ac/binary_xml/bin_xml.h>
 
 namespace pklib_xml
 {
@@ -396,6 +396,39 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
     return false;
 }
 
+int XBT_SizeFromString(const char *src,XML_Binary_Type type)
+{
+    switch (type)
+    {
+        case XBT_NULL: return 0;
+        case XBT_INT32: return 4;
+        case XBT_INT64: return 8;
+        case XBT_FLOAT: return 4;
+        case XBT_DOUBLE: return 8;
+        case XBT_STRING: return strlen(src)+1;
+        case XBT_SHA1: return 20;
+        case XBT_GUID: return 16;
+        case XBT_UNIX_DATE: return 4;
+        case XBT_UNIX_TIME: return 4;
+        case XBT_UNIX_TIME64_MSEC: return 8;
+        case XBT_IPv4: return 4;
+        case XBT_IPv6: return 16;
+        case XBT_UINT32: return 4;
+        case XBT_UINT64: return 8;
+
+        case XBT_BLOB:
+            ASSERT_NO_RET_N1(2057,NOT_IMPLEMENTED);
+            break;
+        case XBT_HEX:
+            ASSERT_NO_RET_N1(2058,NOT_IMPLEMENTED);
+            break;
+        default:
+            fprintf(stderr,"%s: Size detection of '%s' to binary representation is not implemented!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
+//            assert(false);
+            return -1;
+    }
+    return false;
+}
 const char *XBT_ToString(XML_Binary_Type type,const char *data)
 {
     int align_size = XBT_Align(type);

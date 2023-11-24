@@ -1,12 +1,25 @@
 # Working diary
 
+## 2023-11-24
+
+I need 2xbw for easily editing.
+
+    bool Bin_xml_creator::Make_xbw()
+
+    ---> void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
+
+    
+
+
+
+
 ## 2021-05-22
 
 I am trying to implement 
     
     bool BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
 
-This is not so easy. I must compare all key attributes of nodes or even a childrens.
+This is not so easy. I must compare all key attributes of nodes or even a children.
 
 I must provide some size information for `XBT_Compare`.
 

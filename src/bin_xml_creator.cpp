@@ -1011,6 +1011,12 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     // There are 2 solutions:
     // 1. when single process - allocate more enough and return unused space later
     // 2. when multi process - measure size first and then allocate
+    
+    // NOW SLOW but SAFE solution
+    // 1st pass - detecting real size
+        int size = XBT_SizeFromString(value,tag_type); // TODO: not finished detection!!!
+        
+        
     }
     
     
