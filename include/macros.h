@@ -40,6 +40,7 @@
 #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
 #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
+#define NOT_IMPLEMENTED false // used in assert
 
 #ifndef STRCPY
     #define STRCPY(dst,src) do {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';} while(0)

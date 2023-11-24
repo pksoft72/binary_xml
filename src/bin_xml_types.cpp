@@ -1,8 +1,8 @@
-#include <ac/binary_xml/bin_xml_types.h>
-#include <ac/binary_xml/macros.h>
-#include <ac/binary_xml/utils.h>
+#include <bin_xml_types.h>
+#include <macros.h>
+#include <utils.h>
 #include <assert.h>
-#include <ac/binary_xml/bin_xml.h>
+#include <bin_xml.h>
 
 namespace pklib_xml
 {
