@@ -1,5 +1,11 @@
 # Working diary
 
+## 2023-01-06
+
+[FIX] Code till calling XStore2XBWEvent is OK.
+
+
+
 ## 2023-11-24
 
 I need 2xbw for easily editing.

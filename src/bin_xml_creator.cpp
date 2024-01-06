@@ -267,6 +267,7 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator
     else
         this->dst = AllocFilenameChangeExt(dst,".xbw");
     this->dst_file = -1; 
+    this->dst_file_size = -1;
     
     this->data = nullptr;
 
@@ -602,9 +603,9 @@ bool Bin_xml_creator::Make_xbw()
     CopySymbolTable() || MakeSymbolTable();
     // 2. show stats---------------------------------
     // I have completed 2x2 arrays
-    const char              **symbol_table[SYMBOL_TABLES_COUNT];
-    XML_Binary_Type_Stored  *symbol_table_types[SYMBOL_TABLES_COUNT];
-    int                     symbol_count[SYMBOL_TABLES_COUNT];
+    //const char              **symbol_table[SYMBOL_TABLES_COUNT];
+    //XML_Binary_Type_Stored  *symbol_table_types[SYMBOL_TABLES_COUNT];
+    //int                     symbol_count[SYMBOL_TABLES_COUNT];
 
     DBG(std::cout << "total elements: " << total_node_count << "\n");
     DBG(std::cout << "total params: " << total_param_count << "\n");
@@ -618,7 +619,8 @@ bool Bin_xml_creator::Make_xbw()
     src->updateFileSize();
 
     // 3.1 create
-    BW_plugin W(dst,nullptr,MAX(0x40000,((src->getFileSize() >> 12)+1) << 16)); // 16*more - rounded up to 64kB blocks - should not grow!
+    //BW_plugin(const char *filename = nullptr,Bin_xml_creator *bin_xml_creator = nullptr,int max_pool_size = 0x20000,uint32_t config_flags = 0);
+    BW_plugin W(dst,nullptr,MAX(0x40000,((src->getFileSize() >> 12)+1) << 16),BIN_WRITE_CFG_ALWAYS_CREATE_NEW); // 16*more - rounded up to 64kB blocks - should not grow!
     // 3.2 initialize
     ASSERT_NO_RET_FALSE(2053,W.Initialize());
     // 3.3 tags
@@ -638,12 +640,13 @@ bool Bin_xml_creator::Make_xbw()
     node_info.dst_bw_element = nullptr;
 
     XStore2XBWEvent(root,&node_info);
+    ASSERT_NO_RET_FALSE(2059,node_info.dst_bw_element != nullptr);
     W.setRoot(node_info.dst_bw_element);
 //typedef void (*OnElement_t)(void *element,void *userdata);
 
 
 
-    return false; // not implemented
+    return true;
 }
 //-------------------------------------------------------------------------------------------------
 
@@ -999,7 +1002,7 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     XML_Binary_Type tag_type;
     int value_size = 0;
     const char *value = _this->src->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
-    if (value == nullptr)
+    if (value == nullptr) // text analyse solution when binary is not available
     {
         value = _this->src->getNodeValue(element);
         tag_type = static_cast<XML_Binary_Type>(_this->symbol_table_types[SYMBOL_TABLE_NODES][tag_id]);
@@ -1018,6 +1021,11 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
         
         
     }
+// OK, I have:
+// - tag_id
+// - tag_type;
+// - value as string / binary value
+    BW_element *bw1 = W.tag(
     
     
 
