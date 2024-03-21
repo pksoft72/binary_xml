@@ -67,6 +67,9 @@ Binary representation whould be uint64(guid)+int32(file reference)+int32(in file
         </Records>
     </History>
 
+Referencing via 32 bit offset can be unstable as object can move as it grows ...
+So backup variant through uint64 guid index file should help.
+
 ## .xbw version 2
 
 I will need parent link for easy locking.

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Users>
+    <User id="0">
+        <PublicName>anonymous user</PublicName>
+        <Rights>
+          <Area name="/">
+             <Right name="task">V</Right> <!-- Create View Read Update Delete | read update delete = only own tasks | Read = with sources | View = without sources-->
+             <Right name="comment">V</Right>
+             <Right name="vote">V</Right>
+          </Area>
+        </Rights>
+    </User>
+    <User id="1">
+        <PublicName>default user</PublicName>
+        <Rights>
+          <Area name="/">
+             <Right name="task">V</Right> <!-- Create View Read Update Delete | read update delete = only own tasks | Read = with sources | View = without sources-->
+             <Right name="comment">CVRud</Right>
+             <Right name="vote">CVRud</Right>
+          </Area>
+        </Rights>
+    </User>
+    <User id="1234">
+        <PublicName>pk</PublicName> <!-- want some anonymity -->
+        <FullName>Petr Kundrata</FullName> <!-- optional -->
+        <EMail>pksoft@atlas.cz</EMail> <!-- need some contact for password recovery - but not really needed -->
+        <EMailConfirmed>2022-12-22 09:06:31</EMailConfirmed>
+        <GMail>petr.kundrata72@gmail.com</GMail>
+        <Password></Password> <!-- hash of password -->
+        <Deleted>2090-12-22 00:00:00</Deleted> <!-- optional -->
+        <Rights>
+          <Area name="/">
+             <Right name="task">VR</Right> <!-- Create View Read Update Delete | read update delete = only own tasks | Read = with sources | View = without sources-->
+             <Right name="comment">CVud</Right>
+             <Right name="vote">CVrud</Right>
+          </Area>
+
+        </Rights>
+        <Stats>
+            <Logins>15</Logins>
+            <LoginLast>2022-12-22 09:45:15</LoginLast>
+            <IPLast>192.168.6.74</IPLast>
+        </Stats>
+    </User>
+</Users>
+
