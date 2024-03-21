@@ -1,6 +1,12 @@
 # Working diary
 
-## 2023-01-06
+## 2024-03-21
+
+I should write it as normally at work.
+
+I am thinking about xbw adding parent reference and join first_child and first_attribute to keep size of node.
+
+## 2024-01-06
 
 [FIX] Code till calling XStore2XBWEvent is OK.
 

@@ -65,7 +65,7 @@ public:
     BW_offset_t             prev;
 
     BW_offset_t             first_child;
-    BW_offset_t             first_attribute;
+    BW_offset_t             first_attribute;    // parent
 
     // value is placed just after this object
 
