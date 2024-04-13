@@ -22,7 +22,9 @@
 // All data written just into temporary part will be visible for all other processes.
 // 
 
-#define BIN_WRITE_POOL_FORMAT_VERSION   0
+#define BIN_WRITE_POOL_FORMAT_VERSION               0
+#define BIN_WRITE_POOL_FORMAT_VERSION_WITH_PARENT   1   // no first_child & first_attribute but parent & children 
+
 #define BW2_INITIAL_FILE_SIZE       0x4000      // 16kB
 
 #define BIN_WRITE_ATTR_FLAG         0  // element (1) or attribute (0)
@@ -66,6 +68,9 @@ public:
 
     BW_offset_t             first_child;
     BW_offset_t             first_attribute;
+// TODO: there can be only first_child and attributes would be distinguished via flags - so we could stay in 24B per node
+
+// TODO:     BW_offset_t             parent;    -- this should be populated for greater usability
 
     // value is placed just after this object
 
