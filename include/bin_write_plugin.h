@@ -68,9 +68,8 @@ public:
 
     BW_offset_t             first_child;
     BW_offset_t             first_attribute;
+// TODO: BW_offset_t             parent;    -- this should be populated for greater usability
 // TODO: there can be only first_child and attributes would be distinguished via flags - so we could stay in 24B per node
-
-// TODO:     BW_offset_t             parent;    -- this should be populated for greater usability
 
     // value is placed just after this object
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+make $* || exit 1
+gdb --args build/default/2xbw test/data/p4-users.xml
