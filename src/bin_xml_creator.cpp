@@ -1025,7 +1025,7 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
 // - tag_id
 // - tag_type;
 // - value as string / binary value
-    BW_element *bw1 = W.tag(
+//    BW_element *bw1 = W.tag(
     
     
 

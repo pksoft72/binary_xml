@@ -120,7 +120,7 @@ The is working conversion of standard xml and JSON into binary xml, but when we 
 
     ...
         -- Bin write plugin is object for authoring binary xml on the fly
-        -- wxb is different format than xb, it is position independent linked tree of objects
+        -- xbw is different format than xb, it is position independent linked tree of objects
         -- It is good for hanging new objects to tree.
         BW_plugin W("test3.wxb",nullptr,0x40000);
         ASSERT_NO_RET_(1150,W.Initialize(),1);

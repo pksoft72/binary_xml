@@ -361,6 +361,11 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 *_wp += scanned;
                 return scanned == 20;
             }
+        case XBT_FLOAT:
+            AA(*_wp);
+            *reinterpret_cast<float*>(*_wp) = atof(src);
+            *_wp += sizeof(float);
+            return true;
         case XBT_UNIX_TIME:
             {
                 AA(*_wp);

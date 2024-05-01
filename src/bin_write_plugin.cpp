@@ -1347,6 +1347,19 @@ BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
     return result;
 }
 
+BW_element* BW_pool::tagAny(int16_t id,XML_Binary_Type type,const char *data_as_string,int data_size)
+{
+    BW_element* result = new_element(type,data_size);
+    ASSERT_NO_RET_NULL(2060,result != nullptr);
+    result->init(this,id,type,BIN_WRITE_ELEMENT_FLAG);
+
+    //bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
+    char *wp = reinterpret_cast<char*>(result+1);
+    ASSERT_NO_RET_NULL(2061,XBT_FromString(data_as_string,type,&wp,wp+data_size));
+
+    return result;
+}
+
 //-------------------------------------------------------------------------------------------------
 
 BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size,uint32_t config_flags)
@@ -1365,7 +1378,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     Bin_src_plugin::setFilename(filename,".xbw"); // will allocate copy of filename
     ASSERT_NO_DO_NOTHING(2011,plugins.registerPlugin(this));
 }
- 
+
 BW_plugin::~BW_plugin()
 {
     ASSERT_NO_DO_NOTHING(2008,plugins.unregisterPlugin(this));

@@ -178,6 +178,7 @@ public:
     BW_element*     tagString(int16_t id,const char *value);
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagSHA1(int16_t id,const uint8_t *value);
+    BW_element*     tagAny(int16_t id,XML_Binary_Type type,const char *data,int data_size);
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -200,6 +201,7 @@ public:
     BW_plugin(const char *filename = nullptr,Bin_xml_creator *bin_xml_creator = nullptr,int max_pool_size = 0x20000,uint32_t config_flags = 0);
     virtual ~BW_plugin();
 
+// setFilename & LinkCreator are inherited
     void        setFlags(uint32_t flags);
     bool        setMaxPoolSize(int max_pool_size);
     
