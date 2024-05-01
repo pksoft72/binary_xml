@@ -283,7 +283,7 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
     return this;
 }
 
-BW_element*     BW_element::attrInt32(int16_t id,int32_t value)
+BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_attr)
 {
     if (this == nullptr) return nullptr;
 
@@ -299,6 +299,8 @@ BW_element*     BW_element::attrInt32(int16_t id,int32_t value)
     *dst                  = value; // store value
 
     add(attr);
+    if (dst_attr != nullptr)
+        *dst_attr = attr;
 
     return this;
 }
@@ -792,6 +794,7 @@ XML_Binary_Data_Ref BW_element::getData()
 }
 
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
+// the same like tagGet(id)
 {
     if (this == nullptr) return nullptr;
     // for all children
