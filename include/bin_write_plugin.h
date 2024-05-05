@@ -50,86 +50,6 @@ class BW_pool;      // header of whole allocated memory
 class BW_plugin;    // service object
 
 //-------------------------------------------------------------------------------------------------
-
-class BW_element // 24B
-{
-// This is DOM element - main brick of wall
-public:
-    BW_offset_t             offset;             // offset of this element - is used to freely access everything only via pointer
-                                                // I can get pointer to 
-
-    int16_t                 identification; // reference to symbol table for tags/params
-    uint8_t                 flags;          // BIN_WRITE_ELEMENT_FLAG | BIN_WRITE_REMOTE_VALUE | ... 
-    XML_Binary_Type_Stored  value_type;     // 8-bits: XBT_NULL,...
-
-    // round bidirectional list - enables effective adding to last position
-    BW_offset_t             next;
-    BW_offset_t             prev;
-
-    BW_offset_t             first_child;
-    BW_offset_t             first_attribute;
-// TODO: BW_offset_t             parent;    -- this should be populated for greater usability
-// TODO: there can be only first_child and attributes would be distinguished via flags - so we could stay in 24B per node
-
-    // value is placed just after this object
-
-    void        init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags);
-
-    BW_pool*    getPool();
-    BW_element* BWE(BW_offset_t offset);
-    char*       BWD();
-
-    BW_element* join(BW_element *B);    // this will connect two circles
-    BW_element* add(BW_element *tag);
-    BW_element* replace(BW_element *old_value,BW_element *new_value);
-
-
-    BW_element  *attrNull(int16_t id);
-    BW_element  *attrStr(int16_t id,const char *value);
-    BW_element  *attrStr2(int16_t id,const char *beg,const char *end);
-    BW_element  *attrHexStr(int16_t id,const char *value);
-    BW_element  *attrBLOB(int16_t id,const void *value,int32_t size);
-    BW_element  *attrInt32(int16_t id,int32_t value,BW_element **dst_attr = nullptr);
-    BW_element  *attrUInt32(int16_t id,uint32_t value);
-    BW_element  *attrInt64(int16_t id,int64_t value);
-    BW_element  *attrUInt64(int16_t id,uint64_t value);
-    BW_element  *attrFloat(int16_t id,float value);
-    BW_element  *attrDouble(int16_t id,double value);
-    BW_element  *attrGUID(int16_t id,const char *value);
-    BW_element  *attrSHA1(int16_t id,const char *value);
-    BW_element  *attrTime(int16_t id,time_t value);
-    BW_element  *attrTime64(int16_t id,int64_t value);
-    BW_element  *attrIPv4(int16_t id,const char *value);
-    BW_element  *attrIPv6(int16_t id,const char *value);
-    BW_element  *attrData(int16_t id,XML_Binary_Data_Ref &data);
-    BW_element  *attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc);
-    BW_element  *attrGet(int16_t id);
-    
-    BW_element  *tagGet(int16_t id);
-    BW_element  *tag(int16_t id); // find or create
-    BW_element  *tagSetInt32(int16_t id,int32_t value);
-    BW_element  *tagSetInt64(int16_t id,int64_t value);
-    BW_element  *tagSetString(int16_t id,const char *value);
-    BW_element  *tagSetTime(int16_t id,time_t value);
-    BW_element  *tagSetSHA1(int16_t id,const uint8_t *value);
-
-    int32_t     *getInt32();
-    int64_t     *getInt64();
-    char        *getStr();
-    XML_Binary_Data_Ref getData();
-
-    BW_element  *findChildByTag(int16_t tag_id);
-    BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
-    BW_element  *findAttr(int16_t attr_id);
-    BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);
-    bool         EqualKeys(XB_reader &xb,XML_Item *src);
-
-// !!! BW_FOREACH are 2 commands !!! cannot be used like if () BW_FOREACH2(...)
-#define BW_FOREACH2(list,element) BW_offset_t _idx = 0;for(BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
-//#define BW_FOREACH(list,element) for(BW_offset_t _idx = 0,BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
-    BW_element*  NextChild(BW_offset_t &offset);
-};
-
 #define BW_SYMBOLS_FAST_REG 1
 class BW_symbol_table_16B
 {
@@ -183,6 +103,89 @@ public:
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagSHA1(int16_t id,const uint8_t *value);
     BW_element*     tagAny(int16_t id,XML_Binary_Type type,const char *data,int data_size);
+};
+
+
+class BW_element // 24B
+{
+// This is DOM element - main brick of wall
+public:
+    BW_offset_t             offset;             // offset of this element - is used to freely access everything only via pointer
+                                                // I can get pointer to 
+
+    int16_t                 identification; // reference to symbol table for tags/params
+    uint8_t                 flags;          // BIN_WRITE_ELEMENT_FLAG | BIN_WRITE_REMOTE_VALUE | ... 
+    XML_Binary_Type_Stored  value_type;     // 8-bits: XBT_NULL,...
+
+    // round bidirectional list - enables effective adding to last position
+    BW_offset_t             next;
+    BW_offset_t             prev;
+
+    BW_offset_t             first_child;
+    BW_offset_t             first_attribute;
+// TODO: BW_offset_t             parent;    -- this should be populated for greater usability
+// TODO: there can be only first_child and attributes would be distinguished via flags - so we could stay in 24B per node
+
+    // value is placed just after this object
+
+    void        init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags);
+
+    BW_pool*    getPool();
+    BW_element* BWE(BW_offset_t offset);
+    char*       BWD();
+
+    inline const char* getName() {  return (flags & BIN_WRITE_ELEMENT_FLAG) ? getPool()->getTagName(identification) : getPool()->getAttrName(identification); };
+    inline XML_Binary_Type getSymbolType() {  return (flags & BIN_WRITE_ELEMENT_FLAG) ? getPool()->getTagType(identification) : getPool()->getAttrType(identification); }
+
+    BW_element* join(BW_element *B);    // this will connect two circles
+    BW_element* add(BW_element *tag);
+    BW_element* replace(BW_element *old_value,BW_element *new_value);
+
+
+    BW_element  *attrNull(int16_t id);
+    BW_element  *attrStr(int16_t id,const char *value);
+    BW_element  *attrStr2(int16_t id,const char *beg,const char *end);
+    BW_element  *attrHexStr(int16_t id,const char *value);
+    BW_element  *attrBLOB(int16_t id,const void *value,int32_t size);
+    BW_element  *attrInt32(int16_t id,int32_t value,BW_element **dst_attr = nullptr);
+    BW_element  *attrUInt32(int16_t id,uint32_t value);
+    BW_element  *attrInt64(int16_t id,int64_t value);
+    BW_element  *attrUInt64(int16_t id,uint64_t value);
+    BW_element  *attrFloat(int16_t id,float value);
+    BW_element  *attrDouble(int16_t id,double value);
+    BW_element  *attrGUID(int16_t id,const char *value);
+    BW_element  *attrSHA1(int16_t id,const char *value);
+    BW_element  *attrTime(int16_t id,time_t value);
+    BW_element  *attrTime64(int16_t id,int64_t value);
+    BW_element  *attrIPv4(int16_t id,const char *value);
+    BW_element  *attrIPv6(int16_t id,const char *value);
+    BW_element  *attrData(int16_t id,XML_Binary_Data_Ref &data);
+    BW_element  *attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc);
+    BW_element  *attrGet(int16_t id);
+    
+    BW_element  *tagGet(int16_t id);
+    BW_element  *tag(int16_t id); // find or create
+    BW_element  *tagSetInt32(int16_t id,int32_t value);
+    BW_element  *tagSetInt64(int16_t id,int64_t value);
+    BW_element  *tagSetString(int16_t id,const char *value);
+    BW_element  *tagSetTime(int16_t id,time_t value);
+    BW_element  *tagSetSHA1(int16_t id,const uint8_t *value);
+
+    int32_t     *getInt32();
+    int64_t     *getInt64();
+    char        *getStr();
+    XML_Binary_Data_Ref getData();
+
+    BW_element  *findChildByTag(int16_t tag_id);
+    BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
+    BW_element  *findAttr(int16_t attr_id);
+    BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);
+    bool         EqualKeys(XB_reader &xb,XML_Item *src);
+
+// !!! BW_FOREACH are 2 commands !!! cannot be used like if () BW_FOREACH2(...)
+#define BW_FOREACH2(list,element) BW_offset_t _idx = 0;for(BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
+//#define BW_FOREACH(list,element) for(BW_offset_t _idx = 0,BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
+    BW_element*  NextChild(BW_offset_t &offset);
 };
 
 //-------------------------------------------------------------------------------------------------
