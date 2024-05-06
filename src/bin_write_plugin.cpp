@@ -748,10 +748,12 @@ int32_t *BW_element::getInt32()
     if (this == nullptr) return nullptr;
 
     BW_pool             *pool = getPool();    
-    XML_Binary_Type     attr_type = (flags & BIN_WRITE_ATTR_FLAG ? 
-                            pool->getAttrType(identification) :
-                            pool->getTagType(identification));
-    ASSERT_NO_RET_NULL(1173,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_INT32)
+    {
+        LOG_ERROR("[1173] +%d %s'type = %d = %s but XBT_INT32 is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
+        return nullptr;
+    }
 
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
@@ -761,10 +763,14 @@ int64_t *BW_element::getInt64()
     if (this == nullptr) return nullptr;
 
     BW_pool             *pool = getPool();    
-    XML_Binary_Type     attr_type = (flags & BIN_WRITE_ATTR_FLAG ? 
-                            pool->getAttrType(identification) :
-                            pool->getTagType(identification));
-    ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64 || value_type == XBT_INT64);// || attr_type == XBT_VARIANT);
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_INT64 && value_type != XBT_INT64);
+    {
+        //ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64 || value_type == XBT_INT64);// || attr_type == XBT_VARIANT);
+        LOG_ERROR("[2026] +%d %s'type = %d = %s but XBT_INT64 is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
+        return nullptr;
+    }
+
 
     return reinterpret_cast<int64_t*>(this+1); // just after this element
 }
