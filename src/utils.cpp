@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <time.h> // clock_gettime()
 #include <limits.h>
+#include <sys/mman.h>   // mmap
+
 
 const char HEX[16+1] = "0123456789abcdef";
 const char HEX_UP[16+1] = "0123456789ABCDEF";
@@ -39,13 +41,13 @@ bool WriteToFile(const char *filename,const char *fmt,...)
     return true;
 }
 
-char *ReadFile(const char *filename,bool MustExist,int *size)
+char *ReadFile(const char *filename,bool must_exist,int *size)
 // will read file and allocate enough memory for file store in memory
 {
     int fd = open(filename,O_RDONLY);
     if (fd == -1)
     {
-//      if (!MustExist && errno == ) return nullptr;
+//      if (!must_exist && errno == ) return nullptr;
         ERRNO_SHOW(1010,"ReadFile-open",filename);
         return nullptr; 
     }
@@ -82,6 +84,87 @@ char *ReadFile(const char *filename,bool MustExist,int *size)
     if (size != nullptr)
         *size = file_size;
     return data;    
+}
+
+//-------------------------------------------------------------------------------------------------
+
+static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_pool_size);
+
+char *ShareFileRO(const char *filename,int *fd,int max_pool_size)
+{
+    return s_ShareFile(filename,O_RDONLY | O_NOATIME,fd,max_pool_size);    
+}
+
+char *ShareFileRW(const char *filename,bool must_exist,int *fd,int max_pool_size)
+{
+    int open_flags = O_RDWR | O_NOATIME; 
+    if (!must_exist) open_flags |= O_CREAT;
+    return s_ShareFile(filename,open_flags,fd,max_pool_size);    
+}
+
+static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_pool_size)
+{
+    int open_fd = open(filename,open_flags,S_IRUSR | S_IWUSR | S_IRGRP);
+    if (open_fd < 0)
+    {
+        ERRNO_SHOW(2062,"open",filename);
+        return nullptr;
+    }
+    //  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+    char *pool = reinterpret_cast<char *>(mmap(nullptr,max_pool_size,PROT_READ | PROT_WRITE, 
+                MAP_SHARED,  //  Share  this  mapping.   Updates to the mapping are visible to other processes mapping the same region, 
+                // and (in the case of file-backed mappings) are carried through to the underlying file.  
+                // (To precisely control when updates are carried through to the underlying file requires the use of msync(2).)
+
+                open_fd, 0));
+    if (pool == MAP_FAILED)
+    {
+        ERRNO_SHOW(2063,"mmap",filename);
+        close(open_fd);
+        return nullptr;
+    }
+
+
+    if (fd != nullptr)  
+        *fd = open_fd;
+    else
+        close(open_fd);
+    return pool;
+}
+
+void CloseSharedFile(char *pool,int max_pool_size,int fd,const char *debug_info)
+{
+    if (fd > 0)
+    {
+        if (close(fd) < 0)
+            ERRNO_SHOW(2064,"close",debug_info);
+    }
+    if (pool != nullptr)
+    {
+        if (munmap(pool,max_pool_size) != 0)
+            ERRNO_SHOW(1949,"munmap",debug_info);
+    }
+}
+
+off_t FileGetSize(const char *filename)
+{
+    struct stat file_info;
+    int err = stat(filename,&file_info);
+    if (err != 0)
+    {
+        if (errno == ENOENT)
+            return -1; // file not exists - no message
+
+        ERRNO_SHOW(0,"fstat",filename); 
+        return -1; // failed
+    }
+    if (S_ISDIR(file_info.st_mode)) 
+    {
+        std::cerr << "\n" ANSI_RED_BRIGHT "Error " ANSI_RED_DARK " while " 
+            ANSI_RED_BRIGHT "FileGetSize(" << filename << ")" ANSI_RED_DARK " 'file' is directory!" ANSI_RESET;
+        return -1; // directory
+    }
+    return file_info.st_size;
 }
 
 off_t FileGetSizeByFd(int fd)

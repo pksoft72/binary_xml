@@ -6,10 +6,14 @@
 
 extern const char HEX[16+1];
 
+off_t FileGetSize(const char *filename);
 off_t FileGetSizeByFd(int fd);
 
 bool WriteToFile(const char *filename,const char *fmt,...);
-char *ReadFile(const char *filename,bool MustExist,int *size);
+char *ReadFile(const char *filename,bool must_exist,int *size);
+char *ShareFileRO(const char *filename,int *fd,int max_pool_size);
+char *ShareFileRW(const char *filename,bool must_exist,int *fd,int max_pool_size);
+void CloseSharedFile(char *pool,int max_pool_size,int fd,const char *debug_info);
 
 // const pointer variants
 bool Scan(const char *&p,const char *beg);
