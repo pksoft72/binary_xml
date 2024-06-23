@@ -1011,15 +1011,18 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     // if size of result is only result, it is waste of CPU time.
     // XBW is based on atomic memory allocation and expect multiple processes to allocate
     // at the same time. So size must be known at time of allocation.
-    // There are 2 solutions:
+    // There are 3 solutions:
     // 1. when single process - allocate more enough and return unused space later
     // 2. when multi process - measure size first and then allocate
+    // 3. provide some limited temporary memory which will for most cases save processing result and allows it to reuse
     
     // NOW SLOW but SAFE solution
     // 1st pass - detecting real size
         int size = XBT_SizeFromString(value,tag_type); // TODO: not finished detection!!!
+        int align = XBT_Align(tag_type);
         
         
+        ASSERT_NO_EXIT_1(2062,NOT_IMPLEMENTED);
     }
 // OK, I have:
 // - tag_id
