@@ -573,10 +573,12 @@ BW_element*  BW_element::NextChild(BW_offset_t &offset)
     if (this == nullptr) return nullptr; // empty list -> no children
 
     if (offset == 0) // first element of loop
+    {
         if (first_child == 0) 
             return nullptr; // empty list
         else
             return BWE(offset = first_child); // first child
+    }	
 
     BW_element *prev = BWE(offset); // current element, need next
     if (prev->next == first_child) return nullptr; // end of loop
@@ -747,7 +749,7 @@ int32_t *BW_element::getInt32()
 {
     if (this == nullptr) return nullptr;
 
-    BW_pool             *pool = getPool();    
+//    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
     if (attr_type != XBT_INT32)
     {
@@ -762,7 +764,7 @@ int64_t *BW_element::getInt64()
 {
     if (this == nullptr) return nullptr;
 
-    BW_pool             *pool = getPool();    
+//    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
     if (attr_type != XBT_INT64 && value_type != XBT_INT64)
     {
@@ -1038,11 +1040,11 @@ const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
 
         while (id < max_id)
         { 
-            const char *start = p;
+            //const char *start = p;
             id = *(p++);
             id |= *(p++) << 8;
 
-            XML_Binary_Type element_type = static_cast<XML_Binary_Type>(*(p++));
+            //XML_Binary_Type element_type = static_cast<XML_Binary_Type>(*(p++));
 
             if (id == search_id) return p; // found
 
@@ -2141,10 +2143,12 @@ BW_element* BW_plugin::CopyPath_(bool copy_whole_last_node,XB_reader &xb,XML_Ite
         {
             // Recursive copy of last element
             if (copy)
+            {
                 if (copy_whole_last_node)
                     ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
                 else
                     ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
+            }
             break;
         }
         if (copy) ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);

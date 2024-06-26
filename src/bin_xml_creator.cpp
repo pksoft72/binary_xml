@@ -1018,8 +1018,8 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     
     // NOW SLOW but SAFE solution
     // 1st pass - detecting real size
-        int size = XBT_SizeFromString(value,tag_type); // TODO: not finished detection!!!
-        int align = XBT_Align(tag_type);
+        //int size = XBT_SizeFromString(value,tag_type); // TODO: not finished detection!!!
+        //int align = XBT_Align(tag_type);
         
         
         ASSERT_NO_EXIT_1(2062,NOT_IMPLEMENTED);

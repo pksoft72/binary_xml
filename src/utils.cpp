@@ -401,9 +401,7 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
     value -= (year - 1900 - 1) / 100;
     value += (year - 1600 - 1) / 400;
 
-    bool is_leap_year = 
-        ((year % 4) == 0) && !((year % 100) == 0) 
-        || ((year % 400) == 0);
+    bool is_leap_year = (((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0);
     if (is_leap_year)   
         value += LEAP_MONTH_OFFSET[month-1];
     else
@@ -439,7 +437,7 @@ bool ScanUnixDate(const char *&p,int32_t &value)
 {
     int year,month,day;
 
-    const char *beg = p;
+    //const char *beg = p;
 
     if (!ScanInt(p,year)) return false;    
     if (*(p++) != '-') return false;
@@ -459,9 +457,7 @@ bool ScanUnixDate(const char *&p,int32_t &value)
     value -= (year - 1900 - 1) / 100;
     value += (year - 1600 - 1) / 400;
 
-    bool is_leap_year = 
-        ((year % 4) == 0) && !((year % 100) == 0) 
-        || ((year % 400) == 0);
+    bool is_leap_year = (((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0);
     if (is_leap_year)   
         value += LEAP_MONTH_OFFSET[month-1];
     else
