@@ -813,6 +813,8 @@ bool SkipLineW(char *&p)
 
 int  GetInt(const char *p)
 {
+    if (p == nullptr) return INT_NULL_VALUE;
+
     while (isspace(*p)) p++;
     
     bool neg = (*p == '-');
