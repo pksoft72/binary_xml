@@ -198,8 +198,10 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
 #undef RETURN_COMPARE_OF_TYPE
 }
 
-int XBT_Size(XML_Binary_Type type,int size)
+int XBT_Size2(XML_Binary_Type type,int size)
 // This function will return total size of type, when I need to store size bytes of information.
+// It contains also some envelope information needed for storing value
+// sizeof(BW_element) is not included
 {
     switch(type)
     {
@@ -212,7 +214,7 @@ int XBT_Size(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1069,type != XBT_VARIANT); // must be known
             break;
         case XBT_STRING:
-            return ++size; // terminating character
+            return size+1; // terminating character
         case XBT_BLOB:
             return size + sizeof(int32_t);
         case XBT_INT32:
@@ -295,7 +297,7 @@ int XBT_Align(XML_Binary_Type type)
 
 bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
 {
-    int value_size = XBT_Size(type,size);
+    int value_size = XBT_Size2(type,size);
     int align_size = XBT_Align(type);
     if (limit - *_wp < value_size + align_size) 
     {
@@ -331,6 +333,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
     switch (type)
     {
         case XBT_NULL:
+            if (src == nullptr) return true; // OK, should be empty
             if (strlen(src) == 0) return true;
             fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
             break;
@@ -402,6 +405,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
 }
 
 int XBT_SizeFromString(const char *src,XML_Binary_Type type)
+// returns data size without envelope
 {
     switch (type)
     {
@@ -410,7 +414,7 @@ int XBT_SizeFromString(const char *src,XML_Binary_Type type)
         case XBT_INT64: return 8;
         case XBT_FLOAT: return 4;
         case XBT_DOUBLE: return 8;
-        case XBT_STRING: return strlen(src)+1;
+        case XBT_STRING: return strlen(src);
         case XBT_SHA1: return 20;
         case XBT_GUID: return 16;
         case XBT_UNIX_DATE: return 4;
@@ -425,8 +429,7 @@ int XBT_SizeFromString(const char *src,XML_Binary_Type type)
             ASSERT_NO_RET_N1(2057,NOT_IMPLEMENTED);
             break;
         case XBT_HEX:
-            ASSERT_NO_RET_N1(2058,NOT_IMPLEMENTED);
-            break;
+            return strlen(src) >> 1;
         default:
             fprintf(stderr,"%s: Size detection of '%s' to binary representation is not implemented!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
 //            assert(false);

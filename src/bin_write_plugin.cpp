@@ -768,8 +768,8 @@ int64_t *BW_element::getInt64()
     {
         //ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64 || value_type == XBT_INT64);// || attr_type == XBT_VARIANT);
         LOG_ERROR("[2026] +%d %s'type = %d/%d = %s/%s but XBT_INT64 is expected!",
-		offset,getName(),
-		attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
+        offset,getName(),
+        attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
         return nullptr;
     }
 
@@ -842,7 +842,7 @@ BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Bin
                     {
                     // I have value_type, data & data_size to compare with ...
                         int cmp = XBT_Compare(static_cast<XML_Binary_Type>(attr->value_type),reinterpret_cast<void*>(attr+1),
-                                                XBT_Size(static_cast<XML_Binary_Type>(attr->value_type),0),
+                                                XBT_Size2(static_cast<XML_Binary_Type>(attr->value_type),0),
                                               value_type,data,data_size);
                         if (cmp == 0)
                             return child;
@@ -1228,6 +1228,7 @@ char*  BW_pool::allocate(int size)
     ROUND32UP(allocator);
 
     MAXIMIZE(size,allocator);
+    memset(THIS+offset,0,size);
 
     return THIS+offset;
 }
@@ -1244,25 +1245,31 @@ char*           BW_pool::allocate8(int size)        // 64 bit aligned value
     ROUND32UP(allocator);
 
     MAXIMIZE(size,allocator);
+    memset(THIS+offset,0,size);
 
     return THIS+offset;
 }
 
 BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
+// size is content only size
+// XBT_Size() will add envelope size
 {
     ASSERT_NO_RET_NULL(1067,this != nullptr);
-    int size2 = XBT_Size(type,size);
+    int size2 = XBT_Size2(type,size);
     if (size2 < 0) return nullptr;
-    BW_element* result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
+    int align = XBT_Align(type);
+    ASSERT_NO_RET_NULL(2068,align == 0 || align == 4 || align == 8);
+    BW_element* result = reinterpret_cast<BW_element*>(align == 8 ? allocate8(sizeof(BW_element)+size2) : allocate(sizeof(BW_element)+size2));
     if (result == nullptr) // need makeSpace
     {
         BW_plugin *plugin = plugins.getPlugin(this);
         ASSERT_NO_RET_NULL(2012,plugin != nullptr);
         ASSERT_NO_RET_NULL(2013,plugin->makeSpace(sizeof(BW_element)+size2));
-        result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
+        result = reinterpret_cast<BW_element*>(align == 8 ? allocate8(sizeof(BW_element)+size2) : allocate(sizeof(BW_element)+size2));
         if (result == nullptr) return nullptr; // error message already shown in allocate
     }
     result->value_type = type;
+    result->offset = (reinterpret_cast<char*>(result) - reinterpret_cast<char*>(this));
     switch(type)
     {
         case XBT_BLOB:

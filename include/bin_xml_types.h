@@ -84,7 +84,7 @@ int             XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_siz
                             XML_Binary_Type B_type,const void *B_value,int B_size);
 
 
-int             XBT_Size    (XML_Binary_Type type,int size);
+int             XBT_Size2   (XML_Binary_Type type,int size);
 int             XBT_Align   (XML_Binary_Type type);
 bool            XBT_Copy    (const char *src,XML_Binary_Type type,int size,char **_wp,char *limit);
 bool            XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);

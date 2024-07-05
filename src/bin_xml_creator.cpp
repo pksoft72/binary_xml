@@ -917,7 +917,7 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
     }
     else
     {
-        int size = XBT_Size(type,0); // empty size of type
+        int size = XBT_Size2(type,0); // empty size of type
         char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
         // bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
         
@@ -966,7 +966,7 @@ void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param
         type = static_cast<XML_Binary_Type>(xstore_data->creator->symbol_table_types[SYMBOL_TABLE_PARAMS][name_id]);
 
     type = XBT_Detect2(param_value,type);
-    int size = XBT_Size(type,0);
+    int size = XBT_Size2(type,0);
     char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
     if (size == 4 && XBT_FromString(param_value,type,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
     {
@@ -995,6 +995,11 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
     ASSERT_NO_RET(2055,node_info->src_element == element);
     Bin_xml_creator  *_this = node_info->creator;
+    ASSERT_NO_RET(2065,_this != nullptr);
+    BW_plugin        *bw = node_info->bw;
+    ASSERT_NO_RET(2066,bw != nullptr);
+    BW_pool         *pool = bw->getPool();
+    ASSERT_NO_RET(2067,pool != nullptr);
 
     int tag_id = _this->Find(_this->src->getNodeName(element),SYMBOL_TABLE_NODES); // SLOW
     ASSERT_NO_RET(2056,tag_id >= 0);
@@ -1018,17 +1023,27 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     
     // NOW SLOW but SAFE solution
     // 1st pass - detecting real size
-        int size = XBT_SizeFromString(value,tag_type); // TODO: not finished detection!!!
+        int size = XBT_SizeFromString(value,tag_type); // TODO: not finished BLOB detection!!!
+        int size2 = XBT_Size2(tag_type,size);
         int align = XBT_Align(tag_type);
         
-        
-        ASSERT_NO_EXIT_1(2062,NOT_IMPLEMENTED);
+        ASSERT_NO_EXIT_1(2069,bw->makeSpace(sizeof(BW_element)+size2+8/*max align*/));    // this is faster, as I know, where plugin is
+
+        BW_element *dst = node_info->dst_bw_element = pool->new_element(tag_type,size);
+        dst->identification = tag_id;
+        dst->flags = BIN_WRITE_ELEMENT_FLAG; // element and not attribute
+    // bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
+        char *wp = reinterpret_cast<char*>(dst+1);
+        char *limit = wp + size2;
+        ASSERT_NO_EXIT_1(2062,XBT_FromString(value,tag_type,&wp,limit));
+    }
+    else
+    { // xbw2xbw variant
     }
 // OK, I have:
 // - tag_id
 // - tag_type;
 // - value as string / binary value
-//    BW_element *bw1 = W.tag(
     
     
 
