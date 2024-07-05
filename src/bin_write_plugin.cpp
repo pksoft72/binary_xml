@@ -1560,7 +1560,7 @@ bool BW_plugin::CheckExistingFile(int file_size)
 
 bool BW_plugin::makeSpace(int size)
 {
-    int new_size = ((pool->allocator+4095) >> 12 << 12) + size;
+    int new_size = ((pool->allocator+4095+size) >> 12 << 12); // I want rounded file size
     ASSERT_NO_RET_FALSE(1143,new_size <= (int)pool->mmap_size);
     if (new_size < (int)pool->file_size) return true; // no grow - ok
     if (ftruncate(fd,new_size) < 0)
