@@ -992,8 +992,11 @@ void Bin_xml_creator::XStoreChildrenEvent(void *element,void *userdata)
 
 void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
 {
+// processing userdata paramater
+// success is indicated, when node_info->dst_bw_element is valid
     MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
     ASSERT_NO_RET(2055,node_info->src_element == element);
+
     Bin_xml_creator  *_this = node_info->creator;
     ASSERT_NO_RET(2065,_this != nullptr);
     BW_plugin        *bw = node_info->bw;
@@ -1001,7 +1004,10 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     BW_pool         *pool = bw->getPool();
     ASSERT_NO_RET(2067,pool != nullptr);
 
-    int tag_id = _this->Find(_this->src->getNodeName(element),SYMBOL_TABLE_NODES); // SLOW
+    const char *node_name = _this->src->getNodeName(element);
+    ASSERT_NO_RET(2066,node_name != nullptr);
+    // TODO: flags / nodes?
+    int tag_id = _this->Find(node_name,SYMBOL_TABLE_NODES); // SLOW
     ASSERT_NO_RET(2056,tag_id >= 0);
 
     XML_Binary_Type tag_type;
@@ -1040,6 +1046,7 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     else
     { // xbw2xbw variant
     }
+    // node_info->dst_bw_element =  
 // OK, I have:
 // - tag_id
 // - tag_type;
@@ -1198,7 +1205,7 @@ void Bin_xml_creator::ShowSymbols(const int t)
 
 const char *Bin_xml_creator::getNodeName(tag_name_id_t name_id)
 {
-    assert(name_id > XTNR_LAST && name_id < symbol_count[SYMBOL_TABLE_NODES]);
+    ASSERT_NO_RET_NULL(2067,name_id > XTNR_LAST && name_id < symbol_count[SYMBOL_TABLE_NODES]);
     if (name_id >= 0)
         return symbol_table[SYMBOL_TABLE_NODES][name_id];
     else switch(name_id)
@@ -1213,7 +1220,7 @@ const char *Bin_xml_creator::getNodeName(tag_name_id_t name_id)
         case XTNR_PROCESSED : return "PROCESSED";
         case XTNR_ET_TECERA : return "ET_TECERA";
     }
-    return "?";
+    return nullptr;
 }
 
 const char *Bin_xml_creator::getNodeInfo(const XML_Item *X)

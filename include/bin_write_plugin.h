@@ -32,6 +32,7 @@
 #define BIN_WRITE_REMOTE_VALUE      2  // for sharing big values with stable pointers ouf of pool
 #define BIN_WRITTEN                 4  // this element and all of it's children is written
 #define BIN_DELETED                 8
+#define BIN_WRITE_LOCK              16 // this element has lock in one of its parameters BLOB, so locking operations should be easy
 
 #define BIN_WRITE_CFG_ALWAYS_CREATE_NEW     1
 
@@ -196,6 +197,7 @@ class BW_plugin : public Bin_src_plugin  // !!! #define BIN_WRITE_PLUGIN
 // Can be used to produce xb file via several passes.
 // This can be also used to produce open-end xb on incremental base.
 // This object creates shared memory which can be read by some other process and data can be ready to publish immediately after write and link.
+// This object is not shared so it can have local pointers and also file descriptors to manipulate with file size.
 protected:
     int         max_pool_size;  // never exceeed size
     int         fd;             // file handle
