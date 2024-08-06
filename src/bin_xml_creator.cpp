@@ -1031,7 +1031,7 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     // 1st pass - detecting real size
         int size = XBT_SizeFromString(value,tag_type); // TODO: not finished BLOB detection!!!
         int size2 = XBT_Size2(tag_type,size);
-        int align = XBT_Align(tag_type);
+        //int align = XBT_Align(tag_type);
         
         ASSERT_NO_EXIT_1(2069,bw->makeSpace(sizeof(BW_element)+size2+8/*max align*/));    // this is faster, as I know, where plugin is
 
