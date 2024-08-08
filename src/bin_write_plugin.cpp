@@ -1219,6 +1219,11 @@ bool   BW_pool::checkTable(BW_symbol_table_16B &table,BW_offset_t limit)
     return true;
 }
 
+bool   BW_pool::check_id()
+{
+    return strcmp(binary_xml_write_type_info,"binary_xml.pksoft.org") == 0;
+}
+
 char*  BW_pool::allocate(int size)
 {
     if (size <= 0) return 0;
@@ -1258,7 +1263,8 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 {
     ASSERT_NO_RET_NULL(1067,this != nullptr);
     int size2 = XBT_Size2(type,size);
-    if (size2 < 0) return nullptr;
+    ASSERT_NO_RET_NULL(2075,size2 >= 0);
+    //if (size2 < 0) return nullptr;
     int align = XBT_Align(type);
     ASSERT_NO_RET_NULL(2068,align == 0 || align == 4 || align == 8);
     BW_element* result = reinterpret_cast<BW_element*>(align == 8 ? allocate8(sizeof(BW_element)+size2) : allocate(sizeof(BW_element)+size2));
@@ -1268,10 +1274,11 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
         ASSERT_NO_RET_NULL(2012,plugin != nullptr);
         ASSERT_NO_RET_NULL(2013,plugin->makeSpace(sizeof(BW_element)+size2));
         result = reinterpret_cast<BW_element*>(align == 8 ? allocate8(sizeof(BW_element)+size2) : allocate(sizeof(BW_element)+size2));
+        ASSERT_NO_RET_NULL(2091,result != nullptr);
         if (result == nullptr) return nullptr; // error message already shown in allocate
     }
     result->value_type = type;
-    result->offset = (reinterpret_cast<char*>(result) - reinterpret_cast<char*>(this));
+    result->prev = result->next = result->offset = (reinterpret_cast<char*>(result) - reinterpret_cast<char*>(this));
     switch(type)
     {
         case XBT_BLOB:

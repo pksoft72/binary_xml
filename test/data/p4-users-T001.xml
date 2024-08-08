@@ -1,2 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?/>
+<Users>
+	<User>
+		<PublicName>anonymous user</PublicName>
+		<Rights>
+			<Area>
+				<Right>V</Right>
+				<Right>V</Right>
+				<Right>V</Right>
+			</Area>
+		</Rights>
+	</User>
+	<User>
+		<PublicName>default user</PublicName>
+		<Rights>
+			<Area>
+				<Right>V</Right>
+				<Right>CVRud</Right>
+				<Right>CVRud</Right>
+			</Area>
+		</Rights>
+	</User>
+	<User>
+		<PublicName>pk</PublicName>
+		<FullName>Petr Kundrata</FullName>
+		<EMail>pksoft@atlas.cz</EMail>
+		<EMailConfirmed>2022-12-22 09:06:31</EMailConfirmed>
+		<GMail>petr.kundrata72@gmail.com</GMail>
+		<Password/>
+		<Deleted>2090-12-22 00:00:00</Deleted>
+		<Rights>
+			<Area>
+				<Right>VR</Right>
+				<Right>CVud</Right>
+				<Right>CVrud</Right>
+			</Area>
+		</Rights>
+		<Stats>
+			<Logins>15</Logins>
+			<LoginLast>2022-12-22 09:45:15</LoginLast>
+			<IPLast>192.168.6.74</IPLast>
+		</Stats>
+	</User>
+</Users>
