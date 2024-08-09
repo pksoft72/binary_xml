@@ -585,6 +585,8 @@ struct MakingXBW_1node
     void            *src_element;
 // result
     BW_element      *dst_bw_element;
+    const char      *param_name;
+    const char      *param_value;
 };
 
 bool Bin_xml_creator::Make_xbw()
@@ -638,6 +640,8 @@ bool Bin_xml_creator::Make_xbw()
     node_info.bw      = &W;
     node_info.src_element = root;
     node_info.dst_bw_element = nullptr;
+    node_info.param_name = nullptr;
+    node_info.param_value = nullptr;
 
     XStore2XBWEvent(root,&node_info);
     ASSERT_NO_RET_FALSE(2059,node_info.dst_bw_element != nullptr);
@@ -1006,22 +1010,46 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     BW_pool         *pool = bw->getPool();
     ASSERT_NO_RET(2067,pool != nullptr);
 
-    const char *node_name = _this->src->getNodeName(element);
-    ASSERT_NO_RET(2072,node_name != nullptr);
-
-    //printf("%s (%s)",node_name,pool->binary_xml_write_type_info);
-
-    // TODO: flags / nodes?
-    int tag_id = _this->Find(node_name,SYMBOL_TABLE_NODES); // SLOW
-    ASSERT_NO_RET(2056,tag_id >= 0);
-
+    int id;
+    int flags = 0;
+    SymbolTableTypes st_type;
+    const char *value; 
     XML_Binary_Type tag_type;
     int value_size = 0;
-    const char *value = _this->src->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
-    if (value == nullptr) // text analyse solution when binary is not available
+    bool from_text = false;
+    if (node_info->param_name != nullptr)
     {
-        value = _this->src->getNodeValue(element);
-        tag_type = static_cast<XML_Binary_Type>(_this->symbol_table_types[SYMBOL_TABLE_NODES][tag_id]);
+        id = _this->Find(node_info->param_name,SYMBOL_TABLE_PARAMS); // SLOW
+        ASSERT_NO_RET(0,id >= 0);
+        st_type = SYMBOL_TABLE_PARAMS;
+        flags = BIN_WRITE_ATTR_FLAG;
+        value = node_info->param_value;
+        // TODO: prepare binary parameter support
+        from_text = true;
+        //printf("\t.%s = %s",node_info->param_name,node_info->param_value);
+    }
+    else
+    {
+        const char *node_name = _this->src->getNodeName(element);
+        ASSERT_NO_RET(2072,node_name != nullptr);
+
+        //printf("%s (%s)",node_name,pool->binary_xml_write_type_info);
+
+        id = _this->Find(node_name,SYMBOL_TABLE_NODES); // SLOW
+        ASSERT_NO_RET(2056,id >= 0);
+        st_type = SYMBOL_TABLE_NODES;
+        flags = BIN_WRITE_ELEMENT_FLAG;
+        value = _this->src->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
+        if (value == nullptr)
+        {
+            value = _this->src->getNodeValue(element);
+            from_text = true;
+        }
+    }
+
+    if (from_text) // text analyse solution when binary is not available
+    {
+        tag_type = static_cast<XML_Binary_Type>(_this->symbol_table_types[st_type][id]);
     // THIS IS BAD: I have value in string but need size of this value as binary value
     // and this size can be obtained by decoding string. But decoding string is work and
     // if size of result is only result, it is waste of CPU time.
@@ -1043,8 +1071,8 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
         BW_element *dst = node_info->dst_bw_element = pool->new_element(tag_type,size);
         //printf("... %p[%d] (%d)\n",dst,size,dst->offset);
         ASSERT_NO_EXIT_1(2074,dst != nullptr);
-        dst->identification = tag_id;
-        dst->flags = BIN_WRITE_ELEMENT_FLAG; // element and not attribute
+        dst->identification = id;
+        dst->flags = flags;; // element and not attribute
     // bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
         char *wp = reinterpret_cast<char*>(dst+1);
         char *limit = wp + size2;
@@ -1054,23 +1082,48 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     { // xbw2xbw variant
     }
 //-----------------------------------------------
-//    if (!src->ForAllBinParams(XStoreBinParamsEvent,element,&xstore_data))
-//        src->ForAllParams(XStoreParamsEvent,element,&xstore_data);
-    _this->src->ForAllChildren(XBWStoreChildrenEvent,element,userdata);
+    if (st_type == SYMBOL_TABLE_NODES) 
+    {
+        //    if (!src->ForAllBinParams(XStoreBinParamsEvent,element,&xstore_data))
+        _this->src->ForAllParams(XBWStoreParamsEvent,element,userdata);
+        _this->src->ForAllChildren(XBWStoreChildrenEvent,element,userdata);
+    }
     // node_info->dst_bw_element =  
 // OK, I have:
-// - tag_id
+// - id
 // - tag_type;
 // - value as string / binary value
     
     
 
 
-//    BW_element *bw_root = W.tag(Find(src->getNodeName(root),SYMBOL_TABLE_NODES));
+//    BW_element *bw_root = W.tag(Find(src->getNodeName(root),st_type));
 //    W.setRoot(bw_root);
 //    src->ForAllChildren(,root,
 //void Bin_json_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
     
+}
+
+void Bin_xml_creator::XBWStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+    MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
+
+    ASSERT_NO_RET(2090,node_info->dst_bw_element != nullptr);
+
+    MakingXBW_1node subnode_info = *node_info;
+    subnode_info.src_element = element;
+    subnode_info.dst_bw_element = nullptr;
+    subnode_info.param_name = param_name;
+    subnode_info.param_value = param_value;
+
+    XStore2XBWEvent(element,&subnode_info);
+    
+    if (subnode_info.dst_bw_element != nullptr)
+    {
+        BW_pool *pool = node_info->bw->getPool();
+        //printf("\t%d.add(%d)\n",node_info->dst_bw_element->offset,subnode_info.dst_bw_element->offset);
+        node_info->dst_bw_element->add(subnode_info.dst_bw_element);
+    }
 }
 
 void Bin_xml_creator::XBWStoreChildrenEvent(void *element,void *userdata)

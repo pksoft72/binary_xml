@@ -1239,7 +1239,7 @@ char*  BW_pool::allocate(int size)
     allocator += size;
     ROUND32UP(allocator);
 
-    MAXIMIZE(size,allocator);
+    //MAXIMIZE(size,allocator);
     memset(THIS+offset,0,size);
 
     return THIS+offset;
