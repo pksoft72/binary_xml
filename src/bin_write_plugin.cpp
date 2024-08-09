@@ -112,6 +112,11 @@ BW_element* BW_element::join(BW_element *B)    // this will connect two circles
     int A_prev_offset = this->prev;
     int B_prev_offset = B->prev;
 
+    ASSERT_NO_RET_NULL(2092,A_prev_offset != 0);
+    ASSERT_NO_RET_NULL(2093,B_prev_offset != 0);
+    ASSERT_NO_RET_NULL(2094,this->offset != 0);
+    ASSERT_NO_RET_NULL(2095,B->offset != 0);
+
     this->prev = B_prev_offset;
     B->prev = A_prev_offset;
     

@@ -1006,8 +1006,6 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     BW_pool         *pool = bw->getPool();
     ASSERT_NO_RET(2067,pool != nullptr);
 
-    ASSERT_NO_RET(2076,pool->check_id());
-
     const char *node_name = _this->src->getNodeName(element);
     ASSERT_NO_RET(2072,node_name != nullptr);
 
@@ -1020,12 +1018,9 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     XML_Binary_Type tag_type;
     int value_size = 0;
     const char *value = _this->src->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
-    ASSERT_NO_RET(2077,pool->check_id());
     if (value == nullptr) // text analyse solution when binary is not available
     {
-        ASSERT_NO_RET(2078,pool->check_id());
         value = _this->src->getNodeValue(element);
-        ASSERT_NO_RET(2079,pool->check_id());
         tag_type = static_cast<XML_Binary_Type>(_this->symbol_table_types[SYMBOL_TABLE_NODES][tag_id]);
     // THIS IS BAD: I have value in string but need size of this value as binary value
     // and this size can be obtained by decoding string. But decoding string is work and
@@ -1039,27 +1034,21 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     
     // NOW SLOW but SAFE solution
     // 1st pass - detecting real size
-        ASSERT_NO_RET(2080,pool->check_id());
         int size = XBT_SizeFromString(value,tag_type); // TODO: not finished BLOB detection!!!
-        ASSERT_NO_RET(2081,pool->check_id());
         int size2 = XBT_Size2(tag_type,size);
         //int align = XBT_Align(tag_type);
         
-        ASSERT_NO_RET(2082,pool->check_id());
         ASSERT_NO_EXIT_1(2069,bw->makeSpace(sizeof(BW_element)+size2+8/*max align*/));    // this is faster, as I know, where plugin is
 
         BW_element *dst = node_info->dst_bw_element = pool->new_element(tag_type,size);
         //printf("... %p[%d] (%d)\n",dst,size,dst->offset);
-        ASSERT_NO_RET(2083,pool->check_id());
         ASSERT_NO_EXIT_1(2074,dst != nullptr);
         dst->identification = tag_id;
         dst->flags = BIN_WRITE_ELEMENT_FLAG; // element and not attribute
     // bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
         char *wp = reinterpret_cast<char*>(dst+1);
         char *limit = wp + size2;
-        ASSERT_NO_RET(2084,pool->check_id());
         ASSERT_NO_EXIT_1(2062,XBT_FromString(value,tag_type,&wp,limit));
-        ASSERT_NO_RET(2085,pool->check_id());
     }
     else
     { // xbw2xbw variant
@@ -1067,9 +1056,7 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
 //-----------------------------------------------
 //    if (!src->ForAllBinParams(XStoreBinParamsEvent,element,&xstore_data))
 //        src->ForAllParams(XStoreParamsEvent,element,&xstore_data);
-    ASSERT_NO_RET(2086,pool->check_id());
     _this->src->ForAllChildren(XBWStoreChildrenEvent,element,userdata);
-    ASSERT_NO_RET(2087,pool->check_id());
     // node_info->dst_bw_element =  
 // OK, I have:
 // - tag_id
@@ -1100,12 +1087,8 @@ void Bin_xml_creator::XBWStoreChildrenEvent(void *element,void *userdata)
     if (subnode_info.dst_bw_element != nullptr)
     {
         BW_pool *pool = node_info->bw->getPool();
-        ASSERT_NO_RET(2088, pool->check_id());
         //printf("\t%d.add(%d)\n",node_info->dst_bw_element->offset,subnode_info.dst_bw_element->offset);
-        //if (subnode_info.dst_bw_element->offset == 544)
-        //    printf("BREAK!!!\n");
         node_info->dst_bw_element->add(subnode_info.dst_bw_element);
-        ASSERT_NO_RET(2089,pool->check_id());
     }
 }
 
