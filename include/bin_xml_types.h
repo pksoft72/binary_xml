@@ -39,7 +39,7 @@ enum XML_Binary_Type
     XBT_IPv4    = 12,   // 192.168.3.15
     XBT_IPv6    = 13,   // TODO: not implemented yet
     XBT_UNKNOWN = 14,   // type detection failed
-    XBT_UINT64  = 15,    // stores as binary int64_t
+    XBT_UINT64  = 15,    // stores as binary int64_t - example: 9223372036854775808
     XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
     XBT_UINT32  = 17,    // stores as binary int64_t
     XBT_UNIX_DATE = 18,  // time() / (24*60*60) -> 32 bit
