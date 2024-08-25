@@ -54,6 +54,7 @@ bool StrWrite(char *&dest,const char *dest_limit,const char *&src,const char *sr
 const char *MakeIdent(const char *Source,const char *style = "");
 int GetIdentLen(const char *p);
 
+bool streq(const char *src0,const char *src1);
 
 /* This function will encode binary data into base64 encoded string */
 char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size);

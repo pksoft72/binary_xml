@@ -959,6 +959,21 @@ int GetIdentLen(const char *p)
     return len; 
 }
 
+bool streq(const char *src0,const char *src1) 
+{
+    if (src0 == nullptr)
+    {
+        if (src1 == nullptr) return true; // the same
+        if (*src1 == '\0') return true;
+        return false;
+    }
+    if (src1 == nullptr)
+    {
+        if (*src0 == '\0') return true;
+        return false;
+    }
+    return strcmp(src0,src1) == 0;
+}
 //-------------------------------------------------------------------------------------------------
 static const char* BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 /* This function will encode binary data into base64 encoded string */

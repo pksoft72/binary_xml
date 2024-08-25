@@ -771,10 +771,10 @@ int64_t *BW_element::getInt64()
 
 //    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
-    if (attr_type != XBT_INT64 && value_type != XBT_INT64)
+    if (attr_type != XBT_INT64 && value_type != XBT_INT64 && value_type != XBT_UNIX_TIME64_MSEC)
     {
         //ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64 || value_type == XBT_INT64);// || attr_type == XBT_VARIANT);
-        LOG_ERROR("[2026] +%d %s'type = %d/%d = %s/%s but XBT_INT64 is expected!",
+        LOG_ERROR("[2026] +%d %s'type = %d/%d = %s/%s but XBT_INT64/XBT_UNIX_TIME64_MSEC is expected!",
         offset,getName(),
         attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
         return nullptr;
