@@ -379,6 +379,7 @@ const int MAX_DAY = 0xffffffff/(24*60*60);
 
 bool ScanUnixTime(const char *&p,uint32_t &value)
 {
+    value = 0;
     int year,month,day,hour,minute,second;
 
     const char *beg = p;
@@ -430,6 +431,24 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
 
     if (!ScanInt(p,second)) return false;    
     value += second;
+    return true;
+}
+
+bool ScanUnixTime64msec(const char *&p,int64_t &value)
+{
+    value = 0;
+    uint32_t tm32;
+    if (!ScanUnixTime(p,tm32)) return false;
+    if (*(p++) != '.') return false;
+
+    if (*p < '0' || *p > '9') return false;
+    int v000 = 100 * (*(p++) - '0');
+    if (*p < '0' || *p > '9') return false;
+    v000 += 10 * (*(p++) - '0');
+    if (*p < '0' || *p > '9') return false;
+    v000 += (*(p++) - '0');
+
+    value = v000 + (int64_t)tm32 * 1000;
     return true;
 }
 
@@ -610,6 +629,13 @@ bool SkipLine(const char *&p)
     if (*p == '\0') return false; // end of file
     p++;    // skip \n
     return true;
+}
+
+bool Go(const char *&p,char separator)
+{
+    while (*p != '\0')
+        if (*(p++) == separator) return true;
+    return false;    
 }
 
 int ScanHex(const char *&p,uint8_t *dst,int dst_size)

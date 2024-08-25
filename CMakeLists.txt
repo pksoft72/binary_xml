@@ -110,7 +110,7 @@ add_custom_target(run
     COMMAND test -f ${XB_RESULT} && hexdump -C ${XB_RESULT})
 
 
-install(TARGETS 2xb xb2xml binary_xml binary_xml_static
+install(TARGETS 2xb 2xbw xb2xml binary_xml binary_xml_static
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib/static)

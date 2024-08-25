@@ -2034,7 +2034,12 @@ BW_element* BW_plugin::tagTime(int16_t id,time_t value)
 BW_element* BW_plugin::tagTime64(int16_t id,int64_t value)
 {
     XML_Binary_Type tag_type = pool->getTagType(id);
-    ASSERT_NO_RET_NULL(1959,tag_type == XBT_UNIX_TIME64_MSEC || tag_type == XBT_VARIANT);
+    if (tag_type != XBT_UNIX_TIME64_MSEC && tag_type != XBT_VARIANT)
+    {
+        LOG_ERROR("[1959] %s.tag_type = %d = %s and should be XBT_UNIX_TIME64_MSEC or XBT_VARIANT",pool->getTagName(id),tag_type,XBT2STR(tag_type));
+        // ASSERT_NO_RET_NULL(1959,tag_type == XBT_UNIX_TIME64_MSEC || tag_type == XBT_VARIANT);
+        return nullptr;
+    }
 
     ASSERT_NO_RET_NULL(1960,makeSpace(BW2_INITIAL_FILE_SIZE+8));
 

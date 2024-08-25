@@ -21,11 +21,13 @@ bool ScanInt(const char *&p,int &value);
 bool ScanInt64(const char *&p,int64_t &value);
 bool ScanUInt64(const char *&p,uint64_t &value);
 bool ScanUnixTime(const char *&p,uint32_t &value);
+bool ScanUnixTime64msec(const char *&p,int64_t &value);
 bool ScanUnixDate(const char *&p,int32_t &value);
 char *UnixDate2Str(int32_t value,char *dst);
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size);
 void SkipSpaces(const char *&p);
 bool SkipLine(const char *&p);
+bool Go(const char *&p,char separator);
 
 int ScanHex(const char *&p,uint8_t *dst,int dst_size);
 const char *Hex2Str(const char *src,int src_size,char *dst);

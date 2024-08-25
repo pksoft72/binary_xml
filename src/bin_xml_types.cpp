@@ -109,6 +109,10 @@ XML_Binary_Type XBT_Detect(const char *value)
     if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
         value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')
         return XBT_UNIX_TIME;
+// 2021-06-15 22:41:40.000
+    if (str_len == 23 && digits == 17 && spaces == 1 && negative == 2 && colons == 2 &&
+        value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
+        return XBT_UNIX_TIME64_MSEC;
 // DISABLED - not fully supported yet
 //  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
 //      return XBT_HEX;
@@ -228,7 +232,7 @@ int XBT_Size2(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1071,size == 0);
             return sizeof(int64_t);
         case XBT_UINT64:
-            ASSERT_NO_RET_N1(1171,size == 0);
+            ASSERT_NO_RET_N1(1171,size == 0 || size == 8);
             return sizeof(uint64_t);
         case XBT_FLOAT:
             ASSERT_NO_RET_N1(1072,size == 0);
@@ -258,7 +262,7 @@ int XBT_Size2(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1078,size == 0);
             return 16;
         case XBT_UNIX_TIME64_MSEC:
-            ASSERT_NO_RET_N1(1172,size == 0);
+            ASSERT_NO_RET_N1(1172,size == 0 || size == 8);
             return sizeof(uint64_t);
     }
     return 0;
@@ -354,6 +358,15 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 *_wp += sizeof(int64_t);
                 return true;
             }
+        case XBT_UINT64:
+            {
+                uint64_t v;
+                ASSERT_NO_RET_FALSE(2022,ScanUInt64(src,v));
+                AA8(*_wp);
+                *reinterpret_cast<uint64_t*>(*_wp) = v;
+                *_wp += sizeof(uint64_t);
+                return true;
+            }
             
         case XBT_STRING:
             strcpy(*_wp,src);
@@ -382,6 +395,19 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 }
                 *reinterpret_cast<uint32_t*>(*_wp) = tm0;
                 *_wp += sizeof(uint32_t);
+                return true;
+            }
+        case XBT_UNIX_TIME64_MSEC:
+            {
+                AA(*_wp);
+                int64_t tm0;
+                if (!ScanUnixTime64msec(src,tm0))
+                {
+                    fprintf(stderr,"UNIX_TIME64_MSEC: Conversion of value '%s' to binary representation failed!" ANSI_RESET_LF,src);
+                    return false;
+                }
+                *reinterpret_cast<int64_t*>(*_wp) = tm0;
+                *_wp += sizeof(int64_t);
                 return true;
             }
         case XBT_UNIX_DATE:
@@ -870,6 +896,7 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_DATE,"1970-01-01", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_DATE,"1969-12-31", "ffffffff") && ok;
     
+    ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"1970-01-01 00:00:00.000", "00000000") && ok;
     return ok;
 }
 
