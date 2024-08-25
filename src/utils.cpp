@@ -343,6 +343,29 @@ bool ScanUInt64(const char *&p,uint64_t &value)
     return true;
 }
 
+bool ScanUInt64Hex(const char *&p,uint64_t &value)
+{
+    while (isspace(*p)) p++;
+
+    uint64_t x = 0;
+    const char *p1 = p;
+    if (!isxdigit(*p1)) return false;
+    while (*p1 != '\0')
+    {
+        if (*p1 >= '0' && *p1 <= '9')
+            x = (x << 4) + (*(p1++) - '0');
+        else if (*p1 >= 'A' && *p1 <= 'F')
+            x = (x << 4) + (*(p1++) - 'A' + 10);
+        else if (*p1 >= 'a' && *p1 <= 'f')
+            x = (x << 4) + (*(p1++) - 'a' + 10);
+        else break;
+    }
+
+    p = p1;
+    value = x;
+    return true;
+}
+
 const int MONTH_OFFSET[12] = {
     0,
     31,
