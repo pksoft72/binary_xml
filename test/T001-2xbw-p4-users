@@ -1,5 +1,6 @@
 #!/bin/bash
 make $* || exit 1
+#gdb --args 
 build/default/2xbw test/data/p4-users.xml || (echo "2xbw failed: $?";exit 1)
 ls -l test/data/p4-users.xbw
 xb2xml test/data/p4-users.xbw >test/data/p4-users-T001.xml|| (echo "2xml failed: $?";exit 2)

@@ -92,10 +92,12 @@ public: // index tables (indexed by id) - allocated on pool
     
     bool            makeTable(BW_symbol_table_16B &table,BW_offset_t limit);
     bool            checkTable(BW_symbol_table_16B &table,BW_offset_t limit);
+    bool            check_id();
 public:
     char*           allocate(int size);
     char*           allocate8(int size);        // 64 bit aligned value
     BW_element*     new_element(XML_Binary_Type type,int size = 0);
+
 
     BW_element*     tag(int16_t id);
     BW_element*     tagInt32(int16_t id,int32_t value);

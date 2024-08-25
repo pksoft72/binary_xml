@@ -135,6 +135,8 @@ protected:
                 static void XStoreChildrenEvent(void *element,void *userdata);
 
                 static void XStore2XBWEvent(void *element,void *userdata);
+                static void XBWStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata);
+                static void XBWStoreChildrenEvent(void *element,void *userdata);
             const char *WriteNode(char **_wp,void *element);
 
         virtual int32_t Pack();

@@ -218,7 +218,8 @@ int XBT_Size2(XML_Binary_Type type,int size)
         case XBT_BLOB:
             return size + sizeof(int32_t);
         case XBT_INT32:
-            ASSERT_NO_RET_N1(1070,size == 0);
+            //printf("XBT_UINT32: size = %d\n",size);
+            ASSERT_NO_RET_N1(1070,size == 0 || size == 4);
             return sizeof(int32_t);
         case XBT_UINT32:
             ASSERT_NO_RET_N1(1185,size == 0);
@@ -244,7 +245,8 @@ int XBT_Size2(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1075,size == 0);
             return 24;
         case XBT_UNIX_TIME:
-            ASSERT_NO_RET_N1(1076,size == 0);
+            //printf("XBT_UNIX_TIME: size = %d\n",size);
+            ASSERT_NO_RET_N1(1076,size == 0 || size == 4);
             return sizeof(uint32_t);
         case XBT_UNIX_DATE:
             ASSERT_NO_RET_N1(2021,size == 0);
