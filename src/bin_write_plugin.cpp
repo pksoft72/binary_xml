@@ -784,6 +784,22 @@ int64_t *BW_element::getInt64()
     return reinterpret_cast<int64_t*>(this+1); // just after this element
 }
 
+uint64_t *BW_element::getUInt64()
+{
+    if (this == nullptr) return nullptr;
+
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_UINT64)
+    {
+        LOG_ERROR("[2096] +%d %s'type = %d/%d = %s/%s but XBT_UINT64 is expected!",offset,getName(),
+        attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<uint64_t*>(this+1); // just after this element
+}
+
+
 char *BW_element::getStr()
 {
     if (this == nullptr) return nullptr;

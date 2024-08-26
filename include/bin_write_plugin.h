@@ -176,6 +176,7 @@ public:
 
     int32_t     *getInt32();
     int64_t     *getInt64();
+    uint64_t    *getUInt64();
     char        *getStr();
     XML_Binary_Data_Ref getData();
 
