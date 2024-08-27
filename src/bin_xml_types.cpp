@@ -226,40 +226,40 @@ int XBT_Size2(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1070,size == 0 || size == 4);
             return sizeof(int32_t);
         case XBT_UINT32:
-            ASSERT_NO_RET_N1(1185,size == 0);
+            ASSERT_NO_RET_N1(1185,size == 0 || size == 4);
             return sizeof(uint32_t);
         case XBT_INT64:
-            ASSERT_NO_RET_N1(1071,size == 0);
+            ASSERT_NO_RET_N1(1071,size == 0 || size == 8);
             return sizeof(int64_t);
         case XBT_UINT64:
             ASSERT_NO_RET_N1(1171,size == 0 || size == 8);
             return sizeof(uint64_t);
         case XBT_FLOAT:
-            ASSERT_NO_RET_N1(1072,size == 0);
+            ASSERT_NO_RET_N1(1072,size == 0 || size == 4);
             return sizeof(float);
         case XBT_DOUBLE:
-            ASSERT_NO_RET_N1(1073,size == 0);
+            ASSERT_NO_RET_N1(1073,size == 0 || size == 8);
             return sizeof(double);
         case XBT_HEX:
             return size + sizeof(int32_t);
         case XBT_GUID:
-            ASSERT_NO_RET_N1(1074,size == 0);
+            ASSERT_NO_RET_N1(1074,size == 0 || size == 16);
             return 16;
         case XBT_SHA1:
-            ASSERT_NO_RET_N1(1075,size == 0);
+            ASSERT_NO_RET_N1(1075,size == 0 || size == 20);
             return 24;
         case XBT_UNIX_TIME:
             //printf("XBT_UNIX_TIME: size = %d\n",size);
             ASSERT_NO_RET_N1(1076,size == 0 || size == 4);
             return sizeof(uint32_t);
         case XBT_UNIX_DATE:
-            ASSERT_NO_RET_N1(2021,size == 0);
+            ASSERT_NO_RET_N1(2021,size == 0 || size == 4);
             return sizeof(int32_t);
         case XBT_IPv4:
-            ASSERT_NO_RET_N1(1077,size == 0);
+            ASSERT_NO_RET_N1(1077,size == 0 || size == 4);
             return 4;
         case XBT_IPv6:
-            ASSERT_NO_RET_N1(1078,size == 0);
+            ASSERT_NO_RET_N1(1078,size == 0 || size == 16);
             return 16;
         case XBT_UNIX_TIME64_MSEC:
             ASSERT_NO_RET_N1(1172,size == 0 || size == 8);
