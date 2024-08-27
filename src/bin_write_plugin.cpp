@@ -1313,10 +1313,16 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
     return result;
 }
 
+#define CHECK_TAG_TYPE(no,id,type)\
+    XML_Binary_Type tag_type = getTagType(id);\
+    if (tag_type != type)\
+    {\
+        LOG_ERROR("[%d] Tag %s has type %d=%s and not %s!",no,getTagName(id),tag_type,XBT2STR(tag_type),#type);\
+        return nullptr;\
+    }
 BW_element* BW_pool::tag(int16_t id)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2014,tag_type == XBT_NULL);
+    CHECK_TAG_TYPE(2014,id,XBT_NULL);
     BW_element* result = new_element(XBT_NULL,0);
     ASSERT_NO_RET_NULL(2034,result != nullptr);
     
@@ -1326,8 +1332,7 @@ BW_element* BW_pool::tag(int16_t id)
 
 BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2027,tag_type == XBT_INT32);
+    CHECK_TAG_TYPE(2027,id,XBT_INT32);
 
     BW_element* result = new_element(XBT_INT32,0);
     ASSERT_NO_RET_NULL(2035,result != nullptr);
@@ -1340,8 +1345,7 @@ BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
 
 BW_element* BW_pool::tagInt64(int16_t id,int64_t value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2029,tag_type == XBT_INT64);
+    CHECK_TAG_TYPE(2029,id,XBT_INT64);
 
     BW_element* result = new_element(XBT_INT64,sizeof(value));
     ASSERT_NO_RET_NULL(2036,result != nullptr);
@@ -1354,8 +1358,7 @@ BW_element* BW_pool::tagInt64(int16_t id,int64_t value)
 
 BW_element* BW_pool::tagString(int16_t id,const char *value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2015,tag_type == XBT_STRING);
+    CHECK_TAG_TYPE(2015,id,XBT_STRING);
 
     int value_len = (value != nullptr ? strlen(value) : 0);
 
@@ -1369,8 +1372,7 @@ BW_element* BW_pool::tagString(int16_t id,const char *value)
 
 BW_element* BW_pool::tagTime(int16_t id,time_t value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2006,tag_type == XBT_UNIX_TIME);
+    CHECK_TAG_TYPE(2006,id,XBT_UNIX_TIME);
 
     BW_element* result = new_element(XBT_UNIX_TIME,0);
     ASSERT_NO_RET_NULL(2038,result != nullptr);
@@ -1383,8 +1385,7 @@ BW_element* BW_pool::tagTime(int16_t id,time_t value)
 
 BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2028,tag_type == XBT_SHA1);
+    CHECK_TAG_TYPE(2028,id,XBT_SHA1);
 
     BW_element* result = new_element(XBT_SHA1,0);
     ASSERT_NO_RET_NULL(2039,result != nullptr);

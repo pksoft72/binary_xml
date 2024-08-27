@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 TAG NAMES:
-Area : XBT_NULL
-Deleted : XBT_UNIX_TIME
-EMail : XBT_STRING
-EMailConfirmed : XBT_UNIX_TIME
-FullName : XBT_STRING
-GMail : XBT_STRING
-IPLast : XBT_STRING
-LoginLast : XBT_UNIX_TIME
-Logins : XBT_INT32
-Password : XBT_NULL
-PublicName : XBT_STRING
-Right : XBT_STRING
-Rights : XBT_NULL
-Stats : XBT_NULL
-User : XBT_NULL
-Users : XBT_NULL
+	Area : XBT_NULL
+	Deleted : XBT_UNIX_TIME
+	EMail : XBT_STRING
+	EMailConfirmed : XBT_UNIX_TIME
+	FullName : XBT_STRING
+	GMail : XBT_STRING
+	IPLast : XBT_STRING
+	LoginLast : XBT_UNIX_TIME
+	Logins : XBT_INT32
+	Password : XBT_NULL
+	PublicName : XBT_STRING
+	Right : XBT_STRING
+	Rights : XBT_NULL
+	Stats : XBT_NULL
+	User : XBT_NULL
+	Users : XBT_NULL
 
 ATTR NAMES:
-id : XBT_INT32
-name : XBT_STRING
+	id : XBT_INT32
+	name : XBT_STRING
 -->
 <Users>
 	<User id="0">
