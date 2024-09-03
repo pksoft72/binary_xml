@@ -1255,7 +1255,7 @@ char*  BW_pool::allocate(int size)
     allocator += size;
     ROUND32UP(allocator);
 
-    //MAXIMIZE(size,allocator);
+    //MAXIMIZE(size,allocator);BUG!!
     memset(THIS+offset,0,size);
 
     return THIS+offset;
@@ -1272,7 +1272,7 @@ char*           BW_pool::allocate8(int size)        // 64 bit aligned value
     allocator += size;
     ROUND32UP(allocator);
 
-    MAXIMIZE(size,allocator);
+    //MAXIMIZE(size,allocator);BUG!!
     memset(THIS+offset,0,size);
 
     return THIS+offset;
