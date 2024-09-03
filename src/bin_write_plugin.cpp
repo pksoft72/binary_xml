@@ -138,6 +138,27 @@ BW_element* BW_element::add(BW_element *tag)
     return this;
 }
 
+BW_element* BW_element::remove(BW_element *tag)
+{
+    if (this == nullptr) return nullptr;
+    if (tag == nullptr) return this;
+
+    BW_offset_t *list = (tag->flags & BIN_WRITE_ELEMENT_FLAG) ? &first_child : &first_attribute;
+    if (*list == 0) return this; // empty list - cannot find
+    if (*list == tag->offset)
+    {
+        if (tag->next == tag->offset && tag->prev == tag->offset)
+            *list = 0; // removing last element -> empty
+        else
+            *list = tag->next;
+    }
+    BWE(tag->prev)->next = tag->next;
+    BWE(tag->next)->prev = tag->prev;
+    tag->next = tag->prev = tag->offset;
+    tag->flags |= BIN_DELETED;
+    return this;
+}
+
 BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
 {
     if (this == nullptr) return nullptr; // no where to add

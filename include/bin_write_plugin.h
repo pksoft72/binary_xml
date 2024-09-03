@@ -142,6 +142,7 @@ public:
 
     BW_element* join(BW_element *B);    // this will connect two circles
     BW_element* add(BW_element *tag);
+    BW_element* remove(BW_element *tag);
     BW_element* replace(BW_element *old_value,BW_element *new_value);
 
 
