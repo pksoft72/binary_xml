@@ -62,6 +62,8 @@ public:
 
     int16_t         getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type);
     const char      *getName(BW_pool *pool,int search_id);
+    int32_t         getNamesSize(BW_pool *pool);
+    bool            Open(BW_pool *pool);
 };
 
 class BW_pool // this is flat pointer-less structure mapped directly to the first position of shared memory

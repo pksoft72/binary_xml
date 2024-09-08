@@ -604,7 +604,7 @@ BW_element*  BW_element::NextChild(BW_offset_t &offset)
             return nullptr; // empty list
         else
             return BWE(offset = first_child); // first child
-    }	
+    }   
 
     BW_element *prev = BWE(offset); // current element, need next
     if (prev->next == first_child) return nullptr; // end of loop
@@ -1107,6 +1107,46 @@ const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
     const char *start = POOL+elements[search_id]; 
     return start+3;
 }
+
+int32_t BW_symbol_table_16B::getNamesSize(BW_pool *pool)
+// sometimes I need size of whole sequence of names
+// for copy when extending old table
+{
+    ASSERT_NO_RET_N1(2097,pool != nullptr);
+    if (names_offset == 0) return 0;
+    
+    char *POOL = reinterpret_cast<char*>(pool);
+    const char *start_p = POOL+names_offset;
+    const char *p_limit = POOL+pool->allocator;
+    const char *p = start_p;
+    
+    int id = 0;
+    while (id < max_id)
+    {
+            id = *(p++);
+            id |= *(p++) << 8;
+            p++; // skip type
+            while(p < p_limit && *p != '\0') p++;
+            AA(p);
+            id++;
+    }
+    return p - start_p;
+}
+
+bool BW_symbol_table_16B::Open(BW_pool *pool)
+{
+    ASSERT_NO_RET_FALSE(2100,pool != nullptr);
+    if (index == 0) return true; // no index means - it is opened
+    int size = getNamesSize(pool);
+// prepare new copy of symbol tables with open end
+    char *names = pool->allocate(size);
+    ASSERT_NO_RET_FALSE(2101,names != nullptr);
+    memcpy(names,(char*)pool + names_offset,size);
+    index = 0; // no index yet
+    names_offset = names - (char *)pool;
+    return true;
+}
+
 //-------------------------------------------------------------------------------------------------
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
@@ -1694,6 +1734,8 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
         check_failures++; 
         return false;
     }
+    ASSERT_NO_RET_NULL(2098,pool->params.Open(pool)); // must be opened
+
 // elements must be defined first, empty element are not allowed!
     ASSERT_NO_RET_FALSE(1115,pool->tags.names_offset != 0);
 // root must be later
@@ -1741,6 +1783,8 @@ XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
             return static_cast<XML_Tag_Names>(id);
         }
     }
+    ASSERT_NO_RET_(2099,pool->tags.Open(pool),XTNR_NULL); // must be opened
+
     int len = strlen(name);
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
     ASSERT_NO_RET_(1972,dst != 0,XTNR_NULL);
