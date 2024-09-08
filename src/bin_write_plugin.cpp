@@ -1873,14 +1873,17 @@ void BW_plugin::importParams(XB_reader *src)
 bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
-    if (check_only)
-        return (check_failures == 0); // no problems?
-
     BW_offset_t names_limit = pool->allocator;
-    ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
+    if (check_only && pool->tags.index != 0 && pool->params.index != 0)
+        return (check_failures == 0); // no problems?
+    else
+    {
+        ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
+    }
     ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags,pool->params.names_offset));
     ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->params,names_limit));
-    pool->payload = pool->allocator;
+    if (pool->payload == 0) // when extending symbol tables, don't change
+        pool->payload = pool->allocator;
     return true;
 }
 
