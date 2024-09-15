@@ -1016,7 +1016,7 @@ int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_
         const char *p =       POOL+names_offset;
         const char *p_limit = POOL+pool->allocator;
 
-        while (id < max_id)
+        while (id <= max_id)
         { 
             const char *n = name;
             const char *start = p;
@@ -1080,7 +1080,7 @@ const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
         const char *p =       POOL+names_offset;
         const char *p_limit = POOL+pool->allocator;
 
-        while (id < max_id)
+        while (id <= max_id)
         { 
             //const char *start = p;
             id = *(p++);
@@ -1121,7 +1121,7 @@ int32_t BW_symbol_table_16B::getNamesSize(BW_pool *pool)
     const char *p = start_p;
     
     int id = 0;
-    while (id < max_id)
+    while (id <= max_id)
     {
             id = *(p++);
             id |= *(p++) << 8;
@@ -1133,11 +1133,25 @@ int32_t BW_symbol_table_16B::getNamesSize(BW_pool *pool)
     return p - start_p;
 }
 
+bool BW_symbol_table_16B::check(BW_pool *pool)
+{
+    if (index == 0) return true; // OK, no index is OK
+    char *POOL = reinterpret_cast<char*>(pool);
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
+    int names_size = getNamesSize(pool);
+    for(int i = 0;i <= max_id;i++)
+    {
+        // index reference must be in range of correct names, otherwise index is invalid
+        ASSERT_NO_RET_FALSE(2109,elements[i] >= names_offset && elements[i] < names_offset + names_size);
+    }
+    return true; // OK
+}
+
 bool BW_symbol_table_16B::Open(BW_pool *pool)
 {
     ASSERT_NO_RET_FALSE(2100,pool != nullptr);
-    if (index == 0) return true; // no index means - it is opened
     int size = getNamesSize(pool);
+    if (index == 0 && names_offset + size == pool->allocator) return true; // no index means - it is opened
 // prepare new copy of symbol tables with open end
     char *names = pool->allocate(size);
     ASSERT_NO_RET_FALSE(2101,names != nullptr);
@@ -1265,31 +1279,37 @@ bool   BW_pool::makeTable(BW_symbol_table_16B &table,BW_offset_t limit)
     
     int32_t *index = reinterpret_cast<int32_t*>(allocate(sizeof(int32_t) * (table.max_id+1)));
     ASSERT_NO_RET_FALSE(1118,index != nullptr); // out of memory?
-    table.index = reinterpret_cast<char*>(index) - THIS;
 
     memset(index,0,sizeof(int32_t)*(table.max_id+1)); // 0 means empty
 
     BW_offset_t start = table.names_offset;
 //    BW_offset_t end = reinterpret_cast<char*>(index) - THIS;
-
-    while (start < limit)
+    
+    for(int i = 0;i <= table.max_id;i++)
     {
+        ASSERT_NO_RET_FALSE(2112,start < limit);
         int id = *reinterpret_cast<int16_t*>(THIS + start);
-        ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
+        if (id != i)
+        {
+            LOG_ERROR("[A2113] found id %d at index %d/%d - name %s",id,i,table.max_id+1,THIS+start+3);
+            return false;
+        }
+        ASSERT_NO_RET_FALSE(2113,id == i);
+        //ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
         index[id] = start;
         start += 3 + strlen(THIS+start+3)+1;
         ROUND32UP(start);
     }
-    ASSERT_NO_RET_FALSE(1113,start == limit);
+    //ASSERT_NO_RET_FALSE(1113,start == limit);
+    table.index = reinterpret_cast<char*>(index) - THIS;
     return true;
 }
 
 bool   BW_pool::checkTable(BW_symbol_table_16B &table,BW_offset_t limit)
 {
 // I must check, the symbol table is ok and valid!    
-    if (table.max_id == -1) return true; // no symbols = OK
+    if (table.max_id < 0) return true; // no symbols = OK
     ASSERT_NO_RET_FALSE(1938,table.index >= (int)sizeof(*this));
-    ASSERT_NO_RET_FALSE(1939,table.index + (int)sizeof(int32_t) * (table.max_id+1) < payload);
     int32_t *index = reinterpret_cast<int32_t*>(THIS + table.index);
     for(int i = 0;i <= table.max_id;i++)
     {
@@ -1641,6 +1661,11 @@ bool BW_plugin::CheckExistingFile(int file_size)
     this->check_only = true;
     this->check_failures = 0;
 
+    if (!pool->tags.check(pool))
+        ASSERT_NO_RET_FALSE(2110,pool->tags.Open(pool));
+    if (!pool->params.check(pool))
+        ASSERT_NO_RET_FALSE(2111,pool->params.Open(pool));
+
 //    ASSERT_NO_RET_FALSE(1951,allRegistered()); // make tables and be ready for checking of registration
     // check pool->tags
     // check pool->params
@@ -1691,10 +1716,12 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
         check_failures++; 
         return false;
     }
+    ASSERT_NO_RET_NULL(2108,pool->tags.Open(pool)); // must be opened
 // elements must be defined first
-    ASSERT_NO_RET_FALSE(1108,pool->params.names_offset == 0);
+//    ASSERT_NO_RET_FALSE(1108,pool->params.names_offset == 0);
+
 // root must be later
-    ASSERT_NO_RET_FALSE(1109,pool->root == 0);
+//    ASSERT_NO_RET_FALSE(1109,pool->root == 0);
 //-----------------------------------------------
     if (pool->tags.names_offset == 0) // empty
         pool->tags.names_offset = pool->allocator;
@@ -1876,14 +1903,9 @@ bool BW_plugin::allRegistered()
     BW_offset_t names_limit = pool->allocator;
     if (check_only && pool->tags.index != 0 && pool->params.index != 0)
         return (check_failures == 0); // no problems?
-    else
-    {
-        ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
-    }
-    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags,pool->params.names_offset));
-    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->params,names_limit));
-    if (pool->payload == 0) // when extending symbol tables, don't change
-        pool->payload = pool->allocator;
+
+    ASSERT_NO_RET_FALSE(1123,pool->tags.index != 0   || pool->makeTable(pool->tags,pool->params.names_offset));
+    ASSERT_NO_RET_FALSE(1124,pool->params.index != 0 || pool->makeTable(pool->params,names_limit));
     return true;
 }
 
@@ -1908,8 +1930,7 @@ void BW_plugin::setRoot(const BW_element* X)
 {
     ASSERT_NO_RET(1125,X != nullptr);
     ASSERT_NO_RET(1126,pool->root == 0);    // set root is possibly only once till flush
-    ASSERT_NO_RET(1140,pool->payload != 0); // allRegistered must be called first
-    ASSERT_NO_RET(1141,X->offset >= pool->payload);
+    ASSERT_NO_RET(1141,X->offset >= 0 && X->offset < pool->allocator);
     pool->root = X->offset;
 }
 
@@ -1947,19 +1968,59 @@ bool BW_plugin::Clear()
 // I will clear all data - only symbol table will remain
 {
     ASSERT_NO_RET_FALSE(1178,pool != nullptr);
-    ASSERT_NO_RET_FALSE(1179,pool->payload != 0);
-    int size2clear = pool->allocator - pool->payload;
-    pool->root = 0;
-    pool->allocator = pool->payload;
-    memset(BWE(pool->allocator),0,size2clear);
-    return true; 
+    pool->root = 0; // forget data
+
+    // this is original situation
+    int tags_size = pool->tags.getNamesSize(pool);
+    int params_size = pool->params.getNamesSize(pool);
+    char *tags_src = (char*)BWE(pool->tags.names_offset);
+    char *params_src = (char*)BWE(pool->params.names_offset);
+
+    // this is requested situation
+    char *tags_dst = reinterpret_cast<char*>(pool+1);
+    char *params_dst = tags_dst+tags_size;
+    // Is it possible to have situatiation, which cannot be solved by this code?
+    // -------[PARAMS----][TAGS------------]
+    // Yes - when between old params and new TAGS is not enough space for growth TAGS
+
+    if (tags_src > tags_dst && tags_src < tags_dst + tags_size + params_size)
+    { // copy params to new place
+        char *params2_src = reinterpret_cast<char*>(pool->allocate(params_size));
+        ASSERT_NO_RET_FALSE(2103,params2_src);
+        memcpy(params2_src,params_src,params_size);
+        params_src = params2_src;
+    }
+    if (tags_src != tags_dst)
+    {
+        ASSERT_NO_RET_FALSE(2104,(tags_dst >= params_src + params_size) || (tags_dst + tags_size <= params_src));
+        memmove(tags_dst,tags_src,tags_size);
+    }
+    if (params_src != params_dst)
+    {
+        ASSERT_NO_RET_FALSE(2105,(params_dst >= tags_src + tags_size) || (params_dst + params_size <= tags_src));
+        memmove(params_dst,params_src,params_size);
+    }
+    pool->tags.names_offset = sizeof(*pool);
+    pool->tags.index = 0; // to be constructed
+    pool->params.names_offset = sizeof(*pool)+tags_size;
+    pool->params.index = 0; // to be constructed
+
+    int old_size = pool->allocator;
+    int new_size = pool->params.names_offset + params_size;
+    pool->allocator = new_size;
+    if (old_size > new_size)
+        memset((char*)pool+new_size,0,old_size - new_size); // clear memory
+
+    
+    ASSERT_NO_RET_FALSE(2106,pool->makeTable(pool->tags,pool->params.names_offset));
+    ASSERT_NO_RET_FALSE(2107,pool->makeTable(pool->params,new_size));
+    return true;
 }
 
 int  BW_plugin::getDataSize()
 {
     if (pool == nullptr) return 0;
-    if (pool->payload == 0) return 0;
-    return pool->allocator - pool->payload;
+    return pool->allocator - sizeof(*pool) - pool->tags.getNamesSize(pool) - pool->params.getNamesSize(pool);
 }
 
 //-------------------------------------------------------------------------------------------------

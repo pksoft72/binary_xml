@@ -63,6 +63,7 @@ public:
     int16_t         getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type);
     const char      *getName(BW_pool *pool,int search_id);
     int32_t         getNamesSize(BW_pool *pool);
+    bool            check(BW_pool *pool);
     bool            Open(BW_pool *pool);
 };
 
@@ -75,7 +76,7 @@ public:
     uint32_t                file_size;                      // should not allocate beyond file_size!!
     uint32_t                mmap_size;                      // this is whole allocation limit - memory is mapped to this size
 
-    BW_offset_t             payload;                        // here begins data
+    BW_offset_t             reserved;                       // was payload
     BW_offset_t             root;                           // pointer to the first element - it is not always the same, as payload
     uint32_t                master_xb_size;                 // how big master .xb file is finished
 

@@ -200,6 +200,7 @@ public:
 
     inline const char *getNodeName(tag_name_id_t name_id) const     { return tag_symbols.getSymbol(name_id);}
     inline const char *getParamName(tag_name_id_t name_id) const    { return param_symbols.getSymbol(name_id);}
+    inline const char *getFilename() const                          { return filename;}
     inline tag_name_id_t getNodeID(const char *name) const          { return static_cast<tag_name_id_t>(tag_symbols.getID(name));}
     inline param_name_id_t getParamID(const char *name) const       { return static_cast<param_name_id_t>(param_symbols.getID(name));}
     inline XML_Item *getRoot() const                                { return (this == nullptr ? nullptr : data);}
