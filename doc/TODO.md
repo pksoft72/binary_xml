@@ -13,7 +13,7 @@ I should never drop data. Values, which are not possible to convert should be le
 
 Each conversion should be done in XBT_ code and also there should be function, which says conversion is implemented.
 
-
+Also there must be possible to extend symbol tables!
 
 
 ## Indexes

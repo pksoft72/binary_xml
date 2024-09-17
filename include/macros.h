@@ -44,7 +44,7 @@
 #define NOT_FINISHED false // used in assert
 
 #ifndef STRCPY
-    #define STRCPY(dst,src) do {if ((src) != nullptr) {strncpy(dst,src,sizeof(dst));dst[sizeof(dst)-1] = '\0';} else dst[0] = '\0';} while(0)
+    #define STRCPY(dst,src) do {if ((src) != nullptr) {strncpy(dst,src,sizeof(dst)-1);dst[sizeof(dst)-1] = '\0';} else dst[0] = '\0';} while(0)
 #endif
 #define STRCPY_LINE(dst,src) do {const char *_NL = strchr((src),'\n');int _size = sizeof(dst);if (_NL != nullptr) _size = _NL - (src);strncpy(dst,src,_size);dst[sizeof(dst)-1] = '\0';} while(0)
 #define MEMSET(dst,value) memset(dst,value,sizeof(dst))

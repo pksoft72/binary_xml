@@ -83,7 +83,13 @@ public:
     BW_symbol_table_16B     tags;
     BW_symbol_table_16B     params;
 
+//  pool_format_version = 1
+//  uint8_t                 doc_type_id[16]                 // GUID identification of type of document
+//  uint8_t                 doc_id[16]                      // GUID identification of this document - for match with newer versions
+//  char                    doc_type_name[32]               // some document type name for logging
+
 public: // index tables (indexed by id) - allocated on pool
+    int             getPoolSize() const { return (pool_format_version == 0 ? 9*4+24+32 : sizeof(BW_pool)); }
     XML_Binary_Type getTagType(int16_t id);
     const char*     getTagName(int16_t id);
 
