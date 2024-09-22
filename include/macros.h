@@ -20,13 +20,13 @@
 #define ERRNO_SHOW_EXPL(code,command,params,__e) do {std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
 #define ERRNO_SHOW_MSG(code,command,params,msg) do {std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - : " << msg << ANSI_RESET_LF;} while(0)
 
-
+#define WORK_ID ""
 
 #ifdef __cplusplus
     #ifndef NDEBUG
-        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
+        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << WORK_ID << ":" << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
     #else
-        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] "  << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
+        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << WORK_ID << ":" << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
     #endif
 #endif
 

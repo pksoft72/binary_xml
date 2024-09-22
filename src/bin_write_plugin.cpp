@@ -51,6 +51,8 @@ public:
 BW_plugins plugins;
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID getPool()->getDocTypeName()
 
 void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags)
 {
@@ -1003,6 +1005,8 @@ bool         BW_element::EqualKeys(XB_reader &xb,XML_Item *src)
 }
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID pool->getDocTypeName()
 
 int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type)
 {
@@ -1121,13 +1125,23 @@ int32_t BW_symbol_table_16B::getNamesSize(BW_pool *pool)
     const char *p = start_p;
     
     int id = 0;
+    int prev_id = -1;
     while (id <= max_id)
     {
             id = *(p++);
             id |= *(p++) << 8;
+            if (id != prev_id+1) // don't go to other table
+            {
+                LOG_ERROR("%s/%s correcting max_id: %d --> %d",pool->getDocTypeName(),(&pool->tags == this ? "tags" : "params"),max_id,prev_id);
+                max_id = prev_id;
+                p -= 2;
+                break;
+            }
             p++; // skip type
             while(p < p_limit && *p != '\0') p++;
+            p++; // ASCII.NUL
             AA(p);
+            prev_id = id;
             id++;
     }
     return p - start_p;
@@ -1153,6 +1167,9 @@ bool BW_symbol_table_16B::Open(BW_pool *pool)
     int size = getNamesSize(pool);
     if (index == 0 && names_offset + size == pool->allocator) return true; // no index means - it is opened
 // prepare new copy of symbol tables with open end
+    LOG("%s(%s/%s) - opening symbol table (max_id=%d,size=%d,offset.old=%d,allocator=%d (should be %d)",
+                __FUNCTION__,pool->getDocTypeName(),(&pool->tags == this ? "tags" : "params"),max_id,
+                size,names_offset,pool->allocator,names_offset+size);
     char *names = pool->allocate(size);
     ASSERT_NO_RET_FALSE(2101,names != nullptr);
     memcpy(names,(char*)pool + names_offset,size);
@@ -1162,6 +1179,8 @@ bool BW_symbol_table_16B::Open(BW_pool *pool)
 }
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID getDocTypeName()
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
 {
@@ -1269,38 +1288,37 @@ const char*     BW_pool::getAttrName(int16_t id)
     }
 }
 
-bool   BW_pool::makeTable(BW_symbol_table_16B &table,BW_offset_t limit)
+bool   BW_pool::makeTable(BW_symbol_table_16B &table)
 // This is called after registration of symbols to table - see registerTag & registerAttr
 {
     table.index = 0;
     if (table.max_id < 0) return true; // ok, empty array
 
     ASSERT_NO_RET_FALSE(1111,table.names_offset != 0);
+
     
     int32_t *index = reinterpret_cast<int32_t*>(allocate(sizeof(int32_t) * (table.max_id+1)));
     ASSERT_NO_RET_FALSE(1118,index != nullptr); // out of memory?
 
-    memset(index,0,sizeof(int32_t)*(table.max_id+1)); // 0 means empty
-
     BW_offset_t start = table.names_offset;
-//    BW_offset_t end = reinterpret_cast<char*>(index) - THIS;
+    BW_offset_t end = table.names_offset+table.getNamesSize(this);
     
     for(int i = 0;i <= table.max_id;i++)
     {
-        ASSERT_NO_RET_FALSE(2112,start < limit);
+        ASSERT_NO_RET_FALSE(2112,start < end);
         int id = *reinterpret_cast<int16_t*>(THIS + start);
-        if (id != i)
+        if (id < 0 || id > table.max_id)
         {
-            LOG_ERROR("[A2113] found id %d at index %d/%d - name %s",id,i,table.max_id+1,THIS+start+3);
+            LOG_ERROR("[A1112] %s - found id %d at index %d/%d - name %s",getDocTypeName(),id,i,table.max_id+1,THIS+start+3);
             return false;
         }
-        ASSERT_NO_RET_FALSE(2113,id == i);
+        //ASSERT_NO_RET_FALSE(2113,id == i);
         //ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
         index[id] = start;
         start += 3 + strlen(THIS+start+3)+1;
         ROUND32UP(start);
     }
-    //ASSERT_NO_RET_FALSE(1113,start == limit);
+    //ASSERT_NO_RET_FALSE(1113,start == end);
     table.index = reinterpret_cast<char*>(index) - THIS;
     return true;
 }
@@ -1355,12 +1373,12 @@ const char *BW_pool::getDocTypeName()
 char*  BW_pool::allocate(int size)
 {
     if (size <= 0) return 0;
+    ROUND32UP(size);
 // memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
     ASSERT_NO_RET_0(1080,allocator + size <= allocator_limit);
 
     BW_offset_t offset = allocator;
     allocator += size;
-    ROUND32UP(allocator);
 
     //MAXIMIZE(size,allocator);BUG!!
     memset(THIS+offset,0,size);
@@ -1372,12 +1390,12 @@ char*           BW_pool::allocate8(int size)        // 64 bit aligned value
 {
     if (size <= 0) return 0;
     ROUND64UP(allocator);
+    ROUND64UP(size);
 // memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
     ASSERT_NO_RET_0(1942,allocator + size <= allocator_limit);
 
     BW_offset_t offset = allocator;
     allocator += size;
-    ROUND32UP(allocator);
 
     //MAXIMIZE(size,allocator);BUG!!
     memset(THIS+offset,0,size);
@@ -1517,6 +1535,8 @@ BW_element* BW_pool::tagAny(int16_t id,XML_Binary_Type type,const char *data_as_
 }
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID pool->getDocTypeName()
 
 BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size,uint32_t config_flags)
     : Bin_src_plugin(nullptr,bin_xml_creator)
@@ -1687,10 +1707,10 @@ bool BW_plugin::CheckExistingFile(int file_size)
     this->check_only = true;
     this->check_failures = 0;
 
-    if (!pool->tags.check(pool))
-        ASSERT_NO_RET_FALSE(2110,pool->tags.Open(pool));
-    if (!pool->params.check(pool))
-        ASSERT_NO_RET_FALSE(2111,pool->params.Open(pool));
+    if (!pool->tags.check(pool)) // DO NOT OPEN HERE - not ready to write yet
+        pool->tags.index = 0; // ASSERT_NO_RET_FALSE(2110,pool->tags.Open(pool));
+    if (!pool->params.check(pool)) // DO NOT OPEN HERE - not ready to write yet
+        pool->params.index = 0; // ASSERT_NO_RET_FALSE(2111,pool->params.Open(pool));
 
 //    ASSERT_NO_RET_FALSE(1951,allRegistered()); // make tables and be ready for checking of registration
     // check pool->tags
@@ -1710,7 +1730,7 @@ bool BW_plugin::makeSpace(int size)
 {
     int new_size = ((pool->allocator+4095+size) >> 12 << 12); // I want rounded file size
     ASSERT_NO_RET_FALSE(1143,new_size <= (int)pool->mmap_size);
-    if (new_size < (int)pool->file_size) return true; // no grow - ok
+    if (new_size <= (int)pool->file_size) return true; // no grow - ok
     if (ftruncate(fd,new_size) < 0)
     {
         ERRNO_SHOW(1144,"ftruncate",filename);
@@ -1756,7 +1776,8 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     int len = strlen(name);
 
 // allocation
-    char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
+    int size = sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1;
+    char *dst = pool->allocate(size); // ID:word|Type:byte|string|NUL:byte
     ASSERT_NO_RET_FALSE(1121,dst != 0);
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
@@ -1766,6 +1787,8 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     dst += sizeof(XML_Binary_Type_Stored);
 // name
     strcpy(dst,name);
+    ROUND32UP(size);
+    ASSERT_NO_RET_FALSE(2115,dst+size == reinterpret_cast<char*>(pool)+pool->allocator);
     return true;
 }
 
@@ -1930,8 +1953,8 @@ bool BW_plugin::allRegistered()
     if (check_only && pool->tags.index != 0 && pool->params.index != 0)
         return (check_failures == 0); // no problems?
 
-    ASSERT_NO_RET_FALSE(1123,pool->tags.index != 0   || pool->makeTable(pool->tags,pool->params.names_offset));
-    ASSERT_NO_RET_FALSE(1124,pool->params.index != 0 || pool->makeTable(pool->params,names_limit));
+    ASSERT_NO_RET_FALSE(1123,pool->tags.index != 0   || pool->makeTable(pool->tags));
+    ASSERT_NO_RET_FALSE(1124,pool->params.index != 0 || pool->makeTable(pool->params));
     return true;
 }
 
@@ -2038,8 +2061,8 @@ bool BW_plugin::Clear()
         memset((char*)pool+new_size,0,old_size - new_size); // clear memory
 
     
-    ASSERT_NO_RET_FALSE(2106,pool->makeTable(pool->tags,pool->params.names_offset));
-    ASSERT_NO_RET_FALSE(2107,pool->makeTable(pool->params,new_size));
+    ASSERT_NO_RET_FALSE(2106,pool->makeTable(pool->tags));
+    ASSERT_NO_RET_FALSE(2107,pool->makeTable(pool->params));
     return true;
 }
 
@@ -2568,6 +2591,8 @@ const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type 
 }
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID plugin->getFilename()
 
 BW_plugins::BW_plugins()
 {

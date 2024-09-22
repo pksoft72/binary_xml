@@ -102,7 +102,7 @@ public: // index tables (indexed by id) - allocated on pool
     XML_Binary_Type getAttrType(int16_t id);
     const char*     getAttrName(int16_t id);
     
-    bool            makeTable(BW_symbol_table_16B &table,BW_offset_t limit);
+    bool            makeTable(BW_symbol_table_16B &table);
     bool            checkTable(BW_symbol_table_16B &table,BW_offset_t limit);
     bool            check_id();
 
