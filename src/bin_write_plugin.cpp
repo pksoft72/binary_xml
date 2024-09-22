@@ -1793,6 +1793,7 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 }
 
 bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
+// see registerParam
 // I want to fill symbol tables with attribute names    
 {
     ASSERT_NO_RET_FALSE(1114,name != nullptr);
@@ -1815,7 +1816,7 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
 // elements must be defined first, empty element are not allowed!
     ASSERT_NO_RET_FALSE(1115,pool->tags.names_offset != 0);
 // root must be later
-    ASSERT_NO_RET_FALSE(1116,pool->root == 0);
+//    ASSERT_NO_RET_FALSE(1116,pool->root == 0);
 //-----------------------------------------------
     if (pool->params.names_offset == 0)
         pool->params.names_offset = pool->allocator;
@@ -1877,7 +1878,11 @@ XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
 }
 
 XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
+// see registerAttr
 {
+    ASSERT_NO_RET_(2116,name != nullptr,XPNR_NULL);
+    ASSERT_NO_RET_(2117,type >= XBT_NULL && type < XBT_LAST,XPNR_NULL);
+
     if (pool->params.names_offset == 0) // empty
         pool->params.names_offset = pool->allocator;
 
@@ -1898,7 +1903,13 @@ XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
             return static_cast<XML_Param_Names>(id);
         }
     }
+// elements must be defined first, empty element are not allowed!
+    ASSERT_NO_RET_(2119,pool->tags.names_offset != 0,XPNR_NULL);
+// must be opened
+    ASSERT_NO_RET_(2121,pool->params.Open(pool),XPNR_NULL); 
+
     int len = strlen(name);
+// allocation
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
     ASSERT_NO_RET_(1973,dst != 0,XPNR_NULL);
     id = ++pool->params.max_id;
