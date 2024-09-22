@@ -105,6 +105,9 @@ public: // index tables (indexed by id) - allocated on pool
     bool            makeTable(BW_symbol_table_16B &table,BW_offset_t limit);
     bool            checkTable(BW_symbol_table_16B &table,BW_offset_t limit);
     bool            check_id();
+
+    const char *    getDocTypeName();
+    BW_element*     BWE(BW_offset_t offset) {return reinterpret_cast<BW_element*>(reinterpret_cast<char *>(this) + offset);};
 public:
     char*           allocate(int size);
     char*           allocate8(int size);        // 64 bit aligned value

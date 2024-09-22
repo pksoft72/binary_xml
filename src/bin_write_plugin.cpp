@@ -1326,6 +1326,32 @@ bool   BW_pool::check_id()
     return strcmp(binary_xml_write_type_info,"binary_xml.pksoft.org") == 0;
 }
 
+const char *BW_pool::getDocTypeName() 
+// For debugging purposes - which XBW has problem?
+{
+    if (this == nullptr) return "(NULL)";
+//    if (pool_format_version >= BIN_WRITE_POOL_FORMAT_VERSION_WITH_PARENT)
+//    {
+//        return doc_type_name;
+//    }
+    if (root > getPoolSize() && root < allocator)
+    {
+        BW_element *root = BWE(this->root);   
+        ASSERT_NO_RET_(2114,root->flags & BIN_WRITE_ELEMENT_FLAG,"(bad root flags)");
+        const char *name = tags.getName(this,root->identification);    
+        if (name != nullptr) return name;
+    }
+// OK, no root name - so some early stage
+   
+    BW_plugin *plugin = plugins.getPlugin(this);
+    if (plugin == nullptr) return "(no plugin for pool)";
+    const char *filename = plugin->getFilename();
+    if (filename == nullptr) return "(no filename in plugin)";
+    const char *slash = strrchr(filename,'/');
+    if (slash != nullptr) return slash+1;
+    return filename;
+}
+
 char*  BW_pool::allocate(int size)
 {
     if (size <= 0) return 0;
