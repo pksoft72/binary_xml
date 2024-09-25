@@ -613,6 +613,22 @@ BW_element*  BW_element::NextChild(BW_offset_t &offset)
     return BWE(offset = prev->next);
 }
 
+BW_element*  BW_element::PrevChild(BW_offset_t &offset)
+{
+    if (this == nullptr) return nullptr; // empty list -> no children
+    if (offset == 0) // first element of loop
+    {
+        if (first_child == 0) 
+            return nullptr; // empty list
+
+        BW_element *first = BWE(first_child); // current element, need next
+        return BWE(offset = first->prev); // first child
+    }   
+    if (offset == first_child) return nullptr;
+    BW_element *element = BWE(offset); // current element, need next
+    return BWE(offset = element->prev); // first child
+}
+
 //-------------------------------------------------------------------------------------------------
 
 BW_element  *BW_element::tagGet(int16_t id)

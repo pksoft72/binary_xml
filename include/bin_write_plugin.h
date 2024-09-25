@@ -204,8 +204,14 @@ public:
 
 // !!! BW_FOREACH are 2 commands !!! cannot be used like if () BW_FOREACH2(...)
 #define BW_FOREACH2(list,element) BW_offset_t _idx = 0;for(BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
+#define BW_FOREACH2_REV(list,element) BW_offset_t _idx = 0;for(BW_element *element = (list)->PrevChild(_idx);element != nullptr;element = (list)->PrevChild(_idx))
+//#define BW_FOREACH4REMOVE(list,element) \
+        BW_offset_t _idx = 0;\
+        BE_element _next = nullptr;\
+        for(BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
 //#define BW_FOREACH(list,element) for(BW_offset_t _idx = 0,BW_element *element = (list)->NextChild(_idx);element != nullptr;element = (list)->NextChild(_idx))
     BW_element*  NextChild(BW_offset_t &offset);
+    BW_element*  PrevChild(BW_offset_t &offset);
 };
 
 //-------------------------------------------------------------------------------------------------
