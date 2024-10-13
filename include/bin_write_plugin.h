@@ -191,6 +191,7 @@ public:
     BW_element  *tagSetSHA1(int16_t id,const uint8_t *value);
 
     int32_t     *getInt32();
+    time_t      *getTime();
     int64_t     *getInt64();
     uint64_t    *getUInt64();
     char        *getStr();

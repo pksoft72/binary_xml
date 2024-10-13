@@ -804,6 +804,20 @@ int32_t *BW_element::getInt32()
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
 
+time_t *BW_element::getTime()
+{
+    if (this == nullptr) return nullptr;
+
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_UNIX_TIME)
+    {
+        LOG_ERROR("[2122] +%d %s'type = %d = %s but XBT_UNIX_TIME is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<time_t*>(this+1); // just after this element
+}
+
 int64_t *BW_element::getInt64()
 {
     if (this == nullptr) return nullptr;
