@@ -111,7 +111,10 @@ static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_poo
         return nullptr;
     }
     //  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
-    char *pool = reinterpret_cast<char *>(mmap(nullptr,max_pool_size,PROT_READ | PROT_WRITE, 
+    int prot = PROT_READ;
+    if ((open_flags & O_RDWR) == O_RDWR)
+        prot |= PROT_WRITE;
+    char *pool = reinterpret_cast<char *>(mmap(nullptr,max_pool_size,prot, 
                 MAP_SHARED,  //  Share  this  mapping.   Updates to the mapping are visible to other processes mapping the same region, 
                 // and (in the case of file-backed mappings) are carried through to the underlying file.  
                 // (To precisely control when updates are carried through to the underlying file requires the use of msync(2).)
