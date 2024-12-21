@@ -67,6 +67,21 @@ time_t file_gettime(const char *filename)
     return file_info.st_mtim.tv_sec;
 }
 
+bool file_exists(const char *filename)
+{
+    struct stat file_info;
+    int err = stat(filename,&file_info);
+    if (err != 0)
+    {
+        if (errno == ENOENT)
+            return false; // file not exists - no message
+
+        ERRNO_SHOW(2123,"stat",filename);   
+        return false; // failed
+    }
+    return true;
+}
+
 bool scan_dir(const char *base_dir,void *userdata,on_file_event on_file)
 {
     DIR *dir = opendir(base_dir);

@@ -11,6 +11,7 @@ bool force_directory(const char *directory, mode_t mode);
 // TODO: int is not very good for this?
 off_t file_getsize(const char *filename);
 time_t file_gettime(const char *filename);
+bool file_exists(const char *filename);
 
 typedef bool (*on_file_event)(const char *directory,const char *filename,void *userdata,uint8_t d_type);
 /*
