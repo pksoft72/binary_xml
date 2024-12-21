@@ -72,7 +72,7 @@ So backup variant through uint64 guid index file should help.
 
 ## .xbw version 2
 
-I will need parent link for easy locking.
+I will need parent link for easier locking.
 
 So I can join first_child and first_attribute pointers into children.
 
