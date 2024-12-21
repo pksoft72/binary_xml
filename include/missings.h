@@ -15,6 +15,7 @@ void mergesort_r2(void *base, int nmemb, int size,
 typedef struct { // struct for easy copy assignement
     uint8_t hash[20];
 } SHA1_t;
+extern const SHA1_t SHA1_NULL;
 
 typedef struct {
     unsigned long long size;
