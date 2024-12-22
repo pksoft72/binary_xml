@@ -290,7 +290,7 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
     XML_Binary_Type     attr_type = pool->getAttrType(id);
     ASSERT_NO_RET_NULL(1084,attr_type == XBT_BLOB || attr_type == XBT_VARIANT);
     
-    if (attr_type == XBT_STRING)
+    if (attr_type == XBT_BLOB)
     {
         BW_element* attr      = pool->new_element(XBT_BLOB,size); // only variable types gives size  --- sizeof(int32_t));
         ASSERT_NO_RET_NULL(1085,attr != nullptr);
@@ -298,7 +298,10 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
         attr->init(pool,id,XBT_BLOB,BIN_WRITE_ATTR_FLAG);
 
         char *dst             = reinterpret_cast<char*>(attr+1)+4; // just after this element and blob size
-        memcpy(dst,value,size);
+        if (value != nullptr)
+            memcpy(dst,value,size);
+        else
+            memset(dst,0,size);
         
         add(attr);
     }
@@ -307,9 +310,40 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
         ASSERT_NO_RET_NULL(1086,NOT_IMPLEMENTED); // TODO: variant
     }
 
-    ASSERT_NO_RET_NULL(1087,NOT_IMPLEMENTED); // TODO: variant
     return this;
 }
+
+BW_element*     BW_element::attrHEX(int16_t id,const void *value,int32_t size)
+{
+    if (this == nullptr) return nullptr;
+    
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    ASSERT_NO_RET_NULL(2128,attr_type == XBT_HEX || attr_type == XBT_VARIANT);
+    
+    if (attr_type == XBT_HEX)
+    {
+        BW_element* attr      = pool->new_element(XBT_HEX,size); // only variable types gives size  --- sizeof(int32_t));
+        ASSERT_NO_RET_NULL(2129,attr != nullptr);
+
+        attr->init(pool,id,XBT_HEX,BIN_WRITE_ATTR_FLAG);
+
+        char *dst             = reinterpret_cast<char*>(attr+1)+4; // just after this element and blob size
+        if (value != nullptr)
+            memcpy(dst,value,size);
+        else
+            memset(dst,0,size);
+        
+        add(attr);
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(2130,NOT_IMPLEMENTED); // TODO: variant
+    }
+
+    return this;
+}
+
 
 BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_attr)
 {
@@ -2166,9 +2200,33 @@ BW_element* BW_plugin::tagBLOB(int16_t id,const void *value,int32_t size)
     result->init(pool,id,XBT_BLOB,BIN_WRITE_ELEMENT_FLAG);
 
     *reinterpret_cast<int32_t*>(result+1) = size;
-    memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    if (value != nullptr)
+        memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    else
+        memset(reinterpret_cast<char*>(result+1)+4,0,size);
     return result;
 }
+
+BW_element* BW_plugin::tagHEX(int16_t id,const void *value,int32_t size)
+{
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(2131,tag_type == XBT_HEX);
+
+    ASSERT_NO_RET_NULL(2132,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
+
+    BW_element* result = pool->new_element(XBT_HEX,size);
+    ASSERT_NO_RET_NULL(2133,result != nullptr);
+    
+    result->init(pool,id,XBT_HEX,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int32_t*>(result+1) = size;
+    if (value != nullptr)
+        memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    else
+        memset(reinterpret_cast<char*>(result+1)+4,0,size);
+    return result;
+}
+
 
 BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
 {

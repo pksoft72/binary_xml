@@ -1,8 +1,8 @@
-#include <bin_xml_types.h>
+#include "bin_xml_types.h"
 #include <macros.h>
-#include <utils.h>
+#include "utils.h"
 #include <assert.h>
-#include <bin_xml.h>
+#include "bin_xml.h"
 
 namespace pklib_xml
 {
@@ -44,6 +44,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     int others = 0;
     int exponent = 0;
     int spaces = 0;
+    int whites = 0;
     int exponent_pos = -1;
     bool overflow64 = false;
     
@@ -79,7 +80,12 @@ XML_Binary_Type XBT_Detect(const char *value)
         else if (*p == ':')
             colons++;
         else if (*p == ' ')
+        {
             spaces++;
+            whites++;
+        }
+        else if (*p == '\n' || *p == '\t' || *p == '\r')
+            whites++;
         else
             others++;
     }
@@ -113,9 +119,9 @@ XML_Binary_Type XBT_Detect(const char *value)
     if (str_len == 23 && digits == 17 && spaces == 1 && negative == 2 && colons == 2 &&
         value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
         return XBT_UNIX_TIME64_MSEC;
-// DISABLED - not fully supported yet
-//  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
-//      return XBT_HEX;
+// 2024-12-22 - was DISABLED - not fully supported yet
+    if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
+        return XBT_HEX;
 
     return XBT_STRING;
 }
@@ -220,6 +226,7 @@ int XBT_Size2(XML_Binary_Type type,int size)
         case XBT_STRING:
             return size+1; // terminating character
         case XBT_BLOB:
+        case XBT_HEX:
             return size + sizeof(int32_t);
         case XBT_INT32:
             //printf("XBT_UINT32: size = %d\n",size);
@@ -240,8 +247,6 @@ int XBT_Size2(XML_Binary_Type type,int size)
         case XBT_DOUBLE:
             ASSERT_NO_RET_N1(1073,size == 0 || size == 8);
             return sizeof(double);
-        case XBT_HEX:
-            return size + sizeof(int32_t);
         case XBT_GUID:
             ASSERT_NO_RET_N1(1074,size == 0 || size == 16);
             return 16;
@@ -361,7 +366,7 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
         case XBT_UINT64:
             {
                 uint64_t v;
-                ASSERT_NO_RET_FALSE(2022,ScanUInt64(src,v));
+                ASSERT_NO_RET_FALSE(2124,ScanUInt64(src,v));
                 AA8(*_wp);
                 *reinterpret_cast<uint64_t*>(*_wp) = v;
                 *_wp += sizeof(uint64_t);
@@ -378,6 +383,15 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 int scanned = ScanHex(src,reinterpret_cast<uint8_t *>(*_wp),20);
                 *_wp += scanned;
                 return scanned == 20;
+            }
+        case XBT_HEX:
+            {
+                AA(*_wp);
+                int32_t *size = reinterpret_cast<int32_t*>(*_wp);
+                *_wp += sizeof(int32_t);
+                *size = ScanHex(src,reinterpret_cast<uint8_t *>(*_wp),limit - *_wp);
+                *_wp += *size;
+                return true;
             }
         case XBT_FLOAT:
             AA(*_wp);
@@ -457,7 +471,7 @@ int XBT_SizeFromString(const char *src,XML_Binary_Type type)
             ASSERT_NO_RET_N1(2057,NOT_IMPLEMENTED);
             break;
         case XBT_HEX:
-            return strlen(src) >> 1;
+            return (strlen(src)+1) >> 1;
         default:
             fprintf(stderr,"%s: Size detection of '%s' to binary representation is not implemented!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
 //            assert(false);
@@ -512,6 +526,30 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
                 char *dst = XBT_Buffer(dst_size);
                 ASSERT_NO_RET_NULL(1205,dst != nullptr);
                 return base64_encode(src,size,dst,dst_size);
+            }
+        case XBT_HEX:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                if (size == 0) return nullptr;
+
+                const char *src = reinterpret_cast<const char*>(data)+4;   
+
+                int dst_size = size * 2 + (size >> 4)+2; // each 16 bytes makes a line
+                char *dst = XBT_Buffer(dst_size);
+                ASSERT_NO_RET_NULL(2125,dst != nullptr);
+                char *d = dst;
+                while (size > 0)
+                {
+                    int line_size = MIN(size,16);
+                    Hex2Str(src,line_size,d);
+
+                    src += line_size;
+                    d += line_size*2;
+                    *(d++) = '\n';
+                    size -= line_size;
+                }
+                *(d++) = '\0';
+                return dst;
             }
         default:
             LOG_ERROR("Unsupported type %d",type);
@@ -684,6 +722,30 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
 
                 offset += chunk;
                 return strlen(dst);
+            }
+        case XBT_HEX:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                const char *src = reinterpret_cast<const char*>(data)+4;   
+                if (offset >= (int)size) 
+                {
+                    dst[0] = '\0';
+                    return 0;
+                }
+            // use offset - only here
+                size -= offset;
+                src  += offset;
+
+                if (size > 16) size = 16; // limited output
+                ASSERT_NO_RET_N1(2126,size*16+2 <= dst_size);
+
+                Hex2Str(src,size,dst);
+
+                int hex_len = strlen(dst);
+                dst[hex_len]   = '\n';
+                dst[hex_len+1] = '\0';
+                offset += size;
+                return hex_len+2;
             }
         case XBT_SHA1:
             {
