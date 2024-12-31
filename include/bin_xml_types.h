@@ -61,8 +61,10 @@ enum XML_Binary_Type
 #endif
 };
 
-#define XBT_IS_4(type) ((type) == XBT_INT32 || (type) == XBT_FLOAT || (type) == XBT_UNIX_TIME || (type) == XBT_IPv4 || (type) == XBT_UINT32)
+#define XBT_IS_4(type) ((type) == XBT_INT32 || (type) == XBT_INT32_DECI || (type) == XBT_INT32_CENTI || (type) == XBT_INT32_MILI || (type) == XBT_INT32_MICRO || (type) == XBT_INT32_NANO || (type) == XBT_FLOAT || (type) == XBT_UNIX_TIME || (type) == XBT_IPv4 || (type) == XBT_UINT32)
 #define XBT_IS_8(type) ((type) == XBT_INT64 || (type) == XBT_DOUBLE || ((type) == XBT_UNIX_TIME64_MSEC) || ((type) == XBT_UINT64))
+
+#define XBT_IS_INT32(type) ((type) == XBT_INT32 || (type) == XBT_INT32_DECI || (type) == XBT_INT32_CENTI || (type) == XBT_INT32_MILI || (type) == XBT_INT32_MICRO || (type) == XBT_INT32_NANO)
 
 #define XBT_IS_VARSIZE(type) ((type) == XBT_BLOB || (type) == XBT_HEX)
 #define XBT_FIXEDSIZE(type)  ((type) == XBT_NULL ? 0 : ((type) == XBT_INT64 || (type) == XBT_DOUBLE || (type) == XBT_UINT64 || (type) == XBT_UNIX_TIME64_MSEC ? 8 : ((type) == XBT_GUID ? 16 : ((type) == XBT_SHA1 ? 20 : ((type) == XBT_IPv6 ? 16 : -1)))))
