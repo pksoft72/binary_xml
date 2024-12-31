@@ -68,8 +68,10 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
 #define LOG_ERROR(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_RED_BRIGHT "Error: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
+#define LOG_WARNING(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_MAGENTA_BRIGHT "Warning: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
 #define LOG(fmt,...) do {fflush(stdout);fprintf(stderr,ANSI_BLACK_BRIGHT "%s\t" ANSI_RESET fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while (0)
 
+#define NSEC2MS_US(ns) (int)((ns) / 1000000),(int)((ns) / 1000 % 1000)
 
 #ifndef MINIMIZE
     #define MINIMIZE(x,y) do{if ((y) < (x)) (x) = (y);}while(0)
@@ -82,6 +84,10 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #endif
 #ifndef MIN
     #define MIN(x,y) ((x) < (y) ? (x) : (y))
+#endif
+
+#ifndef ABS
+    #define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
 #endif
 
 #define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)

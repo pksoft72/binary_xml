@@ -43,7 +43,12 @@ enum XML_Binary_Type
     XBT_UNIX_TIME64_MSEC = 16,   // time_t*1000 - 64bit
     XBT_UINT32  = 17,    // stores as binary int64_t
     XBT_UNIX_DATE = 18,  // time() / (24*60*60) -> 32 bit
-    XBT_LAST    = 19,
+    XBT_INT32_DECI  = 19,  // int32_t - 1.3 stored as 13
+    XBT_INT32_CENTI = 20,  // int32_t - 1.23 stored as 123
+    XBT_INT32_MILI  = 21,  // int32_t - 1.234 stored as 1234
+    XBT_INT32_MICRO = 22,  // int32_t - 1.234567 stored as 1234567
+    XBT_INT32_NANO  = 23,  // int32_t - 1.234567890 stored as 1234567890
+    XBT_LAST      = 24,
 
 #if 0
 // Array types are not supported now
@@ -62,7 +67,14 @@ enum XML_Binary_Type
 #define XBT_IS_VARSIZE(type) ((type) == XBT_BLOB || (type) == XBT_HEX)
 #define XBT_FIXEDSIZE(type)  ((type) == XBT_NULL ? 0 : ((type) == XBT_INT64 || (type) == XBT_DOUBLE || (type) == XBT_UINT64 || (type) == XBT_UNIX_TIME64_MSEC ? 8 : ((type) == XBT_GUID ? 16 : ((type) == XBT_SHA1 ? 20 : ((type) == XBT_IPv6 ? 16 : -1)))))
 
-#define XBT2STR(type) ((type) == pklib_xml::XBT_NULL    ? "XBT_NULL" : ((type) == pklib_xml::XBT_VARIANT ? "XBT_VARIANT" : ((type) == pklib_xml::XBT_STRING  ? "XBT_STRING" : ((type) == pklib_xml::XBT_BLOB  ? "XBT_BLOB" : ((type) == pklib_xml::XBT_INT32   ? "XBT_INT32" : ((type) == pklib_xml::XBT_INT64   ? "XBT_INT64" : ((type) == pklib_xml::XBT_FLOAT   ? "XBT_FLOAT" : ((type) == pklib_xml::XBT_DOUBLE  ? "XBT_DOUBLE" : ((type) == pklib_xml::XBT_HEX     ? "XBT_HEX" : ((type) == pklib_xml::XBT_GUID    ? "XBT_GUID" : ((type) == pklib_xml::XBT_SHA1    ? "XBT_SHA1" : ((type) == pklib_xml::XBT_UNIX_TIME   ? "XBT_UNIX_TIME" : ((type) == pklib_xml::XBT_IPv4    ? "XBT_IPv4" : ((type) == pklib_xml::XBT_IPv6    ? "XBT_IPv6" : ((type) == pklib_xml::XBT_UNKNOWN ? "XBT_UNKNOWN" : ((type) == pklib_xml::XBT_UINT64  ? "XBT_UINT64" : ((type) == pklib_xml::XBT_UNIX_TIME64_MSEC ? "XBT_UNIX_TIME64_MSEC" : ((type) == pklib_xml::XBT_UINT32  ? "XBT_UINT32" : ((type) == pklib_xml::XBT_UNIX_DATE ? "XBT_UNIX_DATE" : ((type) == pklib_xml::XBT_LAST    ? "XBT_LAST   " : "XBT_???"))))))))))))))))))))
+#define XBT2STR(type) ((type) == pklib_xml::XBT_NULL    ? "XBT_NULL" : ((type) == pklib_xml::XBT_VARIANT ? "XBT_VARIANT" : ((type) == pklib_xml::XBT_STRING  ? "XBT_STRING" : ((type) == pklib_xml::XBT_BLOB  ? "XBT_BLOB" : ((type) == pklib_xml::XBT_INT32   ? "XBT_INT32" : ((type) == pklib_xml::XBT_INT64   ? "XBT_INT64" : ((type) == pklib_xml::XBT_FLOAT   ? "XBT_FLOAT" : ((type) == pklib_xml::XBT_DOUBLE  ? "XBT_DOUBLE" : ((type) == pklib_xml::XBT_HEX     ? "XBT_HEX" : ((type) == pklib_xml::XBT_GUID    ? "XBT_GUID" : ((type) == pklib_xml::XBT_SHA1    ? "XBT_SHA1" : ((type) == pklib_xml::XBT_UNIX_TIME   ? "XBT_UNIX_TIME" : ((type) == pklib_xml::XBT_IPv4    ? "XBT_IPv4" : ((type) == pklib_xml::XBT_IPv6    ? "XBT_IPv6" : ((type) == pklib_xml::XBT_UNKNOWN ? "XBT_UNKNOWN" : ((type) == pklib_xml::XBT_UINT64  ? "XBT_UINT64" : ((type) == pklib_xml::XBT_UNIX_TIME64_MSEC ? "XBT_UNIX_TIME64_MSEC" : ((type) == pklib_xml::XBT_UINT32  ? "XBT_UINT32" : ((type) == pklib_xml::XBT_UNIX_DATE ? "XBT_UNIX_DATE" : \
+((type) == pklib_xml::XBT_INT32_DECI     ? "XBT_INT32_DECI" :\
+((type) == pklib_xml::XBT_INT32_CENTI    ? "XBT_INT32_CENTI" :\
+((type) == pklib_xml::XBT_INT32_MILI     ? "XBT_INT32_MILI" :\
+((type) == pklib_xml::XBT_INT32_MICRO    ? "XBT_INT32_MICRO" :\
+((type) == pklib_xml::XBT_INT32_NANO     ? "XBT_INT32_NANO" :\
+((type) == pklib_xml::XBT_LAST    ? "XBT_LAST" :\
+ "XBT_???")))))))))))))))))))))))))
 
 struct XML_Binary_Data_Ref
 // I have a problem with const char * vs. char * variant of code!

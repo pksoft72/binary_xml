@@ -27,6 +27,11 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "UNIX_TIME64_MSEC",
     "UINT32",
     "UNIX_DATE",
+    "INT32_DECI",
+    "INT32_CENTI",
+    "INT32_MILI",
+    "INT32_MICRO",
+    "INT32_NANO",
     "!!!!"
 };
 
@@ -36,6 +41,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     if (*value == '\0') return XBT_NULL;
     int str_len = strlen(value);
     int digits = 0;
+    int decimals = 0;
     int hexadigits = 0;
     int negative = 0;
     int dots = 0;
@@ -62,6 +68,8 @@ XML_Binary_Type XBT_Detect(const char *value)
             X0 = X;
             EX = EX*10 + (*p-'0');
             digits++;
+            if (dots > 0)
+                decimals++;
         }
         else if (*p >= 'a' && *p <= 'f')
             hexadigits++;
@@ -99,6 +107,17 @@ XML_Binary_Type XBT_Detect(const char *value)
         if (negative == 0 && (X >> 32) == 0) return XBT_UINT32;
         if (negative == 0 && X > 0x7fffffffffffffff) return XBT_UINT64;
         return XBT_INT64;
+    }
+    if (digits > 0 && dots == 1 && hexadigits == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
+    {
+        if (negative == 0 && X <= 0x7fffffff || negative == 1 && X <= 0x80000000)
+        {
+            if (decimals == 1) return XBT_INT32_DECI;
+            if (decimals == 2) return XBT_INT32_CENTI;
+            if (decimals == 3) return XBT_INT32_MILI;
+            if (decimals <= 6) return XBT_INT32_MICRO;
+            if (decimals <= 9) return XBT_INT32_NANO;
+        }
     }
     if (digits > 0 && hexadigits-exponent == 0 && negative <= 2
         && dots <= 1 && dashes == 0 && colons == 0 && others == 0 && exponent <= 1)
@@ -144,6 +163,18 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
 
     if (B == A) return B;
 
+    if ((A == XBT_INT32 || A == XBT_INT32_DECI || A == XBT_INT32_CENTI || A == XBT_INT32_MILI || A == XBT_INT32_MICRO || A == XBT_INT32_NANO) &&
+        (B == XBT_INT32 || B == XBT_INT32_DECI || B == XBT_INT32_CENTI || B == XBT_INT32_MILI || B == XBT_INT32_MICRO || B == XBT_INT32_NANO))
+    {
+        if (A == XBT_INT32_NANO || B == XBT_INT32_NANO) return XBT_INT32_NANO;
+        if (A == XBT_INT32_MICRO || B == XBT_INT32_MICRO) return XBT_INT32_MICRO;
+        if (A == XBT_INT32_MILI || B == XBT_INT32_MILI) return XBT_INT32_MILI;
+        if (A == XBT_INT32_CENTI || B == XBT_INT32_CENTI) return XBT_INT32_CENTI;
+        if (A == XBT_INT32_DECI || B == XBT_INT32_DECI) return XBT_INT32_DECI;
+        return XBT_INT32;
+    }
+
+
     if ((B == XBT_INT32 || B == XBT_INT64 || B == XBT_FLOAT || B == XBT_DOUBLE) &&
         (A == XBT_INT32 || A == XBT_INT64 || A == XBT_FLOAT || A == XBT_DOUBLE))
     {
@@ -178,7 +209,14 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
     {
         switch (A_type)
         {
-            case XBT_INT32:     RETURN_COMPARE_OF_TYPE(int32_t);
+            case XBT_INT32:     
+            case XBT_INT32_DECI:
+            case XBT_INT32_CENTI:     
+            case XBT_INT32_MILI:     
+            case XBT_INT32_MICRO:     
+            case XBT_INT32_NANO:     
+                                RETURN_COMPARE_OF_TYPE(int32_t);
+
             case XBT_UNIX_DATE: RETURN_COMPARE_OF_TYPE(int32_t);
             case XBT_UINT32:    RETURN_COMPARE_OF_TYPE(uint32_t);
             case XBT_UNIX_TIME: RETURN_COMPARE_OF_TYPE(uint32_t);
@@ -233,6 +271,11 @@ int XBT_Size2(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1070,size == 0 || size == 4);
             return sizeof(int32_t);
         case XBT_UINT32:
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
             ASSERT_NO_RET_N1(1185,size == 0 || size == 4);
             return sizeof(uint32_t);
         case XBT_INT64:
@@ -288,6 +331,11 @@ int XBT_Align(XML_Binary_Type type)
         case XBT_BLOB:
         case XBT_HEX:
         case XBT_INT32:
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
         case XBT_UINT32:
         case XBT_FLOAT:
         case XBT_GUID:
@@ -339,6 +387,37 @@ bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *lim
     return true; // OK
 }
 
+static int32_t str2dec(const char *src,int decimals)
+{
+    bool neg = (*src == '-');
+    if (neg) src++;
+
+    int32_t value = 0;
+    while (*src >= '0' && *src <= '9')
+    {
+        value = value * 10 + (*src) - '0';
+        src++;
+    }
+    if (*src == '.') // decimal point
+    {
+        src++;
+        while (*src >= '0' && *src <= '9' && decimals > 0)
+        {
+            value = value * 10 + (*src) - '0';
+            src++;
+            decimals--;
+        }
+    }
+    while (decimals > 0)
+    {
+        value *= 10;
+        decimals--;
+    }
+
+    if (neg) return -value;
+    return value;
+}
+
 bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
 {
     switch (type)
@@ -354,6 +433,33 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             *reinterpret_cast<int32_t*>(*_wp) = atoi(src);
             *_wp += sizeof(int32_t);
             return true;
+        
+        case XBT_INT32_DECI:
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,1);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_CENTI:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,2);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_MILI:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,3);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_MICRO:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,6);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_NANO:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,9);
+            *_wp += sizeof(int32_t);
+            return true;
+
         case XBT_INT64:
             {
                 int64_t v;
@@ -452,7 +558,13 @@ int XBT_SizeFromString(const char *src,XML_Binary_Type type)
     switch (type)
     {
         case XBT_NULL: return 0;
-        case XBT_INT32: return 4;
+        case XBT_INT32: 
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
+            return 4;
         case XBT_INT64: return 8;
         case XBT_FLOAT: return 4;
         case XBT_DOUBLE: return 8;
@@ -497,6 +609,11 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_STRING: 
             return reinterpret_cast<const char *>(data); 
         case XBT_INT32:
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
         case XBT_UINT32: 
         case XBT_INT64:
         case XBT_UINT64:
@@ -598,6 +715,52 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
 
             snprintf(dst,dst_size,"%d",*reinterpret_cast<const int32_t*>(data));
             return strlen(dst);
+        case XBT_INT32_DECI:
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%d",V / 10,ABS(V) % 10);
+                return strlen(dst);
+            }
+        case XBT_INT32_CENTI:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%02d",V / 100,ABS(V) % 100);
+                return strlen(dst);
+            }
+        case XBT_INT32_MILI:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%03d",V / 1000,ABS(V) % 1000);
+                return strlen(dst);
+            }
+        case XBT_INT32_MICRO:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%06d",V / 1000000,ABS(V) % 1000000);
+                return strlen(dst);
+            }
+        case XBT_INT32_NANO:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%09d",V / 1000000000,ABS(V) % 1000000000);
+                return strlen(dst);
+            }
+
         case XBT_UINT32: 
             if (offset > 0) return 0;
             offset += sizeof(uint32_t);
