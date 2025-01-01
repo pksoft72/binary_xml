@@ -85,6 +85,7 @@ struct XML_Binary_Data_Ref
     XML_Binary_Type type;
     char            *data;
     int             size;
+    int             content_size; // nominal blob size
 };
 
 typedef uint8_t XML_Binary_Type_Stored; // Binary types are stored in array of bytes

@@ -15,6 +15,7 @@
     #define nullptr NULL
 #endif
 #define INT_NULL_VALUE -0x80000000
+#define INT16_NULL_VALUE -0x8000
 
 #define MAX_FAILURES 16 // 0 is first failure, 1 second ... it should be enough for make some stack of failure
 

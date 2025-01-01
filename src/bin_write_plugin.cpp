@@ -901,13 +901,15 @@ XML_Binary_Data_Ref BW_element::getData()
     R.data = reinterpret_cast<char*>(this+1);
     R.type = static_cast<XML_Binary_Type>(value_type);
     if (value_type == XBT_STRING) 
-        R.size = 1+strlen(R.data);
+        R.size = R.content_size = 1+strlen(R.data);
     else if (XBT_IS_4(value_type)) 
-        R.size = 4;
+        R.size = R.content_size = 4;
     else if (XBT_IS_VARSIZE(value_type)) 
-        R.size = 4 + *reinterpret_cast<int32_t*>(R.data);
+    {
+        R.size = 4 + (R.content_size = *reinterpret_cast<int32_t*>(R.data));
+    }
     else 
-        R.size = XBT_FIXEDSIZE(value_type);
+        R.size = R.content_size = XBT_FIXEDSIZE(value_type);
     return R;
 }
 
