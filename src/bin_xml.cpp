@@ -111,11 +111,11 @@ bool XML_Item::Check(XB_reader *R,bool recursive)
 //-------------------------------------------------------------------------------------------------
 
 int32_t s_int32_value = -1;
-const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const 
+const int32_t *XML_Param_Description::getInt32Ptr(const XML_Item *X,XML_Binary_Type int_type) const
 {
     if (this == nullptr) return nullptr;
     if (X == nullptr) return nullptr;
-    if (type == XBT_INT32) return reinterpret_cast<const int32_t *>(&data);
+    if (type == int_type) return reinterpret_cast<const int32_t *>(&data);
     if (type == XBT_STRING) 
     {
         int value0 = atoi(reinterpret_cast<const char *>(X)+data);
@@ -123,6 +123,11 @@ const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const
         return &s_int32_value; // non reetrant!!!
     }
     return nullptr; 
+}
+
+const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const 
+{
+    return getInt32Ptr(X,XBT_INT32);
 }
 
 static int64_t s_int64_value = -1;

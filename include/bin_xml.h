@@ -148,6 +148,7 @@ public:
         return INT32_NULL; 
     }
     const int32_t *getIntPtr(const XML_Item *X) const;
+    const int32_t *getInt32Ptr(const XML_Item *X,XML_Binary_Type int_type) const;
     const int64_t *getInt64Ptr(const XML_Item *X) const;
     const char *getString(const XML_Item *X) const;
     const int   getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const;

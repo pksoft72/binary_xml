@@ -83,7 +83,8 @@ struct XML_Binary_Data_Ref
 // I need char data for xbw
 {
     XML_Binary_Type type;
-    char            *data;
+    char            *data;      // this can point to length of BLOB
+    char            *content;   // this will point to first byte of BLOB
     int             size;
     int             content_size; // nominal blob size
 };

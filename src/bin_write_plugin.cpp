@@ -898,7 +898,7 @@ XML_Binary_Data_Ref BW_element::getData()
 {
     XML_Binary_Data_Ref R = {type:XBT_UNKNOWN,data:nullptr,size:0};
     if (this == nullptr) return R;
-    R.data = reinterpret_cast<char*>(this+1);
+    R.content = R.data = reinterpret_cast<char*>(this+1);
     R.type = static_cast<XML_Binary_Type>(value_type);
     if (value_type == XBT_STRING) 
         R.size = R.content_size = 1+strlen(R.data);
@@ -907,6 +907,7 @@ XML_Binary_Data_Ref BW_element::getData()
     else if (XBT_IS_VARSIZE(value_type)) 
     {
         R.size = 4 + (R.content_size = *reinterpret_cast<int32_t*>(R.data));
+        R.content += 4;
     }
     else 
         R.size = R.content_size = XBT_FIXEDSIZE(value_type);
