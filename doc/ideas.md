@@ -92,3 +92,10 @@ To boost speed, it is possible to have BLOB value with 32-bit size in first 4 by
 Size field is also usable for some version management, as when structure is extended only on the end, it can be kept compatible (with some additional conditions) with older versions.
 
 Only flaw of this is, that no VMT can be in shared data structures (pointers are not compatible when shared between processes), so no virtual methods can be used.
+
+
+## Preallocated string
+
+For some string values, which are often changed - they cound be stored as BLOB, but presented as string. Size will be BLOB limited, but the text representation will by plain text. Update of such a string should be simple by strncpy and mark end of string as ANSI.NUL
+
+Usage: for RSMP statuses database - strings are often changed but I would like to see them in .xbw format
