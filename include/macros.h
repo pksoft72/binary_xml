@@ -110,5 +110,8 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
                         ((x) >= 'A' && (x) <= 'F' ? (x) - 'A' + 10 :\
                         -1)))
 
+#define BIT32(_b) ((uint32_t)1 << (_b))
+#define BIT64(_b) ((uint64_t)1 << (_b))
+
 //#define exit _exit
 #endif
