@@ -881,6 +881,22 @@ int  GetInt(const char *p)
     
 }
 
+uint32_t GetVersion(const char *p)
+{
+    if (p == nullptr) return 0;
+
+    uint32_t version = 0;
+    for(int i = 0;*p != '\0' && i < 4;i++)
+    {
+        int V;
+        if (!ScanInt(&p,V)) break;
+        LIMITE(V,0,255);
+        version |= (V << ((3-i) * 8)); // 24,16,8,0
+        if (*p != '.') break;
+        p++;
+    }
+    return version;
+}
 
 
 bool StrWrite(char *&dest,const char *dest_limit,const char *&src,const char *src_limit)

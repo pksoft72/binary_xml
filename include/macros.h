@@ -87,6 +87,7 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
     #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
 
+
 #ifndef ABS
     #define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
 #endif

@@ -52,6 +52,7 @@ char *AllocFilenameChangeExt(const char *filename,const char *extension,const ch
 
 bool EatEnd(char *p,const char *end);
 int  GetInt(const char *p);
+uint32_t GetVersion(const char *p); 
 bool StrWrite(char *&dest,const char *dest_limit,const char *&src,const char *src_limit);
 const char *MakeIdent(const char *Source,const char *style = "");
 int GetIdentLen(const char *p);
