@@ -993,6 +993,30 @@ bool streq(const char *src0,const char *src1)
     }
     return strcmp(src0,src1) == 0;
 }
+
+const char *Int64ToStr(int64_t value,char40_t buffer)
+{
+    if (buffer == nullptr) return nullptr;
+
+    bool neg = (value < 0);
+    if (neg) value = -value;
+
+    char *p = buffer + sizeof(char40_t);
+    *(--p) = '\0'; // terminating symbol;
+    if (value == 0)
+        *(--p) = '0'; // zero
+    else 
+        while (value > 0)
+        {
+            *(--p) = '0' + (value % 10);
+            value /= 10;
+        }
+
+    if (neg) 
+        *(--p) = '-'; // negative
+    return p;
+}
+
 //-------------------------------------------------------------------------------------------------
 static const char* BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 /* This function will encode binary data into base64 encoded string */

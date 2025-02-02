@@ -92,6 +92,9 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
     #define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
 #endif
 
+#define LT_U32(a,b) ((int32_t)((uint32_t)(a) - (uint32_t)(b)) < 0)
+#define GT_U32(a,b) ((int32_t)((uint32_t)(a) - (uint32_t)(b)) > 0)
+
 #define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))

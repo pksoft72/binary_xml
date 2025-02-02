@@ -59,6 +59,8 @@ int GetIdentLen(const char *p);
 
 bool streq(const char *src0,const char *src1);
 
+const char *Int64ToStr(int64_t value,char40_t buffer);
+
 /* This function will encode binary data into base64 encoded string */
 char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size);
 /* This function will decode binary data into base64 encoded string */
