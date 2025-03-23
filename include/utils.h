@@ -27,6 +27,7 @@ bool ScanUnixTime(const char *&p,uint32_t &value);
 bool ScanUnixTime64msec(const char *&p,int64_t &value);
 bool ScanUnixDate(const char *&p,int32_t &value);
 char *UnixDate2Str(int32_t value,char *dst);
+char *UnixTime642Str(int32_t value,char *dst);
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size);
 void SkipSpaces(const char *&p);
 bool SkipLine(const char *&p);
