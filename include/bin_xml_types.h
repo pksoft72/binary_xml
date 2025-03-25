@@ -17,7 +17,7 @@ namespace pklib_xml
 #define CHECK_AA_THIS assert(((intptr_t)this & 3) == 0)
 
 typedef char        hash192_t[24];      // hash - 24B - sha1
-typedef char        GUID_t[16];     
+typedef uint8_t     GUID_t[16];     
 typedef uint16_t    IPv6_t[8];      
 
 #define MAX_REETRANT_BUFFERS 64  // workaround for XBT_ToString

@@ -82,6 +82,10 @@ There can be new flag - BIN_WRITE_HAS_ATTR which can indicate, whether some attr
 
 Also BIN_WRITE_HAS_LOCK will indicate locking node.
 
+## Strong typing
+
+It is possible to store type of value only in symbol table.
+
 
 ## .xbw binary objects
 
