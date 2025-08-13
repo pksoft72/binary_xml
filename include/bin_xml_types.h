@@ -114,6 +114,20 @@ int             XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &off
 void            XBT_ToStringStream(XML_Binary_Type type,const char *data,std::ostream &os);
 void            XBT_ToXMLStream(XML_Binary_Type type,const char *data,std::ostream &os);
 
+//-------------------------------------------------------------------------------------------------
+
+enum XBT_ConvertableStatus
+{
+    XBT_NONCONVERTABLE,
+    XBT_LOOSE_CONVERTABLE,
+    XBT_CONVERTABLE
+};
+
+XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type dst_type);
+bool XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Data_Ref dst);
+
+//-------------------------------------------------------------------------------------------------
+
 char*           XBT_Buffer(int size);
 void            XBT_Free();
 

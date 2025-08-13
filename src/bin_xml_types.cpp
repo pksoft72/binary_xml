@@ -988,6 +988,81 @@ bool XBT_Equal(XML_Binary_Data_Ref A,XML_Binary_Data_Ref B)
     if (A.size != B.size) return false;
     return memcmp(A.data,B.data,A.size) == 0;
 }
+//-------------------------------------------------------------------------------------------------
+XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type dst_type)
+// TODO implement XBT_Convertable
+{
+    if (src.type == dst_type) return XBT_CONVERTABLE;
+    switch(dst_type)
+    {
+        case XBT_NULL: 
+            return XBT_LOOSE_CONVERTABLE; // probably intentional - NULL will always loose value
+        case XBT_VARIANT: 
+            return XBT_NONCONVERTABLE; // not supported -> but could extract type and try to convert containing 
+        case XBT_STRING: 
+            if (src.type == XBT_BLOB || src.type == XBT_HEX) return XBT_NONCONVERTABLE; // TODO: check presence of 0 character
+            return XBT_CONVERTABLE;
+        case XBT_BLOB: 
+            return XBT_CONVERTABLE; // all can be converted to BLOB
+        case XBT_INT32:
+            if (src.type == XBT_UINT32) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src.type == XBT_INT64) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src.type == XBT_UINT64) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src.type == XBT_STRING) return XBT_NONCONVERTABLE; // TODO: try convert and check range
+            if (src.type == XBT_FLOAT) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src.type == XBT_DOUBLE) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src.type == XBT_UNIX_TIME) return XBT_CONVERTABLE; // TODO: directly compatible
+            if (src.type == XBT_UNIX_DATE) return XBT_CONVERTABLE; // TODO: directly compatible
+            if (src.type == XBT_UNIX_TIME64_MSEC) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src.type == XBT_INT32_DECI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_CENTI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_MILI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_MICRO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_NANO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            return XBT_NONCONVERTABLE;
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:
+        case XBT_INT32_MILI:
+        case XBT_INT32_MICRO:
+        case XBT_INT32_NANO:
+        case XBT_UINT32:
+        case XBT_INT64:
+        case XBT_UINT64:
+        case XBT_FLOAT:
+        case XBT_DOUBLE:
+        case XBT_HEX:
+        case XBT_GUID:
+        case XBT_SHA1:
+        case XBT_UNIX_TIME:
+        case XBT_UNIX_DATE:
+        case XBT_UNIX_TIME64_MSEC:
+        case XBT_IPv4:
+        case XBT_IPv6:
+            // TODO: fill conversion checks
+            return XBT_NONCONVERTABLE;
+    // These cannot be converted
+        case XBT_UNKNOWN:return XBT_NONCONVERTABLE;
+        case XBT_LAST: return XBT_NONCONVERTABLE;
+
+#if 0
+// Array types are not supported now
+// Encoded as BLOB of basic value
+    XBT_INT8    = 18,
+    XBT_UINT8   = 19,
+    XBT_INT16   = 20,
+    XBT_UINT16  = 21
+    XBT_ARRAY   = 127   // when used this bitmask, data consist of many values of base type
+#endif
+    }
+    return XBT_NONCONVERTABLE; // default
+}
+
+bool XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Data_Ref dst)
+{
+    return false;
+}
+
+//-------------------------------------------------------------------------------------------------
 
 char *g_output_buffer = nullptr;
 int   g_output_buffer_size = 0;
@@ -1124,5 +1199,6 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"1970-01-01 00:00:00.000", "00000000") && ok;
     return ok;
 }
+
 
 }

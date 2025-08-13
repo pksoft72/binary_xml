@@ -2736,5 +2736,79 @@ BW_plugin *BW_plugins::getPlugin(BW_pool *pool)
     return nullptr;
 }
 
+struct ConversionStats
+{
+    int bad_value_types;
+    int loose_conversions;
+    int unconvertable_values;
+    int fail_count;
+};
+
+bool BW_plugin::CheckAndUpdateTypes(bool loose_conversion_enabled)
+// loose_conversion_enabled --- time64 --> time_t when time is not .000
+{
+    ConversionStats stats;
+    memset(&stats,0,sizeof(stats));    
+
+    // 1st pass will evaluate
+    ForAllChildrenRecursively(s_OnCheckTypes,reinterpret_cast<BW_element*>(getRoot()),&stats,0);
+//    virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);
+
+    if (stats.bad_value_types == 0) return true; // all is OK - no conversion is needed
+    if (stats.unconvertable_values > 0)
+    {
+        LOG_ERROR("There are %d values to convert but %d are unconvertable!",stats.bad_value_types,stats.unconvertable_values);
+        return false;
+    }
+    if (!loose_conversion_enabled && stats.loose_conversions > 0)
+    {
+        LOG_ERROR("There are %d values to convert but %d would loose in conversion!",stats.bad_value_types,stats.unconvertable_values);
+        return false;
+    }
+    // 2nd pass will convert
+    ForAllChildrenRecursively(s_OnUpdateTypes,reinterpret_cast<BW_element*>(getRoot()),&stats,0);
+    // update symbol table
+    return stats.fail_count == 0;
+}
+
+void BW_plugin::s_OnCheckTypes(void *element,void *userdata,int deep)
+{
+    BW_element *tag = reinterpret_cast<BW_element*>(element);
+    ConversionStats *stats = reinterpret_cast<ConversionStats*>(userdata);
+    
+    XML_Binary_Type  expected_type; // TODO find type used in registration
+
+    if (tag->value_type != expected_type)
+    {
+        XML_Binary_Data_Ref data_ref = tag->getData();
+        switch (XBT_Convertable(data_ref,expected_type))
+        {
+            case XBT_CONVERTABLE: 
+                break; // OK
+            case XBT_LOOSE_CONVERTABLE: 
+                stats->loose_conversions++;
+                break; // OK
+            case XBT_NONCONVERTABLE:
+                stats->unconvertable_values++;
+                break;
+        }
+
+        stats->bad_value_types++;
+    }
+}
+
+void BW_plugin::s_OnUpdateTypes(void *element,void *userdata,int deep)
+{
+    // TODO implement XBT_Convert
+}
+
+void BW_plugin::s_OnCheckParamTypes(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+}
+
+void BW_plugin::s_OnUpdateParamTypes(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+}
+
 }
 #endif // BIN_WRITE_PLUGIN
