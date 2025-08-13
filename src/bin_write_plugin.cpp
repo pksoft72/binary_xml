@@ -194,7 +194,7 @@ BW_element*     BW_element::attrNull(int16_t id)
     if (this == nullptr) return nullptr;
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1985,attr_type == XBT_NULL || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1985,XBT_NULL,XBT_VARIANT);
     
     if (attr_type == XBT_NULL)
     {
@@ -219,7 +219,7 @@ BW_element*     BW_element::attrStr(int16_t id,const char *value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1050,attr_type == XBT_STRING || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1050,XBT_STRING,XBT_VARIANT);
     
     int len = strlen(value);
 
@@ -288,7 +288,7 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1084,attr_type == XBT_BLOB || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1084,XBT_BLOB,XBT_VARIANT);
     
     if (attr_type == XBT_BLOB)
     {
@@ -319,7 +319,7 @@ BW_element*     BW_element::attrHEX(int16_t id,const void *value,int32_t size)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(2128,attr_type == XBT_HEX || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(2128,XBT_HEX,XBT_VARIANT);
     
     if (attr_type == XBT_HEX)
     {
@@ -351,7 +351,8 @@ BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1088,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
+
+    CHECK_TYPE_RET_NULL(1088,XBT_INT32);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1089,attr != nullptr);
@@ -373,7 +374,7 @@ BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1189,attr_type == XBT_UINT32);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1189,XBT_UINT32);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1190,attr != nullptr);
@@ -396,7 +397,7 @@ BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1167,attr_type == XBT_INT64 || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1167,XBT_INT64,XBT_VARIANT);
 
     if (attr_type == XBT_INT64)
     {
@@ -420,7 +421,7 @@ BW_element  *BW_element::attrUInt64(int16_t id,uint64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1169,attr_type == XBT_UINT64 || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1169,XBT_UINT64,XBT_VARIANT);
 
     if (attr_type == XBT_UINT64)
     {
@@ -444,7 +445,7 @@ BW_element*     BW_element::attrFloat(int16_t id,float value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1961,attr_type == XBT_FLOAT);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1961,XBT_FLOAT);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1962,attr != nullptr);
@@ -464,7 +465,7 @@ BW_element*     BW_element::attrDouble(int16_t id,double value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1963,attr_type == XBT_DOUBLE);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1963,XBT_DOUBLE);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1964,attr != nullptr);
@@ -498,7 +499,7 @@ BW_element*     BW_element::attrTime(int16_t id,time_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1163,attr_type == XBT_UNIX_TIME || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1163,XBT_UNIX_TIME,XBT_VARIANT);
 
     if (attr_type == XBT_UNIX_TIME)
     {
@@ -525,7 +526,7 @@ BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1931,attr_type == XBT_UNIX_TIME64_MSEC || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1931,XBT_UNIX_TIME64_MSEC,XBT_VARIANT);
 
     if (attr_type == XBT_UNIX_TIME64_MSEC)
     {
