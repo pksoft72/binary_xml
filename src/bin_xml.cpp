@@ -111,11 +111,11 @@ bool XML_Item::Check(XB_reader *R,bool recursive)
 //-------------------------------------------------------------------------------------------------
 
 int32_t s_int32_value = -1;
-const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const 
+const int32_t *XML_Param_Description::getInt32Ptr(const XML_Item *X,XML_Binary_Type int_type) const
 {
     if (this == nullptr) return nullptr;
     if (X == nullptr) return nullptr;
-    if (type == XBT_INT32) return reinterpret_cast<const int32_t *>(&data);
+    if (type == int_type) return reinterpret_cast<const int32_t *>(&data);
     if (type == XBT_STRING) 
     {
         int value0 = atoi(reinterpret_cast<const char *>(X)+data);
@@ -123,6 +123,11 @@ const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const
         return &s_int32_value; // non reetrant!!!
     }
     return nullptr; 
+}
+
+const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const 
+{
+    return getInt32Ptr(X,XBT_INT32);
 }
 
 static int64_t s_int64_value = -1;
@@ -151,7 +156,7 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
 
     if (type == XBT_STRING) 
         return reinterpret_cast<const char *>(X)+data;
-    if (type == XBT_INT32)
+    if (XBT_IS_4(type))
         return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char*>(&data));
     return XBT_ToString((XML_Binary_Type)type,reinterpret_cast<const char *>(X)+data);
 
@@ -173,9 +178,9 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
 /*    if (R.verbosity > 0)
         std::cerr << ANSI_GREEN_BRIGHT << "+" << (reinterpret_cast<const char *>(this) - reinterpret_cast<const char *>(X)) << " [" << name << ":" << XML_BINARY_TYPE_NAMES[type] << "/" << offset << ":@" << data << "]" ANSI_RESET_LF;
 */
-    if (static_cast<XML_Binary_Type>(type) == XBT_INT32)
+    if (XBT_IS_4(type))
         return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(&data),offset,dst,dst_size);
-    return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
+    else return XBT_ToStringChunk(static_cast<XML_Binary_Type>(type),reinterpret_cast<const char*>(X) + data,offset,dst,dst_size);
 }
 
 XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X) 

@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include "macros.h"
 
+const SHA1_t SHA1_NULL = {0};
+
 void qsort_r2(void *base, int nmemb, int size,
                   int (*compar)(const void *, const void *, void *),
                   void *arg)

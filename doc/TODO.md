@@ -1,5 +1,34 @@
 # Binary XML TODO
 
+## XBW types update
+
+There will be some metadata changes during ages.
+There should be a way of type conversion to new type requested - while opening file.
+
+Some repairs is possible to do "inplace" - as INT32 <--> UINT32, INT64 <---> UINT64, HEX/BLOB, STRING -> binary representation.
+
+May be - there can be another copy of file with types repaired.
+
+I should never drop data. Values, which are not possible to convert should be left in original format, but there should be some counter of such problems in pool or at least indicator.
+
+Each conversion should be done in XBT_ code and also there should be function, which says conversion is implemented.
+
+Also there must be possible to extend symbol tables!
+
+
+## Indexes
+
+I have an idea, that it would be possible to make indexes/hash tables directly linked to tag.
+
+    <Controllers _hash_table="">
+        <Controller id="123">...</Controller>
+        <Controller id="124">...</Controller>
+        <Controller id="125">...</Controller>
+        <Controller id="126">...</Controller>
+    </Controllers>
+
+This attribute could be produced by special function = recreating of index/hash table. Standard accessing functions would update such and index/hash table.
+
 ## Write plugin
 
 ### Write plugin - level 0

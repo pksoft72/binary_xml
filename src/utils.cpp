@@ -6,8 +6,12 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <time.h> // clock_gettime()
+#include <limits.h>
+#include <sys/mman.h>   // mmap
+
 
 const char HEX[16+1] = "0123456789abcdef";
+const char HEX_UP[16+1] = "0123456789ABCDEF";
 
 bool WriteToFile(const char *filename,const char *fmt,...)
 {
@@ -37,13 +41,13 @@ bool WriteToFile(const char *filename,const char *fmt,...)
     return true;
 }
 
-char *ReadFile(const char *filename,bool MustExist,int *size)
+char *ReadFile(const char *filename,bool must_exist,int *size)
 // will read file and allocate enough memory for file store in memory
 {
     int fd = open(filename,O_RDONLY);
     if (fd == -1)
     {
-//      if (!MustExist && errno == ) return nullptr;
+//      if (!must_exist && errno == ) return nullptr;
         ERRNO_SHOW(1010,"ReadFile-open",filename);
         return nullptr; 
     }
@@ -82,6 +86,90 @@ char *ReadFile(const char *filename,bool MustExist,int *size)
     return data;    
 }
 
+//-------------------------------------------------------------------------------------------------
+
+static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_pool_size);
+
+char *ShareFileRO(const char *filename,int *fd,int max_pool_size)
+{
+    return s_ShareFile(filename,O_RDONLY | O_NOATIME,fd,max_pool_size);    
+}
+
+char *ShareFileRW(const char *filename,bool must_exist,int *fd,int max_pool_size)
+{
+    int open_flags = O_RDWR | O_NOATIME; 
+    if (!must_exist) open_flags |= O_CREAT;
+    return s_ShareFile(filename,open_flags,fd,max_pool_size);    
+}
+
+static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_pool_size)
+{
+    int open_fd = open(filename,open_flags,S_IRUSR | S_IWUSR | S_IRGRP);
+    if (open_fd < 0)
+    {
+        ERRNO_SHOW(2062,"open",filename);
+        return nullptr;
+    }
+    //  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+    int prot = PROT_READ;
+    if ((open_flags & O_RDWR) == O_RDWR)
+        prot |= PROT_WRITE;
+    char *pool = reinterpret_cast<char *>(mmap(nullptr,max_pool_size,prot, 
+                MAP_SHARED,  //  Share  this  mapping.   Updates to the mapping are visible to other processes mapping the same region, 
+                // and (in the case of file-backed mappings) are carried through to the underlying file.  
+                // (To precisely control when updates are carried through to the underlying file requires the use of msync(2).)
+
+                open_fd, 0));
+    if (pool == MAP_FAILED)
+    {
+        ERRNO_SHOW(2063,"mmap",filename);
+        close(open_fd);
+        return nullptr;
+    }
+
+
+    if (fd != nullptr)  
+        *fd = open_fd;
+    else
+        close(open_fd);
+    return pool;
+}
+
+void CloseSharedFile(char *pool,int max_pool_size,int fd,const char *debug_info)
+{
+    if (fd > 0)
+    {
+        if (close(fd) < 0)
+            ERRNO_SHOW(2064,"close",debug_info);
+    }
+    if (pool != nullptr)
+    {
+        if (munmap(pool,max_pool_size) != 0)
+            ERRNO_SHOW(1949,"munmap",debug_info);
+    }
+}
+
+off_t FileGetSize(const char *filename)
+{
+    struct stat file_info;
+    int err = stat(filename,&file_info);
+    if (err != 0)
+    {
+        if (errno == ENOENT)
+            return -1; // file not exists - no message
+
+        ERRNO_SHOW(0,"fstat",filename); 
+        return -1; // failed
+    }
+    if (S_ISDIR(file_info.st_mode)) 
+    {
+        std::cerr << "\n" ANSI_RED_BRIGHT "Error " ANSI_RED_DARK " while " 
+            ANSI_RED_BRIGHT "FileGetSize(" << filename << ")" ANSI_RED_DARK " 'file' is directory!" ANSI_RESET;
+        return -1; // directory
+    }
+    return file_info.st_size;
+}
+
 off_t FileGetSizeByFd(int fd)
 {
     struct stat file_info;
@@ -113,23 +201,51 @@ int64_t GetCurrentTime64()
            (int64_t)tm0.tv_nsec / 1000000;
 }
 
-char *AllocFilenameChangeExt(const char *filename,const char *extension)
+char *AllocFilenameChangeExt(const char *filename,const char *extension,const char *target_dir)
+// I have filename - example            src/common/test.xml
+// optional new extension - example     .xb
+// optional target directory - example  build/temp
+// result:                              build/temp/src/common/test.xb
+// want to process some shortcuts       build/test/.. --> build
+// but these shortcuts cannot go out of target_dir
 {
     if (filename == nullptr) return nullptr; // it is correct to send empty filename
+
+// removing ./ prefixes
+    while (filename[0] == '.' && filename[1] == '/') 
+        filename += 2;
+
+    char filepath[PATH_MAX] = "";
+    filepath[PATH_MAX-1] = '\0'; // terminator
+
+    if (target_dir != nullptr)
+    {
+        // removing / root reference
+        if (filename[0] == '/') 
+            filename++; 
+
+        STRCPY(filepath,target_dir);
+        int len = strlen(filepath);
+        filepath[len++] = '/';
+        strncpy(filepath+len,filename,PATH_MAX-len-1);
+    }
+    else 
+        STRCPY(filepath,filename);
+
     if (extension == nullptr)
     {
-        char *new_name = new char[strlen(filename)+1];
-        strcpy(new_name,filename);
+        char *new_name = new char[strlen(filepath)+1];
+        strcpy(new_name,filepath);
         return new_name;
     }
-    const char *dot = strrchr(filename,'.');
-    int len = (dot != nullptr ? dot - filename : strlen(filename));
+    const char *dot = strrchr(filepath,'.');
+    int len = (dot != nullptr ? dot - filepath : strlen(filepath));
     int ext_len = strlen(extension);
 
     char *new_name = new char[len+ext_len+1];
-    strncpy(new_name,filename,len);
+    strncpy(new_name,filepath,len);
     strcpy(new_name+len,extension);
-    
+
     return new_name;
 }
 
@@ -230,6 +346,29 @@ bool ScanUInt64(const char *&p,uint64_t &value)
     return true;
 }
 
+bool ScanUInt64Hex(const char *&p,uint64_t &value)
+{
+    while (isspace(*p)) p++;
+
+    uint64_t x = 0;
+    const char *p1 = p;
+    if (!isxdigit(*p1)) return false;
+    while (*p1 != '\0')
+    {
+        if (*p1 >= '0' && *p1 <= '9')
+            x = (x << 4) + (*(p1++) - '0');
+        else if (*p1 >= 'A' && *p1 <= 'F')
+            x = (x << 4) + (*(p1++) - 'A' + 10);
+        else if (*p1 >= 'a' && *p1 <= 'f')
+            x = (x << 4) + (*(p1++) - 'a' + 10);
+        else break;
+    }
+
+    p = p1;
+    value = x;
+    return true;
+}
+
 const int MONTH_OFFSET[12] = {
     0,
     31,
@@ -266,6 +405,7 @@ const int MAX_DAY = 0xffffffff/(24*60*60);
 
 bool ScanUnixTime(const char *&p,uint32_t &value)
 {
+    value = 0;
     int year,month,day,hour,minute,second;
 
     const char *beg = p;
@@ -288,9 +428,7 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
     value -= (year - 1900 - 1) / 100;
     value += (year - 1600 - 1) / 400;
 
-    bool is_leap_year = 
-        ((year % 4) == 0) && !((year % 100) == 0) 
-        || ((year % 400) == 0);
+    bool is_leap_year = (((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0);
     if (is_leap_year)   
         value += LEAP_MONTH_OFFSET[month-1];
     else
@@ -322,11 +460,29 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
     return true;
 }
 
+bool ScanUnixTime64msec(const char *&p,int64_t &value)
+{
+    value = 0;
+    uint32_t tm32;
+    if (!ScanUnixTime(p,tm32)) return false;
+    if (*(p++) != '.') return false;
+
+    if (*p < '0' || *p > '9') return false;
+    int v000 = 100 * (*(p++) - '0');
+    if (*p < '0' || *p > '9') return false;
+    v000 += 10 * (*(p++) - '0');
+    if (*p < '0' || *p > '9') return false;
+    v000 += (*(p++) - '0');
+
+    value = v000 + (int64_t)tm32 * 1000;
+    return true;
+}
+
 bool ScanUnixDate(const char *&p,int32_t &value)
 {
     int year,month,day;
 
-    const char *beg = p;
+    //const char *beg = p;
 
     if (!ScanInt(p,year)) return false;    
     if (*(p++) != '-') return false;
@@ -346,9 +502,7 @@ bool ScanUnixDate(const char *&p,int32_t &value)
     value -= (year - 1900 - 1) / 100;
     value += (year - 1600 - 1) / 400;
 
-    bool is_leap_year = 
-        ((year % 4) == 0) && !((year % 100) == 0) 
-        || ((year % 400) == 0);
+    bool is_leap_year = (((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0);
     if (is_leap_year)   
         value += LEAP_MONTH_OFFSET[month-1];
     else
@@ -455,6 +609,20 @@ char *UnixDate2Str(int32_t value,char *dst)
     return dst;
 }
 
+char *UnixTime642Str(int64_t value,char *dst)
+{
+    char *p = UnixDate2Str(value / (1000 * 60*60*24),dst);
+    p += strlen(p);
+    value %= 1000 * 60*60*24;
+    int h = 
+    sprintf(p," %02d:%02d:%02d.%03d",
+        (int)((value / (1000 * 60 * 60)) % 24),
+        (int)((value / (1000 * 60)) % 60),
+        (int)((value / (1000)) % 60),
+        (int)(value % 1000));
+    return dst;
+}
+
 bool ScanStr(const char *&p,char separator,char *value,unsigned value_size)
 {
     while (isspace(*p)) p++;
@@ -503,6 +671,13 @@ bool SkipLine(const char *&p)
     return true;
 }
 
+bool Go(const char *&p,char separator)
+{
+    while (*p != '\0')
+        if (*(p++) == separator) return true;
+    return false;    
+}
+
 int ScanHex(const char *&p,uint8_t *dst,int dst_size)
 {
     memset(dst,0,dst_size);
@@ -548,6 +723,21 @@ const char *Hex2Str(const char *src,int src_size,char *dst)
         dst[(i << 1)+1] = HEX[value & 0xf];
     }
     dst[src_size << 1] = '\0';
+    return dst;
+}
+
+const char *Hex3Str(const char *src,int src_size,char *dst)
+{
+    if (src_size < 0) src_size = 0; // don't write to negative indexes!
+    char *d = dst;
+    for(int i = 0;i < src_size;i++)
+    {
+        uint8_t value = static_cast<uint8_t>(src[i]);
+        *(d++) = HEX_UP[value >> 4];
+        *(d++) = HEX_UP[value & 0xf];
+        *(d++) = ' ';
+    }
+    *(d++) = '\0';
     return dst;
 }
 
@@ -689,6 +879,8 @@ bool SkipLineW(char *&p)
 
 int  GetInt(const char *p)
 {
+    if (p == nullptr) return INT_NULL_VALUE;
+
     while (isspace(*p)) p++;
     
     bool neg = (*p == '-');
@@ -703,6 +895,22 @@ int  GetInt(const char *p)
     
 }
 
+uint32_t GetVersion(const char *p)
+{
+    if (p == nullptr) return 0;
+
+    uint32_t version = 0;
+    for(int i = 0;*p != '\0' && i < 4;i++)
+    {
+        int V;
+        if (!ScanInt(p,V)) break;
+        LIMITE(V,0,255);
+        version |= (V << ((3-i) * 8)); // 24,16,8,0
+        if (*p != '.') break;
+        p++;
+    }
+    return version;
+}
 
 
 bool StrWrite(char *&dest,const char *dest_limit,const char *&src,const char *src_limit)
@@ -782,6 +990,45 @@ int GetIdentLen(const char *p)
         len++;p++;
     }
     return len; 
+}
+
+bool streq(const char *src0,const char *src1) 
+{
+    if (src0 == nullptr)
+    {
+        if (src1 == nullptr) return true; // the same
+        if (*src1 == '\0') return true;
+        return false;
+    }
+    if (src1 == nullptr)
+    {
+        if (*src0 == '\0') return true;
+        return false;
+    }
+    return strcmp(src0,src1) == 0;
+}
+
+const char *Int64ToStr(int64_t value,char40_t buffer)
+{
+    if (buffer == nullptr) return nullptr;
+
+    bool neg = (value < 0);
+    if (neg) value = -value;
+
+    char *p = buffer + sizeof(char40_t);
+    *(--p) = '\0'; // terminating symbol;
+    if (value == 0)
+        *(--p) = '0'; // zero
+    else 
+        while (value > 0)
+        {
+            *(--p) = '0' + (value % 10);
+            value /= 10;
+        }
+
+    if (neg) 
+        *(--p) = '-'; // negative
+    return p;
 }
 
 //-------------------------------------------------------------------------------------------------

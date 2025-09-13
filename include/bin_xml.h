@@ -148,6 +148,7 @@ public:
         return INT32_NULL; 
     }
     const int32_t *getIntPtr(const XML_Item *X) const;
+    const int32_t *getInt32Ptr(const XML_Item *X,XML_Binary_Type int_type) const;
     const int64_t *getInt64Ptr(const XML_Item *X) const;
     const char *getString(const XML_Item *X) const;
     const int   getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const;
@@ -182,7 +183,7 @@ public:
     char  *filename;
     size_t      size;
     int     fd; // file descriptor
-    XML_Item  *doc;   // doc element
+    XML_Item  *doc;   // doc element -- entire file
     XML_Item  *data;  // user data element
 
     _XB_symbol_table    tag_symbols;
@@ -200,9 +201,12 @@ public:
 
     inline const char *getNodeName(tag_name_id_t name_id) const     { return tag_symbols.getSymbol(name_id);}
     inline const char *getParamName(tag_name_id_t name_id) const    { return param_symbols.getSymbol(name_id);}
+    inline const char *getFilename() const                          { return filename;}
     inline tag_name_id_t getNodeID(const char *name) const          { return static_cast<tag_name_id_t>(tag_symbols.getID(name));}
     inline param_name_id_t getParamID(const char *name) const       { return static_cast<param_name_id_t>(param_symbols.getID(name));}
     inline XML_Item *getRoot() const                                { return (this == nullptr ? nullptr : data);}
+    inline uint32_t getRelPtr(const char *value) const              { return (doc != nullptr && value > reinterpret_cast<char*>(doc) && value < reinterpret_cast<char*>(doc) + size ? (uint32_t)(value - reinterpret_cast<char*>(doc) ) : 0); } 
+    inline const char *getString(uint32_t rel_ptr) const            { return (doc != nullptr && rel_ptr != 0 && rel_ptr < size ? (const char *) doc + rel_ptr : nullptr); }
 
     friend std::ostream& operator<<(std::ostream& os,  XB_reader& R);
 

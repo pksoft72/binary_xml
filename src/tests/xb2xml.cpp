@@ -31,6 +31,15 @@ int main(int argc,char **argv)
                 ASSERT_NO_RET_1(1209,BW.Initialize());
 
                 std::cout << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+                std::cout << "<!--\nTAG NAMES:\n";
+                pklib_xml::BW_pool *pool = BW.getPool();
+                for(int i = 0;i <= pool->tags.max_id;i++)
+                    std::cout << "\t" << pool->getTagName(i) << " : " << XBT2STR(pool->getTagType(i)) << "\n";
+
+                std::cout << "\nATTR NAMES:\n";
+                for(int i = 0;i <= pool->params.max_id;i++)
+                    std::cout << "\t" << pool->getAttrName(i) << " : " << XBT2STR(pool->getAttrType(i)) << "\n";
+                std::cout << "-->\n";
                 std::cout << BW;
 
 //                ASSERT_NO_RET_1(1210,BW.Finalize());

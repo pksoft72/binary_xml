@@ -1,9 +1,9 @@
 #ifdef BIN_WRITE_PLUGIN
-#include "bin_write_plugin.h"
+#include <binary_xml/bin_write_plugin.h>
 
-#include "bin_xml.h"
-#include "bin_xml_types.h"
-#include "macros.h"
+#include <binary_xml/bin_xml.h>
+#include <binary_xml/bin_xml_types.h>
+#include <binary_xml/macros.h>
 
 #include <string.h>
 #include <stdio.h>     // perror
@@ -51,9 +51,18 @@ public:
 BW_plugins plugins;
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID getPool()->getDocTypeName()
 
 void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags)
 {
+    if (this == nullptr)
+    {
+        LOG_ERROR("BW_element::init(NULL,id:%d=%s,value_type:%d=%s,flags:%u) called!",identification,
+            (flags & BIN_WRITE_ELEMENT_FLAG ? pool->getTagName(identification) : pool->getAttrName(identification)),
+            value_type,XBT2STR(value_type),flags);
+        return;
+    }
     assert(sizeof(*this) == 24);
     assert(pool != nullptr);
 
@@ -105,6 +114,11 @@ BW_element* BW_element::join(BW_element *B)    // this will connect two circles
     int A_prev_offset = this->prev;
     int B_prev_offset = B->prev;
 
+    ASSERT_NO_RET_NULL(2092,A_prev_offset != 0);
+    ASSERT_NO_RET_NULL(2093,B_prev_offset != 0);
+    ASSERT_NO_RET_NULL(2094,this->offset != 0);
+    ASSERT_NO_RET_NULL(2095,B->offset != 0);
+
     this->prev = B_prev_offset;
     B->prev = A_prev_offset;
     
@@ -126,6 +140,27 @@ BW_element* BW_element::add(BW_element *tag)
     return this;
 }
 
+BW_element* BW_element::remove(BW_element *tag)
+{
+    if (this == nullptr) return nullptr;
+    if (tag == nullptr) return this;
+
+    BW_offset_t *list = (tag->flags & BIN_WRITE_ELEMENT_FLAG) ? &first_child : &first_attribute;
+    if (*list == 0) return this; // empty list - cannot find
+    if (*list == tag->offset)
+    {
+        if (tag->next == tag->offset && tag->prev == tag->offset)
+            *list = 0; // removing last element -> empty
+        else
+            *list = tag->next;
+    }
+    BWE(tag->prev)->next = tag->next;
+    BWE(tag->next)->prev = tag->prev;
+    tag->next = tag->prev = tag->offset;
+    tag->flags |= BIN_DELETED;
+    return this;
+}
+
 BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
 {
     if (this == nullptr) return nullptr; // no where to add
@@ -143,6 +178,12 @@ BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
     
     old_value->flags |= BIN_DELETED;
     old_value->next = old_value->prev = old_value->offset;
+
+    if (first_child == old_value->offset)
+        first_child = new_value->offset;
+    if (first_attribute == old_value->offset)
+        first_attribute = new_value->offset;
+
     return this;
 }
 
@@ -153,7 +194,7 @@ BW_element*     BW_element::attrNull(int16_t id)
     if (this == nullptr) return nullptr;
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1985,attr_type == XBT_NULL || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1985,XBT_NULL,XBT_VARIANT);
     
     if (attr_type == XBT_NULL)
     {
@@ -178,7 +219,7 @@ BW_element*     BW_element::attrStr(int16_t id,const char *value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1050,attr_type == XBT_STRING || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1050,XBT_STRING,XBT_VARIANT);
     
     int len = strlen(value);
 
@@ -247,9 +288,9 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1084,attr_type == XBT_BLOB || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1084,XBT_BLOB,XBT_VARIANT);
     
-    if (attr_type == XBT_STRING)
+    if (attr_type == XBT_BLOB)
     {
         BW_element* attr      = pool->new_element(XBT_BLOB,size); // only variable types gives size  --- sizeof(int32_t));
         ASSERT_NO_RET_NULL(1085,attr != nullptr);
@@ -257,7 +298,10 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
         attr->init(pool,id,XBT_BLOB,BIN_WRITE_ATTR_FLAG);
 
         char *dst             = reinterpret_cast<char*>(attr+1)+4; // just after this element and blob size
-        memcpy(dst,value,size);
+        if (value != nullptr)
+            memcpy(dst,value,size);
+        else
+            memset(dst,0,size);
         
         add(attr);
     }
@@ -266,17 +310,49 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
         ASSERT_NO_RET_NULL(1086,NOT_IMPLEMENTED); // TODO: variant
     }
 
-    ASSERT_NO_RET_NULL(1087,NOT_IMPLEMENTED); // TODO: variant
     return this;
 }
 
-BW_element*     BW_element::attrInt32(int16_t id,int32_t value)
+BW_element*     BW_element::attrHEX(int16_t id,const void *value,int32_t size)
+{
+    if (this == nullptr) return nullptr;
+    
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    CHECK_TYPE2_RET_NULL(2128,XBT_HEX,XBT_VARIANT);
+    
+    if (attr_type == XBT_HEX)
+    {
+        BW_element* attr      = pool->new_element(XBT_HEX,size); // only variable types gives size  --- sizeof(int32_t));
+        ASSERT_NO_RET_NULL(2129,attr != nullptr);
+
+        attr->init(pool,id,XBT_HEX,BIN_WRITE_ATTR_FLAG);
+
+        char *dst             = reinterpret_cast<char*>(attr+1)+4; // just after this element and blob size
+        if (value != nullptr)
+            memcpy(dst,value,size);
+        else
+            memset(dst,0,size);
+        
+        add(attr);
+    }
+    else
+    {
+        ASSERT_NO_RET_NULL(2130,NOT_IMPLEMENTED); // TODO: variant
+    }
+
+    return this;
+}
+
+
+BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_attr)
 {
     if (this == nullptr) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1088,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
+
+    CHECK_TYPE_RET_NULL(1088,XBT_INT32);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1089,attr != nullptr);
@@ -286,6 +362,8 @@ BW_element*     BW_element::attrInt32(int16_t id,int32_t value)
     *dst                  = value; // store value
 
     add(attr);
+    if (dst_attr != nullptr)
+        *dst_attr = attr;
 
     return this;
 }
@@ -296,7 +374,7 @@ BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1189,attr_type == XBT_UINT32);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1189,XBT_UINT32);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1190,attr != nullptr);
@@ -319,7 +397,7 @@ BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1167,attr_type == XBT_INT64 || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1167,XBT_INT64,XBT_VARIANT);
 
     if (attr_type == XBT_INT64)
     {
@@ -343,7 +421,7 @@ BW_element  *BW_element::attrUInt64(int16_t id,uint64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1169,attr_type == XBT_UINT64 || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1169,XBT_UINT64,XBT_VARIANT);
 
     if (attr_type == XBT_UINT64)
     {
@@ -367,7 +445,7 @@ BW_element*     BW_element::attrFloat(int16_t id,float value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1961,attr_type == XBT_FLOAT);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1961,XBT_FLOAT);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1962,attr != nullptr);
@@ -387,7 +465,7 @@ BW_element*     BW_element::attrDouble(int16_t id,double value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1963,attr_type == XBT_DOUBLE);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1963,XBT_DOUBLE);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1964,attr != nullptr);
@@ -421,7 +499,7 @@ BW_element*     BW_element::attrTime(int16_t id,time_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1163,attr_type == XBT_UNIX_TIME || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1163,XBT_UNIX_TIME,XBT_VARIANT);
 
     if (attr_type == XBT_UNIX_TIME)
     {
@@ -448,7 +526,7 @@ BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1931,attr_type == XBT_UNIX_TIME64_MSEC || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1931,XBT_UNIX_TIME64_MSEC,XBT_VARIANT);
 
     if (attr_type == XBT_UNIX_TIME64_MSEC)
     {
@@ -550,6 +628,42 @@ BW_element  *BW_element::attrGet(int16_t id)
     return nullptr;
 }
 
+BW_element*  BW_element::NextChild(BW_offset_t &offset)
+// Usage:
+// for(BW_offset_t idx = 0,BW_element *X;X != nullptr;X = NextChild(idx))
+// 
+{
+    if (this == nullptr) return nullptr; // empty list -> no children
+
+    if (offset == 0) // first element of loop
+    {
+        if (first_child == 0) 
+            return nullptr; // empty list
+        else
+            return BWE(offset = first_child); // first child
+    }   
+
+    BW_element *prev = BWE(offset); // current element, need next
+    if (prev->next == first_child) return nullptr; // end of loop
+    return BWE(offset = prev->next);
+}
+
+BW_element*  BW_element::PrevChild(BW_offset_t &offset)
+{
+    if (this == nullptr) return nullptr; // empty list -> no children
+    if (offset == 0) // first element of loop
+    {
+        if (first_child == 0) 
+            return nullptr; // empty list
+
+        BW_element *first = BWE(first_child); // current element, need next
+        return BWE(offset = first->prev); // first child
+    }   
+    if (offset == first_child) return nullptr;
+    BW_element *element = BWE(offset); // current element, need next
+    return BWE(offset = element->prev); // first child
+}
+
 //-------------------------------------------------------------------------------------------------
 
 BW_element  *BW_element::tagGet(int16_t id)
@@ -600,6 +714,34 @@ BW_element  *BW_element::tagSetInt32(int16_t id,int32_t value)
         else
         {
             BW_element *new_item = getPool()->tagInt32(id,value);
+            replace(target,new_item);
+        }
+         
+    }
+    return target;
+}
+
+BW_element  *BW_element::tagSetInt64(int16_t id,int64_t value)
+{
+    if (this == nullptr) return nullptr;
+
+    BW_element *target = tagGet(id);
+    if (target == nullptr) // no previous value - ok, create new
+    {
+        target = getPool()->tagInt64(id,value);
+        add(target);
+    }
+    else
+    {
+        bool to_replace = (target->value_type != XBT_INT64);
+        if (!to_replace) // check size
+        {
+            int64_t *dst = reinterpret_cast<int64_t*>(target+1);
+            *dst = value;
+        }
+        else
+        {
+            BW_element *new_item = getPool()->tagInt64(id,value);
             replace(target,new_item);
         }
          
@@ -686,12 +828,65 @@ int32_t *BW_element::getInt32()
 {
     if (this == nullptr) return nullptr;
 
-    BW_pool             *pool = getPool();    
-    XML_Binary_Type     attr_type = pool->getAttrType(identification);
-    ASSERT_NO_RET_NULL(1173,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
+//    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_INT32)
+    {
+        LOG_ERROR("[1173] +%d %s'type = %d = %s but XBT_INT32 is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
+        return nullptr;
+    }
 
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
+
+time_t *BW_element::getTime()
+{
+    if (this == nullptr) return nullptr;
+
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_UNIX_TIME)
+    {
+        LOG_ERROR("[2122] +%d %s'type = %d = %s but XBT_UNIX_TIME is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<time_t*>(this+1); // just after this element
+}
+
+int64_t *BW_element::getInt64()
+{
+    if (this == nullptr) return nullptr;
+
+//    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_INT64 && value_type != XBT_INT64 && value_type != XBT_UNIX_TIME64_MSEC)
+    {
+        //ASSERT_NO_RET_NULL(2026,attr_type == XBT_INT64 || value_type == XBT_INT64);// || attr_type == XBT_VARIANT);
+        LOG_ERROR("[2026] +%d %s'type = %d/%d = %s/%s but XBT_INT64/XBT_UNIX_TIME64_MSEC is expected!",
+        offset,getName(),
+        attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
+        return nullptr;
+    }
+
+
+    return reinterpret_cast<int64_t*>(this+1); // just after this element
+}
+
+uint64_t *BW_element::getUInt64()
+{
+    if (this == nullptr) return nullptr;
+
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_UINT64)
+    {
+        LOG_ERROR("[2096] +%d %s'type = %d/%d = %s/%s but XBT_UINT64 is expected!",offset,getName(),
+        attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<uint64_t*>(this+1); // just after this element
+}
+
 
 char *BW_element::getStr()
 {
@@ -704,20 +899,24 @@ XML_Binary_Data_Ref BW_element::getData()
 {
     XML_Binary_Data_Ref R = {type:XBT_UNKNOWN,data:nullptr,size:0};
     if (this == nullptr) return R;
-    R.data = reinterpret_cast<char*>(this+1);
+    R.content = R.data = reinterpret_cast<char*>(this+1);
     R.type = static_cast<XML_Binary_Type>(value_type);
     if (value_type == XBT_STRING) 
-        R.size = 1+strlen(R.data);
+        R.size = R.content_size = 1+strlen(R.data);
     else if (XBT_IS_4(value_type)) 
-        R.size = 4;
+        R.size = R.content_size = 4;
     else if (XBT_IS_VARSIZE(value_type)) 
-        R.size = 4 + *reinterpret_cast<int32_t*>(R.data);
+    {
+        R.size = 4 + (R.content_size = *reinterpret_cast<int32_t*>(R.data));
+        R.content += 4;
+    }
     else 
-        R.size = XBT_FIXEDSIZE(value_type);
+        R.size = R.content_size = XBT_FIXEDSIZE(value_type);
     return R;
 }
 
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
+// the same like tagGet(id)
 {
     if (this == nullptr) return nullptr;
     // for all children
@@ -757,7 +956,7 @@ BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Bin
                     {
                     // I have value_type, data & data_size to compare with ...
                         int cmp = XBT_Compare(static_cast<XML_Binary_Type>(attr->value_type),reinterpret_cast<void*>(attr+1),
-                                                XBT_Size(static_cast<XML_Binary_Type>(attr->value_type),0),
+                                                XBT_Size2(static_cast<XML_Binary_Type>(attr->value_type),0),
                                               value_type,data,data_size);
                         if (cmp == 0)
                             return child;
@@ -874,6 +1073,8 @@ bool         BW_element::EqualKeys(XB_reader &xb,XML_Item *src)
 }
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID pool->getDocTypeName()
 
 int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type)
 {
@@ -887,7 +1088,7 @@ int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_
         const char *p =       POOL+names_offset;
         const char *p_limit = POOL+pool->allocator;
 
-        while (id < max_id)
+        while (id <= max_id)
         { 
             const char *n = name;
             const char *start = p;
@@ -937,7 +1138,117 @@ int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_
     return -1; // not found
 }
 
+const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
+{
+    ASSERT_NO_RET_NULL(2032,pool != nullptr);
+    ASSERT_NO_RET_NULL(2033,search_id >= 0 && search_id <= max_id); // TODO: some negative ID are supported
+
+    char *POOL = reinterpret_cast<char*>(pool);
+
+    if (index == 0) // sequential search
+    {
+        int id = 0;
+        // ID:word|Type:byte|string|NUL:byte
+        const char *p =       POOL+names_offset;
+        const char *p_limit = POOL+pool->allocator;
+
+        while (id <= max_id)
+        { 
+            //const char *start = p;
+            id = *(p++);
+            id |= *(p++) << 8;
+
+            //XML_Binary_Type element_type = static_cast<XML_Binary_Type>(*(p++));
+
+            if (id == search_id) return p; // found
+
+            // compare symbol and name
+            while(p < p_limit && *p != '\0') p++;
+            // result?
+            if (p >= p_limit) return nullptr; // not found
+            p++; // skip ASCII.NUL
+
+            AA(p); // round 4B
+            // next id
+            id++;
+        }
+        return nullptr;
+    }
+    // OK, i have indexed access and this should be faster
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
+    const char *start = POOL+elements[search_id]; 
+    return start+3;
+}
+
+int32_t BW_symbol_table_16B::getNamesSize(BW_pool *pool)
+// sometimes I need size of whole sequence of names
+// for copy when extending old table
+{
+    ASSERT_NO_RET_N1(2097,pool != nullptr);
+    if (names_offset == 0) return 0;
+    
+    char *POOL = reinterpret_cast<char*>(pool);
+    const char *start_p = POOL+names_offset;
+    const char *p_limit = POOL+pool->allocator;
+    const char *p = start_p;
+    
+    int id = 0;
+    int prev_id = -1;
+    while (id <= max_id)
+    {
+            id = *(p++);
+            id |= *(p++) << 8;
+            if (id != prev_id+1) // don't go to other table
+            {
+                LOG_ERROR("%s/%s correcting max_id: %d --> %d",pool->getDocTypeName(),(&pool->tags == this ? "tags" : "params"),max_id,prev_id);
+                max_id = prev_id;
+                p -= 2;
+                break;
+            }
+            p++; // skip type
+            while(p < p_limit && *p != '\0') p++;
+            p++; // ASCII.NUL
+            AA(p);
+            prev_id = id;
+            id++;
+    }
+    return p - start_p;
+}
+
+bool BW_symbol_table_16B::check(BW_pool *pool)
+{
+    if (index == 0) return true; // OK, no index is OK
+    char *POOL = reinterpret_cast<char*>(pool);
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
+    int names_size = getNamesSize(pool);
+    for(int i = 0;i <= max_id;i++)
+    {
+        // index reference must be in range of correct names, otherwise index is invalid
+        ASSERT_NO_RET_FALSE(2109,elements[i] >= names_offset && elements[i] < names_offset + names_size);
+    }
+    return true; // OK
+}
+
+bool BW_symbol_table_16B::Open(BW_pool *pool)
+{
+    ASSERT_NO_RET_FALSE(2100,pool != nullptr);
+    int size = getNamesSize(pool);
+    if (index == 0 && names_offset + size == pool->allocator) return true; // no index means - it is opened
+// prepare new copy of symbol tables with open end
+    LOG("%s(%s/%s) - opening symbol table (max_id=%d,size=%d,offset.old=%d,allocator=%d (should be %d)",
+                __FUNCTION__,pool->getDocTypeName(),(&pool->tags == this ? "tags" : "params"),max_id,
+                size,names_offset,pool->allocator,names_offset+size);
+    char *names = pool->allocate(size);
+    ASSERT_NO_RET_FALSE(2101,names != nullptr);
+    memcpy(names,(char*)pool + names_offset,size);
+    index = 0; // no index yet
+    names_offset = names - (char *)pool;
+    return true;
+}
+
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID getDocTypeName()
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
 {
@@ -1045,41 +1356,46 @@ const char*     BW_pool::getAttrName(int16_t id)
     }
 }
 
-bool   BW_pool::makeTable(BW_symbol_table_16B &table,BW_offset_t limit)
+bool   BW_pool::makeTable(BW_symbol_table_16B &table)
 // This is called after registration of symbols to table - see registerTag & registerAttr
 {
     table.index = 0;
     if (table.max_id < 0) return true; // ok, empty array
 
     ASSERT_NO_RET_FALSE(1111,table.names_offset != 0);
+
     
     int32_t *index = reinterpret_cast<int32_t*>(allocate(sizeof(int32_t) * (table.max_id+1)));
     ASSERT_NO_RET_FALSE(1118,index != nullptr); // out of memory?
-    table.index = reinterpret_cast<char*>(index) - THIS;
-
-    memset(index,0,sizeof(int32_t)*(table.max_id+1)); // 0 means empty
 
     BW_offset_t start = table.names_offset;
-//    BW_offset_t end = reinterpret_cast<char*>(index) - THIS;
-
-    while (start < limit)
+    BW_offset_t end = table.names_offset+table.getNamesSize(this);
+    
+    for(int i = 0;i <= table.max_id;i++)
     {
+        ASSERT_NO_RET_FALSE(2112,start < end);
         int id = *reinterpret_cast<int16_t*>(THIS + start);
-        ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
+        if (id < 0 || id > table.max_id)
+        {
+            LOG_ERROR("[A1112] %s - found id %d at index %d/%d - name %s",getDocTypeName(),id,i,table.max_id+1,THIS+start+3);
+            return false;
+        }
+        //ASSERT_NO_RET_FALSE(2113,id == i);
+        //ASSERT_NO_RET_FALSE(1112,id >= 0 && id <= table.max_id);
         index[id] = start;
         start += 3 + strlen(THIS+start+3)+1;
         ROUND32UP(start);
     }
-    ASSERT_NO_RET_FALSE(1113,start == limit);
+    //ASSERT_NO_RET_FALSE(1113,start == end);
+    table.index = reinterpret_cast<char*>(index) - THIS;
     return true;
 }
 
 bool   BW_pool::checkTable(BW_symbol_table_16B &table,BW_offset_t limit)
 {
 // I must check, the symbol table is ok and valid!    
-    if (table.max_id == -1) return true; // no symbols = OK
+    if (table.max_id < 0) return true; // no symbols = OK
     ASSERT_NO_RET_FALSE(1938,table.index >= (int)sizeof(*this));
-    ASSERT_NO_RET_FALSE(1939,table.index + (int)sizeof(int32_t) * (table.max_id+1) < payload);
     int32_t *index = reinterpret_cast<int32_t*>(THIS + table.index);
     for(int i = 0;i <= table.max_id;i++)
     {
@@ -1091,17 +1407,49 @@ bool   BW_pool::checkTable(BW_symbol_table_16B &table,BW_offset_t limit)
     return true;
 }
 
+bool   BW_pool::check_id()
+{
+    return strcmp(binary_xml_write_type_info,"binary_xml.pksoft.org") == 0;
+}
+
+const char *BW_pool::getDocTypeName() 
+// For debugging purposes - which XBW has problem?
+{
+    if (this == nullptr) return "(NULL)";
+//    if (pool_format_version >= BIN_WRITE_POOL_FORMAT_VERSION_WITH_PARENT)
+//    {
+//        return doc_type_name;
+//    }
+    if (root > getPoolSize() && root < allocator)
+    {
+        BW_element *root = BWE(this->root);   
+        ASSERT_NO_RET_(2114,root->flags & BIN_WRITE_ELEMENT_FLAG,"(bad root flags)");
+        const char *name = tags.getName(this,root->identification);    
+        if (name != nullptr) return name;
+    }
+// OK, no root name - so some early stage
+   
+    BW_plugin *plugin = plugins.getPlugin(this);
+    if (plugin == nullptr) return "(no plugin for pool)";
+    const char *filename = plugin->getFilename();
+    if (filename == nullptr) return "(no filename in plugin)";
+    const char *slash = strrchr(filename,'/');
+    if (slash != nullptr) return slash+1;
+    return filename;
+}
+
 char*  BW_pool::allocate(int size)
 {
     if (size <= 0) return 0;
+    ROUND32UP(size);
 // memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
     ASSERT_NO_RET_0(1080,allocator + size <= allocator_limit);
 
     BW_offset_t offset = allocator;
     allocator += size;
-    ROUND32UP(allocator);
 
-    MAXIMIZE(size,allocator);
+    //MAXIMIZE(size,allocator);BUG!!
+    memset(THIS+offset,0,size);
 
     return THIS+offset;
 }
@@ -1110,33 +1458,41 @@ char*           BW_pool::allocate8(int size)        // 64 bit aligned value
 {
     if (size <= 0) return 0;
     ROUND64UP(allocator);
+    ROUND64UP(size);
 // memory must be prepared in allocator_limit before allocation - in BW_pool is fd inaccessible
     ASSERT_NO_RET_0(1942,allocator + size <= allocator_limit);
 
     BW_offset_t offset = allocator;
     allocator += size;
-    ROUND32UP(allocator);
 
-    MAXIMIZE(size,allocator);
+    //MAXIMIZE(size,allocator);BUG!!
+    memset(THIS+offset,0,size);
 
     return THIS+offset;
 }
 
 BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
+// size is content only size
+// XBT_Size() will add envelope size
 {
     ASSERT_NO_RET_NULL(1067,this != nullptr);
-    int size2 = XBT_Size(type,size);
-    if (size2 < 0) return nullptr;
-    BW_element* result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
+    int size2 = XBT_Size2(type,size);
+    ASSERT_NO_RET_NULL(2075,size2 >= 0);
+    //if (size2 < 0) return nullptr;
+    int align = XBT_Align(type);
+    ASSERT_NO_RET_NULL(2068,align == 0 || align == 4 || align == 8);
+    BW_element* result = reinterpret_cast<BW_element*>(align == 8 ? allocate8(sizeof(BW_element)+size2) : allocate(sizeof(BW_element)+size2));
     if (result == nullptr) // need makeSpace
     {
         BW_plugin *plugin = plugins.getPlugin(this);
         ASSERT_NO_RET_NULL(2012,plugin != nullptr);
         ASSERT_NO_RET_NULL(2013,plugin->makeSpace(sizeof(BW_element)+size2));
-        result = reinterpret_cast<BW_element*>(allocate8(sizeof(BW_element)+size2));
+        result = reinterpret_cast<BW_element*>(align == 8 ? allocate8(sizeof(BW_element)+size2) : allocate(sizeof(BW_element)+size2));
+        ASSERT_NO_RET_NULL(2091,result != nullptr);
         if (result == nullptr) return nullptr; // error message already shown in allocate
     }
     result->value_type = type;
+    result->prev = result->next = result->offset = (reinterpret_cast<char*>(result) - reinterpret_cast<char*>(this));
     switch(type)
     {
         case XBT_BLOB:
@@ -1150,11 +1506,18 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
     return result;
 }
 
+#define CHECK_TAG_TYPE(no,id,type)\
+    XML_Binary_Type tag_type = getTagType(id);\
+    if (tag_type != type)\
+    {\
+        LOG_ERROR("[%d] Tag %s has type %d=%s and not %s!",no,getTagName(id),tag_type,XBT2STR(tag_type),#type);\
+        return nullptr;\
+    }
 BW_element* BW_pool::tag(int16_t id)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2014,tag_type == XBT_NULL);
+    CHECK_TAG_TYPE(2014,id,XBT_NULL);
     BW_element* result = new_element(XBT_NULL,0);
+    ASSERT_NO_RET_NULL(2034,result != nullptr);
     
     result->init(this,id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG);
     return result;
@@ -1162,24 +1525,38 @@ BW_element* BW_pool::tag(int16_t id)
 
 BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(0,tag_type == XBT_INT32);
+    CHECK_TAG_TYPE(2027,id,XBT_INT32);
 
-    BW_element* result = new_element(XBT_INT32,sizeof(value));
+    BW_element* result = new_element(XBT_INT32,0);
+    ASSERT_NO_RET_NULL(2035,result != nullptr);
     
     result->init(this,id,XBT_INT32,BIN_WRITE_ELEMENT_FLAG);
 
     *reinterpret_cast<int32_t*>(result+1) = value;
     return result;
 }
+
+BW_element* BW_pool::tagInt64(int16_t id,int64_t value)
+{
+    CHECK_TAG_TYPE(2029,id,XBT_INT64);
+
+    BW_element* result = new_element(XBT_INT64,sizeof(value));
+    ASSERT_NO_RET_NULL(2036,result != nullptr);
+    
+    result->init(this,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int64_t*>(result+1) = value;
+    return result;
+}
+
 BW_element* BW_pool::tagString(int16_t id,const char *value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2015,tag_type == XBT_STRING);
+    CHECK_TAG_TYPE(2015,id,XBT_STRING);
 
     int value_len = (value != nullptr ? strlen(value) : 0);
 
     BW_element* result = new_element(XBT_STRING,value_len+1);
+    ASSERT_NO_RET_NULL(2037,result != nullptr);
     
     result->init(this,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
     strcpy(reinterpret_cast<char*>(result+1),value);
@@ -1188,10 +1565,10 @@ BW_element* BW_pool::tagString(int16_t id,const char *value)
 
 BW_element* BW_pool::tagTime(int16_t id,time_t value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(2006,tag_type == XBT_UNIX_TIME);
+    CHECK_TAG_TYPE(2006,id,XBT_UNIX_TIME);
 
     BW_element* result = new_element(XBT_UNIX_TIME,0);
+    ASSERT_NO_RET_NULL(2038,result != nullptr);
     
     result->init(this,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1201,10 +1578,10 @@ BW_element* BW_pool::tagTime(int16_t id,time_t value)
 
 BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
 {
-    XML_Binary_Type tag_type = getTagType(id);
-    ASSERT_NO_RET_NULL(0,tag_type == XBT_SHA1);
+    CHECK_TAG_TYPE(2028,id,XBT_SHA1);
 
     BW_element* result = new_element(XBT_SHA1,0);
+    ASSERT_NO_RET_NULL(2039,result != nullptr);
     
     result->init(this,id,XBT_SHA1,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1212,7 +1589,22 @@ BW_element* BW_pool::tagSHA1(int16_t id,const uint8_t *value)
     return result;
 }
 
+BW_element* BW_pool::tagAny(int16_t id,XML_Binary_Type type,const char *data_as_string,int data_size)
+{
+    BW_element* result = new_element(type,data_size);
+    ASSERT_NO_RET_NULL(2060,result != nullptr);
+    result->init(this,id,type,BIN_WRITE_ELEMENT_FLAG);
+
+    //bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
+    char *wp = reinterpret_cast<char*>(result+1);
+    ASSERT_NO_RET_NULL(2061,XBT_FromString(data_as_string,type,&wp,wp+data_size));
+
+    return result;
+}
+
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID pool->getDocTypeName()
 
 BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int max_pool_size,uint32_t config_flags)
     : Bin_src_plugin(nullptr,bin_xml_creator)
@@ -1230,7 +1622,7 @@ BW_plugin::BW_plugin(const char *filename,Bin_xml_creator *bin_xml_creator,int m
     Bin_src_plugin::setFilename(filename,".xbw"); // will allocate copy of filename
     ASSERT_NO_DO_NOTHING(2011,plugins.registerPlugin(this));
 }
- 
+
 BW_plugin::~BW_plugin()
 {
     ASSERT_NO_DO_NOTHING(2008,plugins.unregisterPlugin(this));
@@ -1240,6 +1632,13 @@ BW_plugin::~BW_plugin()
 void BW_plugin::setFlags(uint32_t flags)
 {
     this->config_flags = flags;
+}
+
+bool BW_plugin::setMaxPoolSize(int max_pool_size)
+{
+    ASSERT_NO_RET_FALSE(2048,!initialized);
+    this->max_pool_size = max_pool_size;
+    return true;
 }
 
 bool BW_plugin::Initialize()
@@ -1279,7 +1678,7 @@ bool BW_plugin::Initialize()
                     // Don't perform read-ahead: create page tables entries only for pages that are already present in RAM.  
                     // Since Linux 2.6.23, this flag causes MAP_POPULATE to do nothing.  One day, the combination of MAP_POPULATE and MAP_NONBLOCK may be reimplemented.
                     fd, 0));
-        if (pool == nullptr)
+        if (pool == MAP_FAILED)
         {
             ERRNO_SHOW(1049,"mmap",filename);
             return false;
@@ -1376,6 +1775,11 @@ bool BW_plugin::CheckExistingFile(int file_size)
     this->check_only = true;
     this->check_failures = 0;
 
+    if (!pool->tags.check(pool)) // DO NOT OPEN HERE - not ready to write yet
+        pool->tags.index = 0; // ASSERT_NO_RET_FALSE(2110,pool->tags.Open(pool));
+    if (!pool->params.check(pool)) // DO NOT OPEN HERE - not ready to write yet
+        pool->params.index = 0; // ASSERT_NO_RET_FALSE(2111,pool->params.Open(pool));
+
 //    ASSERT_NO_RET_FALSE(1951,allRegistered()); // make tables and be ready for checking of registration
     // check pool->tags
     // check pool->params
@@ -1392,9 +1796,9 @@ bool BW_plugin::CheckExistingFile(int file_size)
 
 bool BW_plugin::makeSpace(int size)
 {
-    int new_size = ((pool->allocator+4095) >> 12 << 12) + size;
+    int new_size = ((pool->allocator+4095+size) >> 12 << 12); // I want rounded file size
     ASSERT_NO_RET_FALSE(1143,new_size <= (int)pool->mmap_size);
-    if (new_size < (int)pool->file_size) return true; // no grow - ok
+    if (new_size <= (int)pool->file_size) return true; // no grow - ok
     if (ftruncate(fd,new_size) < 0)
     {
         ERRNO_SHOW(1144,"ftruncate",filename);
@@ -1426,10 +1830,12 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
         check_failures++; 
         return false;
     }
+    ASSERT_NO_RET_NULL(2108,pool->tags.Open(pool)); // must be opened
 // elements must be defined first
-    ASSERT_NO_RET_FALSE(1108,pool->params.names_offset == 0);
+//    ASSERT_NO_RET_FALSE(1108,pool->params.names_offset == 0);
+
 // root must be later
-    ASSERT_NO_RET_FALSE(1109,pool->root == 0);
+//    ASSERT_NO_RET_FALSE(1109,pool->root == 0);
 //-----------------------------------------------
     if (pool->tags.names_offset == 0) // empty
         pool->tags.names_offset = pool->allocator;
@@ -1438,7 +1844,8 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     int len = strlen(name);
 
 // allocation
-    char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
+    int size = sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1;
+    char *dst = pool->allocate(size); // ID:word|Type:byte|string|NUL:byte
     ASSERT_NO_RET_FALSE(1121,dst != 0);
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
@@ -1448,10 +1855,13 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     dst += sizeof(XML_Binary_Type_Stored);
 // name
     strcpy(dst,name);
+    ROUND32UP(size);
+    ASSERT_NO_RET_FALSE(2115,dst+size == reinterpret_cast<char*>(pool)+pool->allocator);
     return true;
 }
 
 bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
+// see registerParam
 // I want to fill symbol tables with attribute names    
 {
     ASSERT_NO_RET_FALSE(1114,name != nullptr);
@@ -1469,10 +1879,12 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
         check_failures++; 
         return false;
     }
+    ASSERT_NO_RET_NULL(2098,pool->params.Open(pool)); // must be opened
+
 // elements must be defined first, empty element are not allowed!
     ASSERT_NO_RET_FALSE(1115,pool->tags.names_offset != 0);
 // root must be later
-    ASSERT_NO_RET_FALSE(1116,pool->root == 0);
+//    ASSERT_NO_RET_FALSE(1116,pool->root == 0);
 //-----------------------------------------------
     if (pool->params.names_offset == 0)
         pool->params.names_offset = pool->allocator;
@@ -1516,6 +1928,8 @@ XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
             return static_cast<XML_Tag_Names>(id);
         }
     }
+    ASSERT_NO_RET_(2099,pool->tags.Open(pool),XTNR_NULL); // must be opened
+
     int len = strlen(name);
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
     ASSERT_NO_RET_(1972,dst != 0,XTNR_NULL);
@@ -1532,7 +1946,11 @@ XML_Tag_Names   BW_plugin::registerTag(const char *name,XML_Binary_Type type)
 }
 
 XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
+// see registerAttr
 {
+    ASSERT_NO_RET_(2116,name != nullptr,XPNR_NULL);
+    ASSERT_NO_RET_(2117,type >= XBT_NULL && type < XBT_LAST,XPNR_NULL);
+
     if (pool->params.names_offset == 0) // empty
         pool->params.names_offset = pool->allocator;
 
@@ -1553,7 +1971,13 @@ XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
             return static_cast<XML_Param_Names>(id);
         }
     }
+// elements must be defined first, empty element are not allowed!
+    ASSERT_NO_RET_(2119,pool->tags.names_offset != 0,XPNR_NULL);
+// must be opened
+    ASSERT_NO_RET_(2121,pool->params.Open(pool),XPNR_NULL); 
+
     int len = strlen(name);
+// allocation
     char *dst = pool->allocate(sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1); // ID:word|Type:byte|string|NUL:byte
     ASSERT_NO_RET_(1973,dst != 0,XPNR_NULL);
     id = ++pool->params.max_id;
@@ -1604,14 +2028,12 @@ void BW_plugin::importParams(XB_reader *src)
 bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
-    if (check_only)
+    BW_offset_t names_limit = pool->allocator;
+    if (check_only && pool->tags.index != 0 && pool->params.index != 0)
         return (check_failures == 0); // no problems?
 
-    BW_offset_t names_limit = pool->allocator;
-    ASSERT_NO_RET_FALSE(1139,pool->payload == 0);
-    ASSERT_NO_RET_FALSE(1123,pool->makeTable(pool->tags,pool->params.names_offset));
-    ASSERT_NO_RET_FALSE(1124,pool->makeTable(pool->params,names_limit));
-    pool->payload = pool->allocator;
+    ASSERT_NO_RET_FALSE(1123,pool->tags.index != 0   || pool->makeTable(pool->tags));
+    ASSERT_NO_RET_FALSE(1124,pool->params.index != 0 || pool->makeTable(pool->params));
     return true;
 }
 
@@ -1636,8 +2058,7 @@ void BW_plugin::setRoot(const BW_element* X)
 {
     ASSERT_NO_RET(1125,X != nullptr);
     ASSERT_NO_RET(1126,pool->root == 0);    // set root is possibly only once till flush
-    ASSERT_NO_RET(1140,pool->payload != 0); // allRegistered must be called first
-    ASSERT_NO_RET(1141,X->offset >= pool->payload);
+    ASSERT_NO_RET(1141,X->offset >= 0 && X->offset < pool->allocator);
     pool->root = X->offset;
 }
 
@@ -1675,19 +2096,59 @@ bool BW_plugin::Clear()
 // I will clear all data - only symbol table will remain
 {
     ASSERT_NO_RET_FALSE(1178,pool != nullptr);
-    ASSERT_NO_RET_FALSE(1179,pool->payload != 0);
-    int size2clear = pool->allocator - pool->payload;
-    pool->root = 0;
-    pool->allocator = pool->payload;
-    memset(BWE(pool->allocator),0,size2clear);
-    return true; 
+    pool->root = 0; // forget data
+
+    // this is original situation
+    int tags_size = pool->tags.getNamesSize(pool);
+    int params_size = pool->params.getNamesSize(pool);
+    char *tags_src = (char*)BWE(pool->tags.names_offset);
+    char *params_src = (char*)BWE(pool->params.names_offset);
+
+    // this is requested situation
+    char *tags_dst = reinterpret_cast<char*>(pool+1);
+    char *params_dst = tags_dst+tags_size;
+    // Is it possible to have situatiation, which cannot be solved by this code?
+    // -------[PARAMS----][TAGS------------]
+    // Yes - when between old params and new TAGS is not enough space for growth TAGS
+
+    if (tags_src > tags_dst && tags_src < tags_dst + tags_size + params_size)
+    { // copy params to new place
+        char *params2_src = reinterpret_cast<char*>(pool->allocate(params_size));
+        ASSERT_NO_RET_FALSE(2103,params2_src);
+        memcpy(params2_src,params_src,params_size);
+        params_src = params2_src;
+    }
+    if (tags_src != tags_dst)
+    {
+        ASSERT_NO_RET_FALSE(2104,(tags_dst >= params_src + params_size) || (tags_dst + tags_size <= params_src));
+        memmove(tags_dst,tags_src,tags_size);
+    }
+    if (params_src != params_dst)
+    {
+        ASSERT_NO_RET_FALSE(2105,(params_dst >= tags_src + tags_size) || (params_dst + params_size <= tags_src));
+        memmove(params_dst,params_src,params_size);
+    }
+    pool->tags.names_offset = sizeof(*pool);
+    pool->tags.index = 0; // to be constructed
+    pool->params.names_offset = sizeof(*pool)+tags_size;
+    pool->params.index = 0; // to be constructed
+
+    int old_size = pool->allocator;
+    int new_size = pool->params.names_offset + params_size;
+    pool->allocator = new_size;
+    if (old_size > new_size)
+        memset((char*)pool+new_size,0,old_size - new_size); // clear memory
+
+    
+    ASSERT_NO_RET_FALSE(2106,pool->makeTable(pool->tags));
+    ASSERT_NO_RET_FALSE(2107,pool->makeTable(pool->params));
+    return true;
 }
 
 int  BW_plugin::getDataSize()
 {
     if (pool == nullptr) return 0;
-    if (pool->payload == 0) return 0;
-    return pool->allocator - pool->payload;
+    return pool->allocator - sizeof(*pool) - pool->tags.getNamesSize(pool) - pool->params.getNamesSize(pool);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1700,6 +2161,7 @@ BW_element* BW_plugin::tag(int16_t id)
     ASSERT_NO_RET_NULL(1145,makeSpace(BW2_INITIAL_FILE_SIZE));
 
     BW_element* result = pool->new_element(XBT_NULL);
+    ASSERT_NO_RET_NULL(2040,result != nullptr);
 
     result->init(pool,id,XBT_NULL,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1715,6 +2177,7 @@ BW_element* BW_plugin::tagStr(int16_t id,const char *value)
     ASSERT_NO_RET_NULL(1146,makeSpace(BW2_INITIAL_FILE_SIZE+value_len));
 
     BW_element* result = pool->new_element(XBT_STRING,value_len);
+    ASSERT_NO_RET_NULL(2041,result != nullptr);
     
     result->init(pool,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1736,13 +2199,38 @@ BW_element* BW_plugin::tagBLOB(int16_t id,const void *value,int32_t size)
     ASSERT_NO_RET_NULL(1955,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
 
     BW_element* result = pool->new_element(XBT_BLOB,size);
+    ASSERT_NO_RET_NULL(2042,result != nullptr);
     
     result->init(pool,id,XBT_BLOB,BIN_WRITE_ELEMENT_FLAG);
 
     *reinterpret_cast<int32_t*>(result+1) = size;
-    memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    if (value != nullptr)
+        memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    else
+        memset(reinterpret_cast<char*>(result+1)+4,0,size);
     return result;
 }
+
+BW_element* BW_plugin::tagHEX(int16_t id,const void *value,int32_t size)
+{
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(2131,tag_type == XBT_HEX);
+
+    ASSERT_NO_RET_NULL(2132,makeSpace(BW2_INITIAL_FILE_SIZE+size+4));
+
+    BW_element* result = pool->new_element(XBT_HEX,size);
+    ASSERT_NO_RET_NULL(2133,result != nullptr);
+    
+    result->init(pool,id,XBT_HEX,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int32_t*>(result+1) = size;
+    if (value != nullptr)
+        memcpy(reinterpret_cast<char*>(result+1)+4,value,size);
+    else
+        memset(reinterpret_cast<char*>(result+1)+4,0,size);
+    return result;
+}
+
 
 BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
 {
@@ -1752,6 +2240,7 @@ BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
     ASSERT_NO_RET_NULL(1956,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
 
     BW_element* result = pool->new_element(XBT_INT32,0);
+    ASSERT_NO_RET_NULL(2043,result != nullptr);
     
     result->init(pool,id,XBT_INT32,BIN_WRITE_ELEMENT_FLAG);
 
@@ -1767,9 +2256,20 @@ BW_element* BW_plugin::tagUInt32(int16_t id,uint32_t value)
 
 BW_element* BW_plugin::tagInt64(int16_t id,int64_t value)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1131,NOT_IMPLEMENTED);
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(2030,tag_type == XBT_INT64 || tag_type == XBT_VARIANT);
+
+    ASSERT_NO_RET_NULL(2031,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int64_t)));
+
+    BW_element* result = pool->new_element(XBT_INT64,0);
+    ASSERT_NO_RET_NULL(2044,result != nullptr);
+    
+    result->init(pool,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<int64_t*>(result+1) = value;
+    return result;
 }
+
 
 BW_element* BW_plugin::tagUInt64(int16_t id,uint64_t value)
 {
@@ -1803,6 +2303,7 @@ BW_element* BW_plugin::tagSHA1(int16_t id,const uint8_t *value)
     ASSERT_NO_RET_NULL(1958,makeSpace(BW2_INITIAL_FILE_SIZE+4));
 
     BW_element* result = pool->new_element(XBT_SHA1,0);
+    ASSERT_NO_RET_NULL(2045,result != nullptr);
     
     result->init(pool,id,XBT_SHA1,BIN_WRITE_ELEMENT_FLAG);
    
@@ -1820,6 +2321,7 @@ BW_element* BW_plugin::tagTime(int16_t id,time_t value)
     ASSERT_NO_RET_NULL(2020,makeSpace(BW2_INITIAL_FILE_SIZE+4));
 
     BW_element* result = pool->new_element(XBT_UNIX_TIME,0);
+    ASSERT_NO_RET_NULL(2046,result != nullptr);
     
     result->init(pool,id,XBT_UNIX_TIME,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1830,11 +2332,17 @@ BW_element* BW_plugin::tagTime(int16_t id,time_t value)
 BW_element* BW_plugin::tagTime64(int16_t id,int64_t value)
 {
     XML_Binary_Type tag_type = pool->getTagType(id);
-    ASSERT_NO_RET_NULL(1959,tag_type == XBT_UNIX_TIME64_MSEC || tag_type == XBT_VARIANT);
+    if (tag_type != XBT_UNIX_TIME64_MSEC && tag_type != XBT_VARIANT)
+    {
+        LOG_ERROR("[1959] %s.tag_type = %d = %s and should be XBT_UNIX_TIME64_MSEC or XBT_VARIANT",pool->getTagName(id),tag_type,XBT2STR(tag_type));
+        // ASSERT_NO_RET_NULL(1959,tag_type == XBT_UNIX_TIME64_MSEC || tag_type == XBT_VARIANT);
+        return nullptr;
+    }
 
     ASSERT_NO_RET_NULL(1960,makeSpace(BW2_INITIAL_FILE_SIZE+8));
 
     BW_element* result = pool->new_element(XBT_UNIX_TIME64_MSEC,0);
+    ASSERT_NO_RET_NULL(2047,result != nullptr);
     
     result->init(pool,id,XBT_UNIX_TIME64_MSEC,BIN_WRITE_ELEMENT_FLAG);
     
@@ -1957,10 +2465,12 @@ BW_element* BW_plugin::CopyPath_(bool copy_whole_last_node,XB_reader &xb,XML_Ite
         {
             // Recursive copy of last element
             if (copy)
+            {
                 if (copy_whole_last_node)
                     ASSERT_NO_RET_NULL(1977,CopyAll(dst,xb,src) != nullptr);
                 else
                     ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
+            }
             break;
         }
         if (copy) ASSERT_NO_RET_NULL(1994,dst->CopyKeys(xb,src) != nullptr);
@@ -2043,6 +2553,7 @@ const char *BW_plugin::getNodeValue(void *element)
 
 const char *BW_plugin::getNodeBinValue(void *element,XML_Binary_Type &type,int &size)
 {
+    if (element == nullptr) return nullptr; // no attributes
     BW_element *E = reinterpret_cast<BW_element*>(element);
     type = static_cast<XML_Binary_Type>(E->value_type);
     
@@ -2070,6 +2581,8 @@ BW_element* BW_plugin::BWE(BW_offset_t offset)
 
 void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
 {
+    if (parent == nullptr) return; // nothing
+
     BW_element *E = reinterpret_cast<BW_element*>(parent);
     if (E->first_child == 0) return; // no elements
     BW_element *child = BWE(E->first_child);
@@ -2083,6 +2596,7 @@ void BW_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdat
 
 void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent,void *userdata,int deep)
 {
+    if (parent == nullptr) return; // no attributes
     BW_element *E = reinterpret_cast<BW_element*>(parent);
     on_element(E,userdata,deep);
     if (E->first_child == 0) return; // no elements
@@ -2098,9 +2612,9 @@ void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent
 
 void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
 {
+    if (element == nullptr) return; // no attributes
+
     BW_element *E = reinterpret_cast<BW_element*>(element);
-    if (E->first_attribute == 0) return; // no attributes
-    
     BW_element *child = BWE(E->first_attribute);
     for(;;)
     {
@@ -2115,6 +2629,7 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
 
 bool BW_plugin::ForAllBinParams(OnBinParam_t on_param,void *element,void *userdata)
 {
+    if (element == nullptr) return true; // nothing
     BW_element *E = reinterpret_cast<BW_element*>(element);
     if (E->first_attribute == 0) return true; // no attributes
     
@@ -2179,6 +2694,8 @@ const char *BW_plugin::getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type 
 }
 
 //-------------------------------------------------------------------------------------------------
+#undef WORK_ID
+#define WORK_ID plugin->getFilename()
 
 BW_plugins::BW_plugins()
 {
@@ -2217,6 +2734,80 @@ BW_plugin *BW_plugins::getPlugin(BW_pool *pool)
         if (plugins[i]->getPool() == pool)
             return plugins[i];
     return nullptr;
+}
+
+struct ConversionStats
+{
+    int bad_value_types;
+    int loose_conversions;
+    int unconvertable_values;
+    int fail_count;
+};
+
+bool BW_plugin::CheckAndUpdateTypes(bool loose_conversion_enabled)
+// loose_conversion_enabled --- time64 --> time_t when time is not .000
+{
+    ConversionStats stats;
+    memset(&stats,0,sizeof(stats));    
+
+    // 1st pass will evaluate
+    ForAllChildrenRecursively(s_OnCheckTypes,reinterpret_cast<BW_element*>(getRoot()),&stats,0);
+//    virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);
+
+    if (stats.bad_value_types == 0) return true; // all is OK - no conversion is needed
+    if (stats.unconvertable_values > 0)
+    {
+        LOG_ERROR("There are %d values to convert but %d are unconvertable!",stats.bad_value_types,stats.unconvertable_values);
+        return false;
+    }
+    if (!loose_conversion_enabled && stats.loose_conversions > 0)
+    {
+        LOG_ERROR("There are %d values to convert but %d would loose in conversion!",stats.bad_value_types,stats.unconvertable_values);
+        return false;
+    }
+    // 2nd pass will convert
+    ForAllChildrenRecursively(s_OnUpdateTypes,reinterpret_cast<BW_element*>(getRoot()),&stats,0);
+    // update symbol table
+    return stats.fail_count == 0;
+}
+
+void BW_plugin::s_OnCheckTypes(void *element,void *userdata,int deep)
+{
+    BW_element *tag = reinterpret_cast<BW_element*>(element);
+    ConversionStats *stats = reinterpret_cast<ConversionStats*>(userdata);
+    
+    XML_Binary_Type  expected_type; // TODO find type used in registration
+
+    if (tag->value_type != expected_type)
+    {
+        XML_Binary_Data_Ref data_ref = tag->getData();
+        switch (XBT_Convertable(data_ref,expected_type))
+        {
+            case XBT_CONVERTABLE: 
+                break; // OK
+            case XBT_LOOSE_CONVERTABLE: 
+                stats->loose_conversions++;
+                break; // OK
+            case XBT_NONCONVERTABLE:
+                stats->unconvertable_values++;
+                break;
+        }
+
+        stats->bad_value_types++;
+    }
+}
+
+void BW_plugin::s_OnUpdateTypes(void *element,void *userdata,int deep)
+{
+    // TODO implement XBT_Convert
+}
+
+void BW_plugin::s_OnCheckParamTypes(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+}
+
+void BW_plugin::s_OnUpdateParamTypes(const char *param_name,const char *param_value,void *element,void *userdata)
+{
 }
 
 }

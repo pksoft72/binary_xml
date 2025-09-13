@@ -3,6 +3,7 @@
 // These are standard library functions, which are not present for ts7350 :-(
 
 #include <stdlib.h>
+#include <stdint.h>
 
 void qsort_r2(void *base, int nmemb, int size,
                   int (*compar)(const void *, const void *, void *),
@@ -10,6 +11,11 @@ void qsort_r2(void *base, int nmemb, int size,
 void mergesort_r2(void *base, int nmemb, int size,
                   int (*compar)(const void *, const void *, void *),
                   void *arg);
+
+typedef struct { // struct for easy copy assignement
+    uint8_t hash[20];
+} SHA1_t;
+extern const SHA1_t SHA1_NULL;
 
 typedef struct {
     unsigned long long size;

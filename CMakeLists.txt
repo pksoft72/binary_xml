@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.16.0)
 project (binary_xml)
 
 #-----------------------------------------------------------------------------------------------
@@ -77,6 +77,10 @@ file(GLOB JSON_SOURCES src/tests/data/*.json)
 add_executable(2xb src/tests/2xb.cpp)
     target_include_directories(2xb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(2xb binary_xml)
+
+add_executable(2xbw src/tests/2xbw.cpp)
+    target_include_directories(2xbw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(2xbw binary_xml)
 #   add_test(2xb-1 COMMAND 2xb t0.xml )
 #   add_test(2xb-2 COMMAND 2xb t1.xml )
 #   add_test(2xb-3 COMMAND 2xb t1.json )
@@ -106,7 +110,7 @@ add_custom_target(run
     COMMAND test -f ${XB_RESULT} && hexdump -C ${XB_RESULT})
 
 
-install(TARGETS 2xb xb2xml binary_xml binary_xml_static
+install(TARGETS 2xb 2xbw xb2xml binary_xml binary_xml_static
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib/static)

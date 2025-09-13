@@ -1,12 +1,37 @@
 # Working diary
 
+## 2024-03-21
+
+I should write it as normally at work.
+
+I am thinking about xbw adding parent reference and join first_child and first_attribute to keep size of node.
+
+## 2024-01-06
+
+[FIX] Code till calling XStore2XBWEvent is OK.
+
+
+
+## 2023-11-24
+
+I need 2xbw for easily editing.
+
+    bool Bin_xml_creator::Make_xbw()
+
+    ---> void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
+
+    
+
+
+
+
 ## 2021-05-22
 
 I am trying to implement 
     
     bool BW_element::EqualKeys(const XB_reader &xb,const XML_Item *src)
 
-This is not so easy. I must compare all key attributes of nodes or even a childrens.
+This is not so easy. I must compare all key attributes of nodes or even a children.
 
 I must provide some size information for `XBT_Compare`.
 

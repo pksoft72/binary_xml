@@ -18,7 +18,9 @@
 #include <limits.h> // PATH_MAX
 #include <iostream>
 
-#define DBG(x)
+#include "bin_write_plugin.h"
+
+#define DBG(x) x
 
 namespace pklib_xml
 {
@@ -56,11 +58,11 @@ void Bin_src_plugin::updateFileSize()
     this->file_size = file_getsize(filename);
 }
 
-void Bin_src_plugin::setFilename(const char *filename,const char *extension)
+void Bin_src_plugin::setFilename(const char *filename,const char *extension,const char *target_dir)
 {
     if (this->filename)
         delete [] this->filename;
-    this->filename = AllocFilenameChangeExt(filename,extension);
+    this->filename = AllocFilenameChangeExt(filename,extension,target_dir);
 }
 
 void Bin_src_plugin::setFilenameFmt(const char *filename,...)
@@ -253,14 +255,19 @@ std::ostream& operator<<(std::ostream& os, Bin_src_plugin &src)
 
 //-------------------------------------------------------------------------------------------------
 
-Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
+Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator_target target)
 {
     assert(BIN_SRC_PLUGIN_SELECTOR != nullptr);
 
     this->src = BIN_SRC_PLUGIN_SELECTOR(src,this);
     this->src_allocated = true;
-    this->dst = AllocFilenameChangeExt(dst,".xb");
+    this->target = target;
+    if (target == XBTARGET_XB)
+        this->dst = AllocFilenameChangeExt(dst,".xb");
+    else
+        this->dst = AllocFilenameChangeExt(dst,".xbw");
     this->dst_file = -1; 
+    this->dst_file_size = -1;
     
     this->data = nullptr;
 
@@ -274,13 +281,18 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst)
     }
 }
 
-Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
+Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst,Bin_xml_creator_target target)
 {
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
     if (dst == nullptr) dst = src->getFilename();
-    this->dst = AllocFilenameChangeExt(dst,".xb");
+    this->target = target;
+    if (target == XBTARGET_XB)
+        this->dst = AllocFilenameChangeExt(dst,".xb");
+    else
+        this->dst = AllocFilenameChangeExt(dst,".xbw");
+    this->dst_file = -1; 
     this->data = nullptr;
     this->dst_file = -1; 
 
@@ -292,12 +304,17 @@ Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,const char *dst)
     }
 }
 
-Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src)
+Bin_xml_creator::Bin_xml_creator(Bin_src_plugin *src,Bin_xml_creator_target target)
 {
     this->src = src;
     this->src->LinkCreator(this); // link it
     this->src_allocated = false;
-    this->dst = AllocFilenameChangeExt(src->getFilename(),".xb");
+    this->target = target;
+    if (target == XBTARGET_XB)
+        this->dst = AllocFilenameChangeExt(dst,".xb");
+    else
+        this->dst = AllocFilenameChangeExt(dst,".xbw");
+    this->dst_file = -1; 
     this->data = nullptr;
     this->dst_file = -1; 
 
@@ -342,6 +359,17 @@ Bin_xml_creator::~Bin_xml_creator()
 
 bool Bin_xml_creator::DoAll()
 {
+    ASSERT_NO_RET_FALSE(2049,dst != nullptr);
+    int dst_len = strlen(dst);
+    ASSERT_NO_RET_FALSE(2050,dst_len > 0);
+    if (dst[dst_len-1] == 'w')
+        return Make_xbw();
+    else
+        return Make_xb();
+}
+
+bool Bin_xml_creator::Make_xb()
+{
     if (!src->Initialize()) return false;
 
     // 1. filling symbol tables----------------------
@@ -353,52 +381,7 @@ bool Bin_xml_creator::DoAll()
     // total_node_count, total_param_count
     src->ForAllChildrenRecursively(FirstPassEvent,root,(void*)this,0);
 
-    if (src->getSymbolCount(SYMBOL_TABLE_NODES) > 0) // has special function for symbol table
-    {
-    // copy of symbol tables where src has some - it's faster and no type detection is needed
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-            int count = /*this->symbol_count[t] = */src->getSymbolCount((SymbolTableTypes)t);
-            this->symbol_table[t] = reinterpret_cast<const char **>(malloc(sizeof(char*)*count));
-            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(sizeof(XML_Binary_Type_Stored)*count));
-            for(int i = 0;i < count;i++)
-            {
-                XML_Binary_Type type;
-                const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
-                if (type != XBT_UNKNOWN)
-                    FindOrAddTyped(name,(SymbolTableTypes)t,type);
-            }
-        }
-    }
-    else
-    {
-        // I don't know final size of array yet, I will allocate more
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-            int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
-            this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
-            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
-            memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
-
-            this->symbol_count[t] = 0;
-        }
-
-        src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
-
-        for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
-        {
-            const char **table_backup = this->symbol_table[t];
-            XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
-
-            int size1 = sizeof(char*)*symbol_count[t];
-            int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
-            this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
-            memcpy(this->symbol_table[t],table_backup,size1);
-
-            this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
-            memcpy(this->symbol_table_types[t],table_types_backup,size2);
-        }
-    }
+    CopySymbolTable() || MakeSymbolTable();
     // 2. show stats---------------------------------
 
     DBG(std::cout << "total elements: " << total_node_count << "\n");
@@ -459,6 +442,58 @@ bool Bin_xml_creator::DoAll()
     return (written == dst_file_size);
 }
 
+bool Bin_xml_creator::CopySymbolTable() 
+{
+    // has special function for symbol table?
+    if (src->getSymbolCount(SYMBOL_TABLE_NODES) <=  0) return false;
+    // copy of symbol tables where src has some - it's faster and no type detection is needed
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        int count = /*this->symbol_count[t] = */src->getSymbolCount((SymbolTableTypes)t);
+        this->symbol_table[t] = reinterpret_cast<const char **>(malloc(sizeof(char*)*count));
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(sizeof(XML_Binary_Type_Stored)*count));
+        for(int i = 0;i < count;i++)
+        {
+            XML_Binary_Type type;
+            const char *name = src->getSymbol((SymbolTableTypes)t,i,type);
+            if (type != XBT_UNKNOWN)
+                FindOrAddTyped(name,(SymbolTableTypes)t,type);
+        }
+    }
+    return true;
+}
+
+bool Bin_xml_creator::MakeSymbolTable() 
+{
+    // I don't know final size of array yet, I will allocate more
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        int count = MAX_SYMBOL_COUNT;//(t == SYMBOL_TABLE_NODES ? total_node_count : total_param_count);
+        this->symbol_table[t] = reinterpret_cast<const char **>(alloca(sizeof(char*)*count));
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(alloca(sizeof(XML_Binary_Type_Stored)*count));
+        memset(this->symbol_table_types[t],0,sizeof(XML_Binary_Type_Stored)*count);
+
+        this->symbol_count[t] = 0;
+    }
+
+    src->ForAllChildrenRecursively(SecondPassEvent,src->getRoot(),(void*)this,0);
+
+    for(int t = 0;t < SYMBOL_TABLES_COUNT;t++)
+    {
+        const char **table_backup = this->symbol_table[t];
+        XML_Binary_Type_Stored *table_types_backup = this->symbol_table_types[t];
+
+        int size1 = sizeof(char*)*symbol_count[t];
+        int size2 = sizeof(XML_Binary_Type_Stored)*symbol_count[t];
+        this->symbol_table[t] = reinterpret_cast<const char **>(malloc(size1));
+        memcpy(this->symbol_table[t],table_backup,size1);
+
+        this->symbol_table_types[t] = reinterpret_cast<XML_Binary_Type_Stored*>(malloc(size2));
+        memcpy(this->symbol_table_types[t],table_types_backup,size2);
+    }
+    return true;
+}
+
 bool Bin_xml_creator::Append(void *element)
 {
     if (dst_file == -1)
@@ -471,15 +506,15 @@ bool Bin_xml_creator::Append(void *element)
         }
     }
 // I should continue in the same alignement as in original file
-	struct stat file_info;
-	int err = fstat(dst_file,&file_info);
-	if (err != 0)
+    struct stat file_info;
+    int err = fstat(dst_file,&file_info);
+    if (err != 0)
     {
 
-        ERRNO_SHOW(0,"fstat",dst);	
+        ERRNO_SHOW(2051,"fstat",dst);  
         return false;
     }
-	int file_align = file_info.st_size & 0xf; // use alignemenet like length of file
+    int file_align = file_info.st_size & 0xf; // use alignemenet like length of file
 
     char *wp = data+file_align;
     AA(wp);
@@ -540,6 +575,83 @@ void Bin_xml_creator::SecondPassParamEvent(const char *param_name,const char *pa
     _this->FindOrAdd(param_name,SYMBOL_TABLE_PARAMS,param_value);
 }
 
+//-------------------------------------------------------------------------------------------------
+
+struct MakingXBW_1node
+{
+// input
+    Bin_xml_creator *creator;
+    BW_plugin       *bw;
+    void            *src_element;
+// result
+    BW_element      *dst_bw_element;
+    const char      *param_name;
+    const char      *param_value;
+};
+
+bool Bin_xml_creator::Make_xbw()
+{
+    if (!src->Initialize()) return false;
+
+    // 1. filling symbol tables----------------------
+    this->total_node_count = 4; // service elements!
+    this->total_param_count = 0;
+
+    void *root = src->getRoot();
+    ASSERT_NO_RET_FALSE(2052,root != nullptr);
+    // total_node_count, total_param_count
+    src->ForAllChildrenRecursively(FirstPassEvent,root,(void*)this,0);
+
+    CopySymbolTable() || MakeSymbolTable();
+    // 2. show stats---------------------------------
+    // I have completed 2x2 arrays
+    //const char              **symbol_table[SYMBOL_TABLES_COUNT];
+    //XML_Binary_Type_Stored  *symbol_table_types[SYMBOL_TABLES_COUNT];
+    //int                     symbol_count[SYMBOL_TABLES_COUNT];
+
+    DBG(std::cout << "total elements: " << total_node_count << "\n");
+    DBG(std::cout << "total params: " << total_param_count << "\n");
+    DBG(std::cout << ANSI_WHITE_HIGH "node names: " ANSI_RESET);
+    DBG(ShowSymbols(SYMBOL_TABLE_NODES));
+    DBG(std::cout << "\n" ANSI_WHITE_HIGH "param names:" ANSI_RESET);
+    DBG(ShowSymbols(SYMBOL_TABLE_PARAMS));
+    DBG(std::cout << "\n");
+
+    // 3. allocate and fill--------------------------
+    src->updateFileSize();
+
+    // 3.1 create
+    //BW_plugin(const char *filename = nullptr,Bin_xml_creator *bin_xml_creator = nullptr,int max_pool_size = 0x20000,uint32_t config_flags = 0);
+    BW_plugin W(dst,nullptr,MAX(0x40000,((src->getFileSize() >> 12)+1) << 16),BIN_WRITE_CFG_ALWAYS_CREATE_NEW); // 16*more - rounded up to 64kB blocks - should not grow!
+    // 3.2 initialize
+    ASSERT_NO_RET_FALSE(2053,W.Initialize());
+    // 3.3 tags
+    for(int i = 0;i < symbol_count[SYMBOL_TABLE_NODES];i++)
+        W.registerTag(i,symbol_table[SYMBOL_TABLE_NODES][i],static_cast<XML_Binary_Type>(symbol_table_types[SYMBOL_TABLE_NODES][i]));
+    // 3.4 attrs
+    for(int i = 0;i < symbol_count[SYMBOL_TABLE_PARAMS];i++)
+        W.registerAttr(i,symbol_table[SYMBOL_TABLE_PARAMS][i],static_cast<XML_Binary_Type>(symbol_table_types[SYMBOL_TABLE_PARAMS][i]));
+    // 3.5 symbols done
+    ASSERT_NO_RET_FALSE(2054,W.allRegistered());
+
+    // 3.6 fill data
+    MakingXBW_1node node_info;
+    node_info.creator = this;
+    node_info.bw      = &W;
+    node_info.src_element = root;
+    node_info.dst_bw_element = nullptr;
+    node_info.param_name = nullptr;
+    node_info.param_value = nullptr;
+
+    XStore2XBWEvent(root,&node_info);
+    ASSERT_NO_RET_FALSE(2059,node_info.dst_bw_element != nullptr);
+    W.setRoot(node_info.dst_bw_element);
+//typedef void (*OnElement_t)(void *element,void *userdata);
+
+
+
+    return true;
+}
 //-------------------------------------------------------------------------------------------------
 
 int32_t Bin_xml_creator::Pack()
@@ -809,7 +921,7 @@ void Bin_xml_creator::XStoreBinParamsEvent(const char *param_name,int param_id,X
     }
     else
     {
-        int size = XBT_Size(type,0); // empty size of type
+        int size = XBT_Size2(type,0); // empty size of type
         char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
         // bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
         
@@ -858,7 +970,7 @@ void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param
         type = static_cast<XML_Binary_Type>(xstore_data->creator->symbol_table_types[SYMBOL_TABLE_PARAMS][name_id]);
 
     type = XBT_Detect2(param_value,type);
-    int size = XBT_Size(type,0);
+    int size = XBT_Size2(type,0);
     char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
     if (size == 4 && XBT_FromString(param_value,type,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
     {
@@ -880,6 +992,157 @@ void Bin_xml_creator::XStoreChildrenEvent(void *element,void *userdata)
 {
     XStoreParamsData *xstore_data = reinterpret_cast<XStoreParamsData*>(userdata);
     *(xstore_data->children++) = xstore_data->creator->WriteNode(xstore_data->_wp,element) - xstore_data->_x;
+}
+
+void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
+// see Bin_xml_creator::WriteNode
+{
+// processing userdata paramater
+// success is indicated, when node_info->dst_bw_element is valid
+    MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
+    ASSERT_NO_RET(2071,node_info->src_element != nullptr);
+    ASSERT_NO_RET(2055,node_info->src_element == element);
+
+    Bin_xml_creator  *_this = node_info->creator;
+    ASSERT_NO_RET(2065,_this != nullptr);
+    BW_plugin        *bw = node_info->bw;
+    ASSERT_NO_RET(2066,bw != nullptr);
+    BW_pool         *pool = bw->getPool();
+    ASSERT_NO_RET(2067,pool != nullptr);
+
+    int id;
+    int flags = 0;
+    SymbolTableTypes st_type;
+    const char *value; 
+    XML_Binary_Type tag_type;
+    int value_size = 0;
+    bool from_text = false;
+    if (node_info->param_name != nullptr)
+    {
+        id = _this->Find(node_info->param_name,SYMBOL_TABLE_PARAMS); // SLOW
+        ASSERT_NO_RET(0,id >= 0);
+        st_type = SYMBOL_TABLE_PARAMS;
+        flags = BIN_WRITE_ATTR_FLAG;
+        value = node_info->param_value;
+        // TODO: prepare binary parameter support
+        from_text = true;
+        //printf("\t.%s = %s",node_info->param_name,node_info->param_value);
+    }
+    else
+    {
+        const char *node_name = _this->src->getNodeName(element);
+        ASSERT_NO_RET(2072,node_name != nullptr);
+
+        //printf("%s (%s)",node_name,pool->binary_xml_write_type_info);
+
+        id = _this->Find(node_name,SYMBOL_TABLE_NODES); // SLOW
+        ASSERT_NO_RET(2056,id >= 0);
+        st_type = SYMBOL_TABLE_NODES;
+        flags = BIN_WRITE_ELEMENT_FLAG;
+        value = _this->src->getNodeBinValue(element,tag_type,value_size);    // binary value referenced
+        if (value == nullptr)
+        {
+            value = _this->src->getNodeValue(element);
+            from_text = true;
+        }
+    }
+
+    if (from_text) // text analyse solution when binary is not available
+    {
+        tag_type = static_cast<XML_Binary_Type>(_this->symbol_table_types[st_type][id]);
+    // THIS IS BAD: I have value in string but need size of this value as binary value
+    // and this size can be obtained by decoding string. But decoding string is work and
+    // if size of result is only result, it is waste of CPU time.
+    // XBW is based on atomic memory allocation and expect multiple processes to allocate
+    // at the same time. So size must be known at time of allocation.
+    // There are 3 solutions:
+    // 1. when single process - allocate more enough and return unused space later
+    // 2. when multi process - measure size first and then allocate
+    // 3. provide some limited temporary memory which will for most cases save processing result and allows it to reuse
+    
+    // NOW SLOW but SAFE solution
+    // 1st pass - detecting real size
+        int size = XBT_SizeFromString(value,tag_type); // TODO: not finished BLOB detection!!!
+        int size2 = XBT_Size2(tag_type,size);
+        //int align = XBT_Align(tag_type);
+        
+        ASSERT_NO_EXIT_1(2069,bw->makeSpace(sizeof(BW_element)+size2+8/*max align*/));    // this is faster, as I know, where plugin is
+
+        BW_element *dst = node_info->dst_bw_element = pool->new_element(tag_type,size);
+        //printf("... %p[%d] (%d)\n",dst,size,dst->offset);
+        ASSERT_NO_EXIT_1(2074,dst != nullptr);
+        dst->identification = id;
+        dst->flags = flags;; // element and not attribute
+    // bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit);
+        char *wp = reinterpret_cast<char*>(dst+1);
+        char *limit = wp + size2;
+        ASSERT_NO_EXIT_1(2062,XBT_FromString(value,tag_type,&wp,limit));
+    }
+    else
+    { // xbw2xbw variant
+    }
+//-----------------------------------------------
+    if (st_type == SYMBOL_TABLE_NODES) 
+    {
+        //    if (!src->ForAllBinParams(XStoreBinParamsEvent,element,&xstore_data))
+        _this->src->ForAllParams(XBWStoreParamsEvent,element,userdata);
+        _this->src->ForAllChildren(XBWStoreChildrenEvent,element,userdata);
+    }
+    // node_info->dst_bw_element =  
+// OK, I have:
+// - id
+// - tag_type;
+// - value as string / binary value
+    
+    
+
+
+//    BW_element *bw_root = W.tag(Find(src->getNodeName(root),st_type));
+//    W.setRoot(bw_root);
+//    src->ForAllChildren(,root,
+//void Bin_json_plugin::ForAllChildren(OnElement_t on_element,void *parent,void *userdata)
+    
+}
+
+void Bin_xml_creator::XBWStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+    MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
+
+    ASSERT_NO_RET(2090,node_info->dst_bw_element != nullptr);
+
+    MakingXBW_1node subnode_info = *node_info;
+    subnode_info.src_element = element;
+    subnode_info.dst_bw_element = nullptr;
+    subnode_info.param_name = param_name;
+    subnode_info.param_value = param_value;
+
+    XStore2XBWEvent(element,&subnode_info);
+    
+    if (subnode_info.dst_bw_element != nullptr)
+    {
+        BW_pool *pool = node_info->bw->getPool();
+        //printf("\t%d.add(%d)\n",node_info->dst_bw_element->offset,subnode_info.dst_bw_element->offset);
+        node_info->dst_bw_element->add(subnode_info.dst_bw_element);
+    }
+}
+
+void Bin_xml_creator::XBWStoreChildrenEvent(void *element,void *userdata)
+{
+    MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
+
+    ASSERT_NO_RET(2090,node_info->dst_bw_element != nullptr);
+
+    MakingXBW_1node subnode_info = *node_info;
+    subnode_info.src_element = element;
+    subnode_info.dst_bw_element = nullptr;
+    XStore2XBWEvent(element,&subnode_info);
+
+    if (subnode_info.dst_bw_element != nullptr)
+    {
+        BW_pool *pool = node_info->bw->getPool();
+        //printf("\t%d.add(%d)\n",node_info->dst_bw_element->offset,subnode_info.dst_bw_element->offset);
+        node_info->dst_bw_element->add(subnode_info.dst_bw_element);
+    }
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1013,13 +1276,11 @@ int Bin_xml_creator::Find(const char *symbol,const int t)
 
 void Bin_xml_creator::ShowSymbols(const int t)
 {
-    std::cout << "[" << symbol_count[t] << "]";
-    if (symbol_count[t] == 0) return;
-    std::cout << " " << symbol_table[t][0];
-    for(int i = 1;i < symbol_count[t];i++)
+    std::cout << "[" << symbol_count[t] << "]: ";
+    for(int i = 0;i < symbol_count[t];i++)
     {
-        std::cout << "," << symbol_table[t][i];
-        std::cout << ":" << XML_BINARY_TYPE_NAMES[symbol_table_types[t][i]];
+        if (i > 0) std::cout << ", ";
+        std::cout << symbol_table[t][i] << ":" << XML_BINARY_TYPE_NAMES[symbol_table_types[t][i]];
     }
 }
 
@@ -1027,7 +1288,7 @@ void Bin_xml_creator::ShowSymbols(const int t)
 
 const char *Bin_xml_creator::getNodeName(tag_name_id_t name_id)
 {
-    assert(name_id > XTNR_LAST && name_id < symbol_count[SYMBOL_TABLE_NODES]);
+    ASSERT_NO_RET_NULL(2073,name_id > XTNR_LAST && name_id < symbol_count[SYMBOL_TABLE_NODES]);
     if (name_id >= 0)
         return symbol_table[SYMBOL_TABLE_NODES][name_id];
     else switch(name_id)
@@ -1042,7 +1303,7 @@ const char *Bin_xml_creator::getNodeName(tag_name_id_t name_id)
         case XTNR_PROCESSED : return "PROCESSED";
         case XTNR_ET_TECERA : return "ET_TECERA";
     }
-    return "?";
+    return nullptr;
 }
 
 const char *Bin_xml_creator::getNodeInfo(const XML_Item *X)

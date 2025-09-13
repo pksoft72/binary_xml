@@ -1,5 +1,5 @@
 #include "bin_xml_types.h"
-#include "macros.h"
+#include <macros.h>
 #include "utils.h"
 #include <assert.h>
 #include "bin_xml.h"
@@ -27,6 +27,11 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "UNIX_TIME64_MSEC",
     "UINT32",
     "UNIX_DATE",
+    "INT32_DECI",
+    "INT32_CENTI",
+    "INT32_MILI",
+    "INT32_MICRO",
+    "INT32_NANO",
     "!!!!"
 };
 
@@ -36,6 +41,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     if (*value == '\0') return XBT_NULL;
     int str_len = strlen(value);
     int digits = 0;
+    int decimals = 0;
     int hexadigits = 0;
     int negative = 0;
     int dots = 0;
@@ -44,6 +50,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     int others = 0;
     int exponent = 0;
     int spaces = 0;
+    int whites = 0;
     int exponent_pos = -1;
     bool overflow64 = false;
     
@@ -61,6 +68,8 @@ XML_Binary_Type XBT_Detect(const char *value)
             X0 = X;
             EX = EX*10 + (*p-'0');
             digits++;
+            if (dots > 0)
+                decimals++;
         }
         else if (*p >= 'a' && *p <= 'f')
             hexadigits++;
@@ -79,7 +88,12 @@ XML_Binary_Type XBT_Detect(const char *value)
         else if (*p == ':')
             colons++;
         else if (*p == ' ')
+        {
             spaces++;
+            whites++;
+        }
+        else if (*p == '\n' || *p == '\t' || *p == '\r')
+            whites++;
         else
             others++;
     }
@@ -93,6 +107,17 @@ XML_Binary_Type XBT_Detect(const char *value)
         if (negative == 0 && (X >> 32) == 0) return XBT_UINT32;
         if (negative == 0 && X > 0x7fffffffffffffff) return XBT_UINT64;
         return XBT_INT64;
+    }
+    if (digits > 0 && dots == 1 && hexadigits == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
+    {
+        if (negative == 0 && X <= 0x7fffffff || negative == 1 && X <= 0x80000000)
+        {
+            if (decimals == 1) return XBT_INT32_DECI;
+            if (decimals == 2) return XBT_INT32_CENTI;
+            if (decimals == 3) return XBT_INT32_MILI;
+            if (decimals <= 6) return XBT_INT32_MICRO;
+            if (decimals <= 9) return XBT_INT32_NANO;
+        }
     }
     if (digits > 0 && hexadigits-exponent == 0 && negative <= 2
         && dots <= 1 && dashes == 0 && colons == 0 && others == 0 && exponent <= 1)
@@ -109,9 +134,13 @@ XML_Binary_Type XBT_Detect(const char *value)
     if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
         value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')
         return XBT_UNIX_TIME;
-// DISABLED - not fully supported yet
-//  if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
-//      return XBT_HEX;
+// 2021-06-15 22:41:40.000
+    if (str_len == 23 && digits == 17 && spaces == 1 && negative == 2 && colons == 2 &&
+        value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
+        return XBT_UNIX_TIME64_MSEC;
+// 2024-12-22 - was DISABLED - not fully supported yet
+    if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
+        return XBT_HEX;
 
     return XBT_STRING;
 }
@@ -133,6 +162,18 @@ XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
     if (B == XBT_UNKNOWN) return A;
 
     if (B == A) return B;
+
+    if ((A == XBT_INT32 || A == XBT_INT32_DECI || A == XBT_INT32_CENTI || A == XBT_INT32_MILI || A == XBT_INT32_MICRO || A == XBT_INT32_NANO) &&
+        (B == XBT_INT32 || B == XBT_INT32_DECI || B == XBT_INT32_CENTI || B == XBT_INT32_MILI || B == XBT_INT32_MICRO || B == XBT_INT32_NANO))
+    {
+        if (A == XBT_INT32_NANO || B == XBT_INT32_NANO) return XBT_INT32_NANO;
+        if (A == XBT_INT32_MICRO || B == XBT_INT32_MICRO) return XBT_INT32_MICRO;
+        if (A == XBT_INT32_MILI || B == XBT_INT32_MILI) return XBT_INT32_MILI;
+        if (A == XBT_INT32_CENTI || B == XBT_INT32_CENTI) return XBT_INT32_CENTI;
+        if (A == XBT_INT32_DECI || B == XBT_INT32_DECI) return XBT_INT32_DECI;
+        return XBT_INT32;
+    }
+
 
     if ((B == XBT_INT32 || B == XBT_INT64 || B == XBT_FLOAT || B == XBT_DOUBLE) &&
         (A == XBT_INT32 || A == XBT_INT64 || A == XBT_FLOAT || A == XBT_DOUBLE))
@@ -168,7 +209,14 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
     {
         switch (A_type)
         {
-            case XBT_INT32:     RETURN_COMPARE_OF_TYPE(int32_t);
+            case XBT_INT32:     
+            case XBT_INT32_DECI:
+            case XBT_INT32_CENTI:     
+            case XBT_INT32_MILI:     
+            case XBT_INT32_MICRO:     
+            case XBT_INT32_NANO:     
+                                RETURN_COMPARE_OF_TYPE(int32_t);
+
             case XBT_UNIX_DATE: RETURN_COMPARE_OF_TYPE(int32_t);
             case XBT_UINT32:    RETURN_COMPARE_OF_TYPE(uint32_t);
             case XBT_UNIX_TIME: RETURN_COMPARE_OF_TYPE(uint32_t);
@@ -198,8 +246,10 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
 #undef RETURN_COMPARE_OF_TYPE
 }
 
-int XBT_Size(XML_Binary_Type type,int size)
+int XBT_Size2(XML_Binary_Type type,int size)
 // This function will return total size of type, when I need to store size bytes of information.
+// It contains also some envelope information needed for storing value
+// sizeof(BW_element) is not included
 {
     switch(type)
     {
@@ -212,49 +262,55 @@ int XBT_Size(XML_Binary_Type type,int size)
             ASSERT_NO_RET_N1(1069,type != XBT_VARIANT); // must be known
             break;
         case XBT_STRING:
-            return ++size; // terminating character
+            return size+1; // terminating character
         case XBT_BLOB:
-            return size + sizeof(int32_t);
-        case XBT_INT32:
-            ASSERT_NO_RET_N1(1070,size == 0);
-            return sizeof(int32_t);
-        case XBT_UINT32:
-            ASSERT_NO_RET_N1(1185,size == 0);
-            return sizeof(uint32_t);
-        case XBT_INT64:
-            ASSERT_NO_RET_N1(1071,size == 0);
-            return sizeof(int64_t);
-        case XBT_UINT64:
-            ASSERT_NO_RET_N1(1171,size == 0);
-            return sizeof(uint64_t);
-        case XBT_FLOAT:
-            ASSERT_NO_RET_N1(1072,size == 0);
-            return sizeof(float);
-        case XBT_DOUBLE:
-            ASSERT_NO_RET_N1(1073,size == 0);
-            return sizeof(double);
         case XBT_HEX:
             return size + sizeof(int32_t);
+        case XBT_INT32:
+            //printf("XBT_UINT32: size = %d\n",size);
+            ASSERT_NO_RET_N1(1070,size == 0 || size == 4);
+            return sizeof(int32_t);
+        case XBT_UINT32:
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
+            ASSERT_NO_RET_N1(1185,size == 0 || size == 4);
+            return sizeof(uint32_t);
+        case XBT_INT64:
+            ASSERT_NO_RET_N1(1071,size == 0 || size == 8);
+            return sizeof(int64_t);
+        case XBT_UINT64:
+            ASSERT_NO_RET_N1(1171,size == 0 || size == 8);
+            return sizeof(uint64_t);
+        case XBT_FLOAT:
+            ASSERT_NO_RET_N1(1072,size == 0 || size == 4);
+            return sizeof(float);
+        case XBT_DOUBLE:
+            ASSERT_NO_RET_N1(1073,size == 0 || size == 8);
+            return sizeof(double);
         case XBT_GUID:
-            ASSERT_NO_RET_N1(1074,size == 0);
+            ASSERT_NO_RET_N1(1074,size == 0 || size == 16);
             return 16;
         case XBT_SHA1:
-            ASSERT_NO_RET_N1(1075,size == 0);
+            ASSERT_NO_RET_N1(1075,size == 0 || size == 20);
             return 24;
         case XBT_UNIX_TIME:
-            ASSERT_NO_RET_N1(1076,size == 0);
+            //printf("XBT_UNIX_TIME: size = %d\n",size);
+            ASSERT_NO_RET_N1(1076,size == 0 || size == 4);
             return sizeof(uint32_t);
         case XBT_UNIX_DATE:
-            ASSERT_NO_RET_N1(2021,size == 0);
+            ASSERT_NO_RET_N1(2021,size == 0 || size == 4);
             return sizeof(int32_t);
         case XBT_IPv4:
-            ASSERT_NO_RET_N1(1077,size == 0);
+            ASSERT_NO_RET_N1(1077,size == 0 || size == 4);
             return 4;
         case XBT_IPv6:
-            ASSERT_NO_RET_N1(1078,size == 0);
+            ASSERT_NO_RET_N1(1078,size == 0 || size == 16);
             return 16;
         case XBT_UNIX_TIME64_MSEC:
-            ASSERT_NO_RET_N1(1172,size == 0);
+            ASSERT_NO_RET_N1(1172,size == 0 || size == 8);
             return sizeof(uint64_t);
     }
     return 0;
@@ -275,6 +331,11 @@ int XBT_Align(XML_Binary_Type type)
         case XBT_BLOB:
         case XBT_HEX:
         case XBT_INT32:
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
         case XBT_UINT32:
         case XBT_FLOAT:
         case XBT_GUID:
@@ -295,7 +356,7 @@ int XBT_Align(XML_Binary_Type type)
 
 bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *limit)
 {
-    int value_size = XBT_Size(type,size);
+    int value_size = XBT_Size2(type,size);
     int align_size = XBT_Align(type);
     if (limit - *_wp < value_size + align_size) 
     {
@@ -326,11 +387,43 @@ bool XBT_Copy(const char *src,XML_Binary_Type type,int size,char **_wp,char *lim
     return true; // OK
 }
 
+static int32_t str2dec(const char *src,int decimals)
+{
+    bool neg = (*src == '-');
+    if (neg) src++;
+
+    int32_t value = 0;
+    while (*src >= '0' && *src <= '9')
+    {
+        value = value * 10 + (*src) - '0';
+        src++;
+    }
+    if (*src == '.') // decimal point
+    {
+        src++;
+        while (*src >= '0' && *src <= '9' && decimals > 0)
+        {
+            value = value * 10 + (*src) - '0';
+            src++;
+            decimals--;
+        }
+    }
+    while (decimals > 0)
+    {
+        value *= 10;
+        decimals--;
+    }
+
+    if (neg) return -value;
+    return value;
+}
+
 bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
 {
     switch (type)
     {
         case XBT_NULL:
+            if (src == nullptr) return true; // OK, should be empty
             if (strlen(src) == 0) return true;
             fprintf(stderr,"%s: Conversion of value '%s' to binary representation is not defined!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
             break;
@@ -340,6 +433,33 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             *reinterpret_cast<int32_t*>(*_wp) = atoi(src);
             *_wp += sizeof(int32_t);
             return true;
+        
+        case XBT_INT32_DECI:
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,1);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_CENTI:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,2);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_MILI:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,3);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_MICRO:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,6);
+            *_wp += sizeof(int32_t);
+            return true;
+        case XBT_INT32_NANO:     
+            AA(*_wp);
+            *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,9);
+            *_wp += sizeof(int32_t);
+            return true;
+
         case XBT_INT64:
             {
                 int64_t v;
@@ -347,6 +467,15 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 AA8(*_wp);
                 *reinterpret_cast<int64_t*>(*_wp) = v;
                 *_wp += sizeof(int64_t);
+                return true;
+            }
+        case XBT_UINT64:
+            {
+                uint64_t v;
+                ASSERT_NO_RET_FALSE(2124,ScanUInt64(src,v));
+                AA8(*_wp);
+                *reinterpret_cast<uint64_t*>(*_wp) = v;
+                *_wp += sizeof(uint64_t);
                 return true;
             }
             
@@ -361,6 +490,20 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 *_wp += scanned;
                 return scanned == 20;
             }
+        case XBT_HEX:
+            {
+                AA(*_wp);
+                int32_t *size = reinterpret_cast<int32_t*>(*_wp);
+                *_wp += sizeof(int32_t);
+                *size = ScanHex(src,reinterpret_cast<uint8_t *>(*_wp),limit - *_wp);
+                *_wp += *size;
+                return true;
+            }
+        case XBT_FLOAT:
+            AA(*_wp);
+            *reinterpret_cast<float*>(*_wp) = atof(src);
+            *_wp += sizeof(float);
+            return true;
         case XBT_UNIX_TIME:
             {
                 AA(*_wp);
@@ -372,6 +515,19 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
                 }
                 *reinterpret_cast<uint32_t*>(*_wp) = tm0;
                 *_wp += sizeof(uint32_t);
+                return true;
+            }
+        case XBT_UNIX_TIME64_MSEC:
+            {
+                AA(*_wp);
+                int64_t tm0;
+                if (!ScanUnixTime64msec(src,tm0))
+                {
+                    fprintf(stderr,"UNIX_TIME64_MSEC: Conversion of value '%s' to binary representation failed!" ANSI_RESET_LF,src);
+                    return false;
+                }
+                *reinterpret_cast<int64_t*>(*_wp) = tm0;
+                *_wp += sizeof(int64_t);
                 return true;
             }
         case XBT_UNIX_DATE:
@@ -396,6 +552,45 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
     return false;
 }
 
+int XBT_SizeFromString(const char *src,XML_Binary_Type type)
+// returns data size without envelope
+{
+    switch (type)
+    {
+        case XBT_NULL: return 0;
+        case XBT_INT32: 
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
+            return 4;
+        case XBT_INT64: return 8;
+        case XBT_FLOAT: return 4;
+        case XBT_DOUBLE: return 8;
+        case XBT_STRING: return strlen(src);
+        case XBT_SHA1: return 20;
+        case XBT_GUID: return 16;
+        case XBT_UNIX_DATE: return 4;
+        case XBT_UNIX_TIME: return 4;
+        case XBT_UNIX_TIME64_MSEC: return 8;
+        case XBT_IPv4: return 4;
+        case XBT_IPv6: return 16;
+        case XBT_UINT32: return 4;
+        case XBT_UINT64: return 8;
+
+        case XBT_BLOB:
+            ASSERT_NO_RET_N1(2057,NOT_IMPLEMENTED);
+            break;
+        case XBT_HEX:
+            return (strlen(src)+1) >> 1;
+        default:
+            fprintf(stderr,"%s: Size detection of '%s' to binary representation is not implemented!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
+//            assert(false);
+            return -1;
+    }
+    return false;
+}
 const char *XBT_ToString(XML_Binary_Type type,const char *data)
 {
     int align_size = XBT_Align(type);
@@ -414,6 +609,11 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_STRING: 
             return reinterpret_cast<const char *>(data); 
         case XBT_INT32:
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:     
+        case XBT_INT32_MILI:     
+        case XBT_INT32_MICRO:     
+        case XBT_INT32_NANO:     
         case XBT_UINT32: 
         case XBT_INT64:
         case XBT_UINT64:
@@ -443,6 +643,30 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
                 char *dst = XBT_Buffer(dst_size);
                 ASSERT_NO_RET_NULL(1205,dst != nullptr);
                 return base64_encode(src,size,dst,dst_size);
+            }
+        case XBT_HEX:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                if (size == 0) return nullptr;
+
+                const char *src = reinterpret_cast<const char*>(data)+4;   
+
+                int dst_size = size * 2 + (size >> 4)+2; // each 16 bytes makes a line
+                char *dst = XBT_Buffer(dst_size);
+                ASSERT_NO_RET_NULL(2125,dst != nullptr);
+                char *d = dst;
+                while (size > 0)
+                {
+                    int line_size = MIN(size,16);
+                    Hex2Str(src,line_size,d);
+
+                    src += line_size;
+                    d += line_size*2;
+                    *(d++) = '\n';
+                    size -= line_size;
+                }
+                *(d++) = '\0';
+                return dst;
             }
         default:
             LOG_ERROR("Unsupported type %d",type);
@@ -491,6 +715,52 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
 
             snprintf(dst,dst_size,"%d",*reinterpret_cast<const int32_t*>(data));
             return strlen(dst);
+        case XBT_INT32_DECI:
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%d",V / 10,ABS(V) % 10);
+                return strlen(dst);
+            }
+        case XBT_INT32_CENTI:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%02d",V / 100,ABS(V) % 100);
+                return strlen(dst);
+            }
+        case XBT_INT32_MILI:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%03d",V / 1000,ABS(V) % 1000);
+                return strlen(dst);
+            }
+        case XBT_INT32_MICRO:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%06d",V / 1000000,ABS(V) % 1000000);
+                return strlen(dst);
+            }
+        case XBT_INT32_NANO:     
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(int32_t);
+                int32_t V = *reinterpret_cast<const int32_t*>(data);
+
+                snprintf(dst,dst_size,"%d.%09d",V / 1000000000,ABS(V) % 1000000000);
+                return strlen(dst);
+            }
+
         case XBT_UINT32: 
             if (offset > 0) return 0;
             offset += sizeof(uint32_t);
@@ -616,6 +886,30 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 offset += chunk;
                 return strlen(dst);
             }
+        case XBT_HEX:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                const char *src = reinterpret_cast<const char*>(data)+4;   
+                if (offset >= (int)size) 
+                {
+                    dst[0] = '\0';
+                    return 0;
+                }
+            // use offset - only here
+                size -= offset;
+                src  += offset;
+
+                if (size > 16) size = 16; // limited output
+                ASSERT_NO_RET_N1(2126,size*16+2 <= dst_size);
+
+                Hex2Str(src,size,dst);
+
+                int hex_len = strlen(dst);
+                dst[hex_len]   = '\n';
+                dst[hex_len+1] = '\0';
+                offset += size;
+                return hex_len+2;
+            }
         case XBT_SHA1:
             {
                 if (offset >= 20) return 0;
@@ -694,6 +988,81 @@ bool XBT_Equal(XML_Binary_Data_Ref A,XML_Binary_Data_Ref B)
     if (A.size != B.size) return false;
     return memcmp(A.data,B.data,A.size) == 0;
 }
+//-------------------------------------------------------------------------------------------------
+XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type dst_type)
+// TODO implement XBT_Convertable
+{
+    if (src.type == dst_type) return XBT_CONVERTABLE;
+    switch(dst_type)
+    {
+        case XBT_NULL: 
+            return XBT_LOOSE_CONVERTABLE; // probably intentional - NULL will always loose value
+        case XBT_VARIANT: 
+            return XBT_NONCONVERTABLE; // not supported -> but could extract type and try to convert containing 
+        case XBT_STRING: 
+            if (src.type == XBT_BLOB || src.type == XBT_HEX) return XBT_NONCONVERTABLE; // TODO: check presence of 0 character
+            return XBT_CONVERTABLE;
+        case XBT_BLOB: 
+            return XBT_CONVERTABLE; // all can be converted to BLOB
+        case XBT_INT32:
+            if (src.type == XBT_UINT32) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src.type == XBT_INT64) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src.type == XBT_UINT64) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src.type == XBT_STRING) return XBT_NONCONVERTABLE; // TODO: try convert and check range
+            if (src.type == XBT_FLOAT) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src.type == XBT_DOUBLE) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src.type == XBT_UNIX_TIME) return XBT_CONVERTABLE; // TODO: directly compatible
+            if (src.type == XBT_UNIX_DATE) return XBT_CONVERTABLE; // TODO: directly compatible
+            if (src.type == XBT_UNIX_TIME64_MSEC) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src.type == XBT_INT32_DECI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_CENTI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_MILI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_MICRO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src.type == XBT_INT32_NANO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            return XBT_NONCONVERTABLE;
+        case XBT_INT32_DECI:
+        case XBT_INT32_CENTI:
+        case XBT_INT32_MILI:
+        case XBT_INT32_MICRO:
+        case XBT_INT32_NANO:
+        case XBT_UINT32:
+        case XBT_INT64:
+        case XBT_UINT64:
+        case XBT_FLOAT:
+        case XBT_DOUBLE:
+        case XBT_HEX:
+        case XBT_GUID:
+        case XBT_SHA1:
+        case XBT_UNIX_TIME:
+        case XBT_UNIX_DATE:
+        case XBT_UNIX_TIME64_MSEC:
+        case XBT_IPv4:
+        case XBT_IPv6:
+            // TODO: fill conversion checks
+            return XBT_NONCONVERTABLE;
+    // These cannot be converted
+        case XBT_UNKNOWN:return XBT_NONCONVERTABLE;
+        case XBT_LAST: return XBT_NONCONVERTABLE;
+
+#if 0
+// Array types are not supported now
+// Encoded as BLOB of basic value
+    XBT_INT8    = 18,
+    XBT_UINT8   = 19,
+    XBT_INT16   = 20,
+    XBT_UINT16  = 21
+    XBT_ARRAY   = 127   // when used this bitmask, data consist of many values of base type
+#endif
+    }
+    return XBT_NONCONVERTABLE; // default
+}
+
+bool XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Data_Ref dst)
+{
+    return false;
+}
+
+//-------------------------------------------------------------------------------------------------
 
 char *g_output_buffer = nullptr;
 int   g_output_buffer_size = 0;
@@ -827,7 +1196,9 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_DATE,"1970-01-01", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_DATE,"1969-12-31", "ffffffff") && ok;
     
+    ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"1970-01-01 00:00:00.000", "00000000") && ok;
     return ok;
 }
+
 
 }

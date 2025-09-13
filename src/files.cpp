@@ -8,6 +8,7 @@
 #include <alloca.h>
 #include <errno.h>
 #include <time.h>
+#include <dirent.h> // readdir ...
 
 bool force_directory(const char *directory, mode_t mode)
 {
@@ -53,6 +54,8 @@ off_t file_getsize(const char *filename)
 
 time_t file_gettime(const char *filename)
 {
+    if (filename == nullptr) return -1; // NULL
+    if (*filename == '\0') return -1; // empty name
     struct stat file_info;
     int err = stat(filename,&file_info);
     if (err != 0)
@@ -64,5 +67,84 @@ time_t file_gettime(const char *filename)
         return -1; // failed
     }
     return file_info.st_mtim.tv_sec;
+}
+
+bool file_exists(const char *filename)
+{
+    if (filename == nullptr) return false; // NULL
+    if (*filename == '\0') return false; // empty name
+
+    struct stat file_info;
+    int err = stat(filename,&file_info);
+    if (err != 0)
+    {
+        if (errno == ENOENT)
+            return false; // file not exists - no message
+
+        ERRNO_SHOW(2123,"stat",filename);   
+        return false; // failed
+    }
+    return true;
+}
+
+bool scan_dir(const char *base_dir,void *userdata,on_file_event on_file)
+{
+    DIR *dir = opendir(base_dir);
+    if (dir == nullptr)
+    {
+        ERRNO_SHOW(1101,"opendir",base_dir);
+        return false;
+    }
+    for(;;)
+    {
+        errno = 0;
+        struct dirent *dirent = readdir(dir);
+        if (dirent == nullptr) break;
+
+        // typedef bool (*on_file_event)(const char *directory,const char *filename,void *username,uint8_t d_type);
+        if (dirent->d_name[0] == '.')
+        {
+            if (dirent->d_name[1] == '\0') continue; // skip .
+            else if (dirent->d_name[1] == '.' && dirent->d_name[2] == '\0') continue; // skip ..
+        }
+        if (!on_file(base_dir,dirent->d_name,userdata,dirent->d_type)) break;
+
+/*        if (*dirent->d_name == '.') continue; // hidden files .*, current dir and upper dir
+        switch (dirent->d_type)
+        {
+            case DT_DIR:
+                {
+                    char dir[PATH_MAX];
+                    snprintf(dir,sizeof(dir),"%s/%s",base_dir,dirent->d_name);
+                    dir[PATH_MAX-1] = '\0';
+                    if (!ScanDir(dir)) return false;
+                    break;
+                }
+            case DT_REG:
+                {
+                    int name_len = strlen(dirent->d_name);
+                    if (name_len < 3) continue;
+                    if (strcmp(dirent->d_name+name_len-3,".xb") != 0) continue;
+                    ASSERT_NO_RET_FALSE(1103,files_count < MAX_XB_FILES);
+                    snprintf(files[files_count].filename,PATH_MAX,"%s/%s",base_dir,dirent->d_name);
+                    files[files_count].filename[PATH_MAX-1] = '\0';
+                    files_count++;
+                    break;
+                }
+            default:
+                break;
+        }*/
+    }
+    if (errno != 0)
+    {
+        ERRNO_SHOW(1102,"readdir",base_dir);
+        return false;
+    }
+    if (closedir(dir) != 0)
+    {
+        ERRNO_SHOW(2025,"closedir",base_dir);
+        return false;
+    }    
+    return true;
 }
 

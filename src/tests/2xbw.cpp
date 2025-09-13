@@ -11,7 +11,7 @@
 
 int main(int argc,char **argv)
 {
-    printf("2xb\n");
+    printf("2xbw\n");
 
     
     for(int i = 1;i < argc;i++)
@@ -20,10 +20,11 @@ int main(int argc,char **argv)
             return (pklib_xml::XBT_Test() ? 0 : 1);
 
         // extension change is done in constructor
-        pklib_xml::Bin_xml_creator XC(argv[1],argv[1],pklib_xml::XBTARGET_XB);
-        if (!XC.Make_xb())
+        pklib_xml::Bin_xml_creator XC(argv[1],argv[1],pklib_xml::XBTARGET_XBW);
+        if (!XC.Make_xbw())
             return 1;
     }
     
     return 0; // ok
 }
+

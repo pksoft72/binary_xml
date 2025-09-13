@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+TAG NAMES:
+	Area : XBT_NULL
+	Deleted : XBT_UNIX_TIME
+	EMail : XBT_STRING
+	EMailConfirmed : XBT_UNIX_TIME
+	FullName : XBT_STRING
+	GMail : XBT_STRING
+	IPLast : XBT_STRING
+	LoginLast : XBT_UNIX_TIME
+	Logins : XBT_INT32
+	Password : XBT_NULL
+	PublicName : XBT_STRING
+	Right : XBT_STRING
+	Rights : XBT_NULL
+	Stats : XBT_NULL
+	User : XBT_NULL
+	Users : XBT_NULL
+
+ATTR NAMES:
+	id : XBT_INT32
+	name : XBT_STRING
+-->
+<Users>
+	<User id="0">
+		<PublicName>anonymous user</PublicName>
+		<Rights>
+			<Area name="/">
+				<Right name="task">V</Right>
+				<Right name="comment">V</Right>
+				<Right name="vote">V</Right>
+			</Area>
+		</Rights>
+	</User>
+	<User id="1">
+		<PublicName>default user</PublicName>
+		<Rights>
+			<Area name="/">
+				<Right name="task">V</Right>
+				<Right name="comment">CVRud</Right>
+				<Right name="vote">CVRud</Right>
+			</Area>
+		</Rights>
+	</User>
+	<User id="1234">
+		<PublicName>pk</PublicName>
+		<FullName>Petr Kundrata</FullName>
+		<EMail>pksoft@atlas.cz</EMail>
+		<EMailConfirmed>2022-12-22 09:06:31</EMailConfirmed>
+		<GMail>petr.kundrata72@gmail.com</GMail>
+		<Password/>
+		<Deleted>2090-12-22 00:00:00</Deleted>
+		<Rights>
+			<Area name="/">
+				<Right name="task">VR</Right>
+				<Right name="comment">CVud</Right>
+				<Right name="vote">CVrud</Right>
+			</Area>
+		</Rights>
+		<Stats>
+			<Logins>15</Logins>
+			<LoginLast>2022-12-22 09:45:15</LoginLast>
+			<IPLast>192.168.6.74</IPLast>
+		</Stats>
+	</User>
+</Users>

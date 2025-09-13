@@ -14,6 +14,12 @@ enum SymbolTableTypes
     SYMBOL_TABLES_COUNT
 };
 
+enum Bin_xml_creator_target
+{
+    XBTARGET_XB = 0,
+    XBTARGET_XBW
+};
+
 const int MAX_SYMBOL_COUNT = 32768; // symbols are stored into 16bit words, negative values are reserved
 const int TAB_SIZE = 4;
 
@@ -53,7 +59,7 @@ public:
     off_t   getFileSize() {return file_size;}
     void    updateFileSize();
     const char *getFilename() {return filename;}
-    void setFilename(const char *filename,const char *extension);
+    void setFilename(const char *filename,const char *extension,const char *target_dir = nullptr);
     void setFilenameFmt(const char *filename,...);
 
     void print();
@@ -78,6 +84,7 @@ public:
 protected:
     bool        src_allocated;
     
+    Bin_xml_creator_target target;
     const char  *dst;
     int32_t     dst_file_size;
 
@@ -94,13 +101,16 @@ protected:
 // incremental addition
     int     dst_file;
 public:
-    Bin_xml_creator(const char *src,const char *dst);
-    Bin_xml_creator(Bin_src_plugin *src,const char *dst);
-    Bin_xml_creator(Bin_src_plugin *src);
+    Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator_target target = XBTARGET_XB);
+    Bin_xml_creator(Bin_src_plugin *src,const char *dst,Bin_xml_creator_target target = XBTARGET_XB);
+    Bin_xml_creator(Bin_src_plugin *src,Bin_xml_creator_target target = XBTARGET_XB);
     virtual ~Bin_xml_creator();
 
     bool DoAll();
-//        bool PrepareDestination();  
+       bool Make_xb();
+       bool Make_xbw();
+        bool CopySymbolTable();
+        bool MakeSymbolTable();
     bool Append(void *element);
 protected:
         static void FirstPassEvent(void *element,void *userdata,int deep);
@@ -124,6 +134,9 @@ protected:
                 static void XStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata);
                 static void XStoreChildrenEvent(void *element,void *userdata);
 
+                static void XStore2XBWEvent(void *element,void *userdata);
+                static void XBWStoreParamsEvent(const char *param_name,const char *param_value,void *element,void *userdata);
+                static void XBWStoreChildrenEvent(void *element,void *userdata);
             const char *WriteNode(char **_wp,void *element);
 
         virtual int32_t Pack();
