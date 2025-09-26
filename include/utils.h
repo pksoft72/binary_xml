@@ -7,6 +7,7 @@
 extern const char HEX[16+1];
 
 typedef char char40_t[40];  // YYYYMMDD HHMMSS.sss
+                            // 1c3e3c04-47a6-4fce-b6a7-7f3c2549156d
 
 off_t FileGetSize(const char *filename);
 off_t FileGetSizeByFd(int fd);

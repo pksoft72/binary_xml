@@ -23,6 +23,14 @@ typedef enum {
 	JSMN_PRIMITIVE = 4
 } jsmntype_t;
 
+#define JSMNTYPE2STR(t) \
+	((t) == JSMN_UNDEFINED ? "UNDEFINED" :\
+	((t) == JSMN_OBJECT ? "OBJECT" :\
+	((t) == JSMN_ARRAY ? "ARRAY" :\
+	((t) == JSMN_STRING ? "STRING" :\
+	((t) == JSMN_PRIMITIVE ? "PRIMITIVE" :\
+	"???"())))))
+
 enum jsmnerr {
 	/* Not enough tokens were provided */
 	JSMN_ERROR_NOMEM = -1,
