@@ -54,6 +54,8 @@ off_t file_getsize(const char *filename)
 
 time_t file_gettime(const char *filename)
 {
+    if (filename == nullptr) return -1; // NULL
+    if (*filename == '\0') return -1; // empty name
     struct stat file_info;
     int err = stat(filename,&file_info);
     if (err != 0)
@@ -69,6 +71,9 @@ time_t file_gettime(const char *filename)
 
 bool file_exists(const char *filename)
 {
+    if (filename == nullptr) return false; // NULL
+    if (*filename == '\0') return false; // empty name
+
     struct stat file_info;
     int err = stat(filename,&file_info);
     if (err != 0)

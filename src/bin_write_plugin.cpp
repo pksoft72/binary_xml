@@ -194,7 +194,7 @@ BW_element*     BW_element::attrNull(int16_t id)
     if (this == nullptr) return nullptr;
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1985,attr_type == XBT_NULL || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1985,XBT_NULL,XBT_VARIANT);
     
     if (attr_type == XBT_NULL)
     {
@@ -219,7 +219,7 @@ BW_element*     BW_element::attrStr(int16_t id,const char *value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1050,attr_type == XBT_STRING || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1050,XBT_STRING,XBT_VARIANT);
     
     int len = strlen(value);
 
@@ -288,7 +288,7 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1084,attr_type == XBT_BLOB || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1084,XBT_BLOB,XBT_VARIANT);
     
     if (attr_type == XBT_BLOB)
     {
@@ -319,7 +319,7 @@ BW_element*     BW_element::attrHEX(int16_t id,const void *value,int32_t size)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(2128,attr_type == XBT_HEX || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(2128,XBT_HEX,XBT_VARIANT);
     
     if (attr_type == XBT_HEX)
     {
@@ -351,7 +351,8 @@ BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1088,attr_type == XBT_INT32);// || attr_type == XBT_VARIANT);
+
+    CHECK_TYPE_RET_NULL(1088,XBT_INT32);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1089,attr != nullptr);
@@ -373,7 +374,7 @@ BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1189,attr_type == XBT_UINT32);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1189,XBT_UINT32);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1190,attr != nullptr);
@@ -396,7 +397,7 @@ BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1167,attr_type == XBT_INT64 || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1167,XBT_INT64,XBT_VARIANT);
 
     if (attr_type == XBT_INT64)
     {
@@ -420,7 +421,7 @@ BW_element  *BW_element::attrUInt64(int16_t id,uint64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1169,attr_type == XBT_UINT64 || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1169,XBT_UINT64,XBT_VARIANT);
 
     if (attr_type == XBT_UINT64)
     {
@@ -444,7 +445,7 @@ BW_element*     BW_element::attrFloat(int16_t id,float value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1961,attr_type == XBT_FLOAT);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1961,XBT_FLOAT);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1962,attr != nullptr);
@@ -464,7 +465,7 @@ BW_element*     BW_element::attrDouble(int16_t id,double value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1963,attr_type == XBT_DOUBLE);// || attr_type == XBT_VARIANT);
+    CHECK_TYPE_RET_NULL(1963,XBT_DOUBLE);// || attr_type == XBT_VARIANT);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
     ASSERT_NO_RET_NULL(1964,attr != nullptr);
@@ -498,7 +499,7 @@ BW_element*     BW_element::attrTime(int16_t id,time_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1163,attr_type == XBT_UNIX_TIME || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1163,XBT_UNIX_TIME,XBT_VARIANT);
 
     if (attr_type == XBT_UNIX_TIME)
     {
@@ -525,7 +526,7 @@ BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    ASSERT_NO_RET_NULL(1931,attr_type == XBT_UNIX_TIME64_MSEC || attr_type == XBT_VARIANT);
+    CHECK_TYPE2_RET_NULL(1931,XBT_UNIX_TIME64_MSEC,XBT_VARIANT);
 
     if (attr_type == XBT_UNIX_TIME64_MSEC)
     {
@@ -2725,6 +2726,80 @@ BW_plugin *BW_plugins::getPlugin(BW_pool *pool)
         if (plugins[i]->getPool() == pool)
             return plugins[i];
     return nullptr;
+}
+
+struct ConversionStats
+{
+    int bad_value_types;
+    int loose_conversions;
+    int unconvertable_values;
+    int fail_count;
+};
+
+bool BW_plugin::CheckAndUpdateTypes(bool loose_conversion_enabled)
+// loose_conversion_enabled --- time64 --> time_t when time is not .000
+{
+    ConversionStats stats;
+    memset(&stats,0,sizeof(stats));    
+
+    // 1st pass will evaluate
+    ForAllChildrenRecursively(s_OnCheckTypes,reinterpret_cast<BW_element*>(getRoot()),&stats,0);
+//    virtual void ForAllParams(OnParam_t on_param,void *element,void *userdata);
+
+    if (stats.bad_value_types == 0) return true; // all is OK - no conversion is needed
+    if (stats.unconvertable_values > 0)
+    {
+        LOG_ERROR("There are %d values to convert but %d are unconvertable!",stats.bad_value_types,stats.unconvertable_values);
+        return false;
+    }
+    if (!loose_conversion_enabled && stats.loose_conversions > 0)
+    {
+        LOG_ERROR("There are %d values to convert but %d would loose in conversion!",stats.bad_value_types,stats.unconvertable_values);
+        return false;
+    }
+    // 2nd pass will convert
+    ForAllChildrenRecursively(s_OnUpdateTypes,reinterpret_cast<BW_element*>(getRoot()),&stats,0);
+    // update symbol table
+    return stats.fail_count == 0;
+}
+
+void BW_plugin::s_OnCheckTypes(void *element,void *userdata,int deep)
+{
+    BW_element *tag = reinterpret_cast<BW_element*>(element);
+    ConversionStats *stats = reinterpret_cast<ConversionStats*>(userdata);
+    
+    XML_Binary_Type  expected_type; // TODO find type used in registration
+
+    if (tag->value_type != expected_type)
+    {
+        XML_Binary_Data_Ref data_ref = tag->getData();
+        switch (XBT_Convertable(data_ref,expected_type))
+        {
+            case XBT_CONVERTABLE: 
+                break; // OK
+            case XBT_LOOSE_CONVERTABLE: 
+                stats->loose_conversions++;
+                break; // OK
+            case XBT_NONCONVERTABLE:
+                stats->unconvertable_values++;
+                break;
+        }
+
+        stats->bad_value_types++;
+    }
+}
+
+void BW_plugin::s_OnUpdateTypes(void *element,void *userdata,int deep)
+{
+    // TODO implement XBT_Convert
+}
+
+void BW_plugin::s_OnCheckParamTypes(const char *param_name,const char *param_value,void *element,void *userdata)
+{
+}
+
+void BW_plugin::s_OnUpdateParamTypes(const char *param_name,const char *param_value,void *element,void *userdata)
+{
 }
 
 }

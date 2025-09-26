@@ -46,6 +46,28 @@ namespace pklib_xml {
 // BW = Bin Write
 #define ROUND32UP(ptr) do { (ptr) = (((ptr)+3) >> 2) << 2; } while(0) // round up
 #define ROUND64UP(ptr) do { (ptr) = (((ptr)+7) >> 3) << 3; } while(0) // round up
+    
+#define CHECK_TYPE_RET_NULL(_code,_type) do { if (attr_type != (_type))\
+         {\
+            FAIL(_code);\
+            std::cerr << ANSI_RED_BRIGHT "[" << (_code) << "] " << WORK_ID << ":" << __FUNCTION__<< ":" << __LINE__ << ":" ANSI_RED_DARK << \
+            pool->getTagName(this->identification) << "." <<\
+            pool->getAttrName(id) << \
+            " has type " << XBT2STR(attr_type) <<\
+            " but " << XBT2STR(_type) << " is expected!" ANSI_RESET_LF;\
+            return nullptr;\
+         }} while (false)
+
+#define CHECK_TYPE2_RET_NULL(_code,_type1,_type2) do { if (attr_type != (_type1) && attr_type != (_type2))\
+         {\
+            FAIL(_code);\
+            std::cerr << ANSI_RED_BRIGHT "[" << (_code) << "] " << WORK_ID << ":" << __FUNCTION__<< ":" << __LINE__ << ":" ANSI_RED_DARK << \
+            pool->getTagName(this->identification) << "." <<\
+            pool->getAttrName(id) << \
+            " has type " << XBT2STR(attr_type) <<\
+            " but " << XBT2STR(_type1) << " or " << XBT2STR(_type2) << " is expected!" ANSI_RESET_LF;\
+            return nullptr;\
+         }} while (false)
 
 typedef int32_t BW_offset_t;                // pool + this value -> pointer
 
@@ -303,7 +325,14 @@ public: // Bin_src_plugin
     
     virtual int getSymbolCount(SymbolTableTypes table);
     virtual const char *getSymbol(SymbolTableTypes table,int idx,XML_Binary_Type &type);
-    
+
+    bool CheckAndUpdateTypes(bool loose_conversion_enabled);
+private:
+        static void s_OnCheckTypes(void *element,void *userdata,int deep);
+        static void s_OnUpdateTypes(void *element,void *userdata,int deep);
+
+        static void s_OnCheckParamTypes(const char *param_name,const char *param_value,void *element,void *userdata);
+        static void s_OnUpdateParamTypes(const char *param_name,const char *param_value,void *element,void *userdata);
 };
 
 } // namespace pklib_xml
