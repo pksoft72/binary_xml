@@ -1147,6 +1147,8 @@ const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
             return XTNR2str(search_id);
         else if (&pool->params == this)
             return XPNR2str(search_id);
+        else 
+            return "???";
     }
     ASSERT_NO_RET_NULL(2033,search_id >= 0 && search_id <= max_id); // TODO: some negative ID are supported
 
