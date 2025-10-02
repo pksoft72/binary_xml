@@ -891,4 +891,22 @@ const char *XTNR2str(int16_t name)
     }
 }
 
+const char *XPNR2str(int16_t name)
+{
+    switch(name)
+    {
+        case XPNR_NULL : return "NULL";
+        case XPNR_NAME : return "name";
+        case XPNR_HASH : return "hash";
+        case XPNR_MODIFIED : return "modified";
+        case XPNR_COUNT : return "count";
+        case XPNR_FORMAT_VERSION : return "version";
+        case XPNR_TYPE_COUNT : return "type_count";
+        case XPNR_ID : return "id";
+        case XPNR_AUTHOR : return "author";
+        case XPNR_TIME_MS : return "time_ms";
+        default:            return "__reserved__";
+    }
+}
+
 } // pklib_xml::

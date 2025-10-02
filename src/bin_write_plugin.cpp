@@ -1141,6 +1141,15 @@ int16_t BW_symbol_table_16B::getByName(BW_pool *pool,const char *name,BW_offset_
 const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
 {
     ASSERT_NO_RET_NULL(2032,pool != nullptr);
+    if (search_id < 0)
+    {
+        if (&pool->tags == this)        
+            return XTNR2str(search_id);
+        else if (&pool->params == this)
+            return XPNR2str(search_id);
+        else 
+            return "???";
+    }
     ASSERT_NO_RET_NULL(2033,search_id >= 0 && search_id <= max_id); // TODO: some negative ID are supported
 
     char *POOL = reinterpret_cast<char*>(pool);
@@ -1332,28 +1341,13 @@ const char*     BW_pool::getAttrName(int16_t id)
     ASSERT_NO_RET_NULL(1066,this != nullptr);
     ASSERT_NO_RET_NULL(1060,params.index != 0);                // index not initialized 
 
-    switch (id)
-    {
-        case XPNR_NULL : return "NULL";
-        case XPNR_NAME : return "name";
-        case XPNR_HASH : return "hash";
-        case XPNR_MODIFIED : return "modified";
-        case XPNR_COUNT : return "count";
-        case XPNR_FORMAT_VERSION : return "version";
-        case XPNR_TYPE_COUNT : return "type_count";
-        case XPNR_ID : return "id";
-        case XPNR_AUTHOR : return "author";
-        case XPNR_TIME_MS : return "time_ms";
+    if (id < 0) return XPNR2str(id);
 
-        default:
-        {
-           ASSERT_NO_RET_NULL(1061,id >=0 && id <= params.max_id);    // id out of range - should be in range, because range is defined by writing application
-           BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+params.index);
-           BW_offset_t offset = elements[id];
-           ASSERT_NO_RET_NULL(1062,offset != 0);                                       // tag id should be correctly registered!
-           return reinterpret_cast<const char *>(THIS+ offset + 3);  
-        }
-    }
+    ASSERT_NO_RET_NULL(1061,id >=0 && id <= params.max_id);    // id out of range - should be in range, because range is defined by writing application
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(THIS+params.index);
+    BW_offset_t offset = elements[id];
+    ASSERT_NO_RET_NULL(1062,offset != 0);                                       // tag id should be correctly registered!
+    return reinterpret_cast<const char *>(THIS+ offset + 3);  
 }
 
 bool   BW_pool::makeTable(BW_symbol_table_16B &table)

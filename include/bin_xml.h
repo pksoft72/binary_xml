@@ -217,6 +217,7 @@ public:
 std::ostream& operator<<(std::ostream& os, const hash192_t& h);
 
 const char *XTNR2str(int16_t name);
+const char *XPNR2str(int16_t name);
 
 } // pklib_xml::
 #endif
