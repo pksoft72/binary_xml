@@ -73,6 +73,7 @@ bool file_exists(const char *filename)
 {
     if (filename == nullptr) return false; // NULL
     if (*filename == '\0') return false; // empty name
+    if (strcmp(filename,"???") == 0) return false; // file_exists::114::14 - Bad address:Error #14 EFAULT while stat on ???
 
     struct stat file_info;
     int err = stat(filename,&file_info);
