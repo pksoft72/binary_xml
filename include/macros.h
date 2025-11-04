@@ -17,6 +17,9 @@
 #define INT_NULL_VALUE -0x80000000
 #define INT16_NULL_VALUE -0x8000
 
+#define IFNULL2(a,b) ((a) == INT_NULL_VALUE ? (b) : (a))
+#define IFNULL3(a,b,c) ((a) != INT_NULL_VALUE ? (a) : ((b) != INT_NULL_VALUE ? (b) : (c)))
+
 #define MAX_FAILURES 16 // 0 is first failure, 1 second ... it should be enough for make some stack of failure
 
 typedef struct 
