@@ -49,7 +49,7 @@ include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(/usr/include)
 
-file(GLOB binary_xml_SOURCES src/*.cpp)
+#file(GLOB binary_xml_SOURCES src/*.cpp)
 file(GLOB binary_xml_SOURCES src/*.cpp src/jsmn/jsmn.c)
 file(GLOB binary_xml_HEADERS include/binary_xml/*.h)
 #message("Found: ${binary_xml_SOURCES}")
