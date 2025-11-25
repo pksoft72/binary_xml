@@ -69,6 +69,8 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
     #define STRCPY(dst,src) do {if ((src) != nullptr) {strncpy((dst),(src),sizeof(dst)-1);dst[sizeof(dst)-1] = '\0';} else dst[0] = '\0';} while(0)
 #endif
 #define STRCPY_LINE(dst,src) do {const char *_NL = strchr((src),'\n');int _size = sizeof(dst);if (_NL != nullptr) _size = _NL - (src);strncpy(dst,src,_size);dst[sizeof(dst)-1] = '\0';} while(0)
+#define STR_TERMINATE(_s) (_s)[sizeof(_s)-1] = '\0'
+#define STR_FMT(_name,_size,...) char _name[_size];snprintf(_name,_size,__VA_ARGS__);_name[_size-1] = '\0'
 #define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
 #define LOG_ERROR(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_RED_BRIGHT "Error: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
@@ -90,6 +92,7 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
     #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
 
+#define ARR_SIZE(_arr) (sizeof(_arr) / sizeof(_arr[0]))
 
 #ifndef ABS
     #define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
