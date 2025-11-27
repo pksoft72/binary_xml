@@ -39,6 +39,7 @@ XML_Binary_Type XBT_Detect(const char *value)
 {
     if (value == nullptr) return XBT_NULL;
     if (*value == '\0') return XBT_NULL;
+    int hex_prefix = 0;
     int str_len = strlen(value);
     int digits = 0;
     int decimals = 0;
@@ -53,14 +54,24 @@ XML_Binary_Type XBT_Detect(const char *value)
     int whites = 0;
     int exponent_pos = -1;
     bool overflow64 = false;
-    
+
     int len = 0;
     uint64_t X = 0,X0 = 0,EX = 0;
+
+
+    if (p[0] == '0' && p[1] == 'x')
+    {
+        hex_prefix++;
+        p += 2;
+    }
+
     for(const char *p = value;*p != '\0';p++)
     {
         if (*p == '-')
+        {
             if (len == exponent_pos+1) negative++;
             else dashes++;
+        }
         else if (*p >= '0' && *p <= '9')
         {
             X = X*10 + (*p-'0');
@@ -100,7 +111,7 @@ XML_Binary_Type XBT_Detect(const char *value)
     if (str_len == 10 && digits == 8 && value[4] == '-' && value[7] == '-')
         return XBT_UNIX_DATE;
     if (digits > 0 && digits <= 19 && hexadigits == 0 && negative <= 1 
-        && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
+            && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     {
         if (negative == 0 && X <= 0x7fffffff) return XBT_INT32;
         if (negative == 1 && X <= 0x80000000) return XBT_INT32;
@@ -108,6 +119,7 @@ XML_Binary_Type XBT_Detect(const char *value)
         if (negative == 0 && X > 0x7fffffffffffffff) return XBT_UINT64;
         return XBT_INT64;
     }
+//    if (hex_prefix == 1 && digits+hexdigits > 0 && hexdigits+digits <= 16 && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     if (digits > 0 && dots == 1 && hexadigits == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     {
         if (negative == 0 && X <= 0x7fffffff || negative == 1 && X <= 0x80000000)
@@ -120,25 +132,25 @@ XML_Binary_Type XBT_Detect(const char *value)
         }
     }
     if (digits > 0 && hexadigits-exponent == 0 && negative <= 2
-        && dots <= 1 && dashes == 0 && colons == 0 && others == 0 && exponent <= 1)
+            && dots <= 1 && dashes == 0 && colons == 0 && others == 0 && exponent <= 1)
     {
         if (EX > 38 || digits >= 8) return XBT_DOUBLE;  
         else return XBT_FLOAT;
     }
     if (digits+hexadigits == 40 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0)
     {
-//        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
+        //        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
-// 2021-06-15 22:41:40
+    // 2021-06-15 22:41:40
     if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
-        value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')
+            value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')
         return XBT_UNIX_TIME;
-// 2021-06-15 22:41:40.000
+    // 2021-06-15 22:41:40.000
     if (str_len == 23 && digits == 17 && spaces == 1 && negative == 2 && colons == 2 &&
-        value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
+            value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
         return XBT_UNIX_TIME64_MSEC;
-// 2024-12-22 - was DISABLED - not fully supported yet
+    // 2024-12-22 - was DISABLED - not fully supported yet
     if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
         return XBT_HEX;
 
