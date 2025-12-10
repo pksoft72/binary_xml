@@ -2022,7 +2022,7 @@ void BW_plugin::importParams(XB_reader *src)
 bool BW_plugin::allRegistered()
 {
     ASSERT_NO_RET_FALSE(1142,makeSpace(BW2_INITIAL_FILE_SIZE));
-    BW_offset_t names_limit = pool->allocator;
+//    BW_offset_t names_limit = pool->allocator;
     if (check_only && pool->tags.index != 0 && pool->params.index != 0)
         return (check_failures == 0); // no problems?
 
@@ -2767,6 +2767,7 @@ bool BW_plugin::CheckAndUpdateTypes(bool loose_conversion_enabled)
 
 void BW_plugin::s_OnCheckTypes(void *element,void *userdata,int deep)
 {
+#if 0
     BW_element *tag = reinterpret_cast<BW_element*>(element);
     ConversionStats *stats = reinterpret_cast<ConversionStats*>(userdata);
     
@@ -2789,6 +2790,7 @@ void BW_plugin::s_OnCheckTypes(void *element,void *userdata,int deep)
 
         stats->bad_value_types++;
     }
+#endif
 }
 
 void BW_plugin::s_OnUpdateTypes(void *element,void *userdata,int deep)

@@ -59,10 +59,10 @@ XML_Binary_Type XBT_Detect(const char *value)
     uint64_t X = 0,X0 = 0,EX = 0;
 
 
-    if (p[0] == '0' && p[1] == 'x')
+    if (value[0] == '0' && value[1] == 'x')
     {
         hex_prefix++;
-        p += 2;
+        value += 2;
     }
 
     for(const char *p = value;*p != '\0';p++)
@@ -122,7 +122,7 @@ XML_Binary_Type XBT_Detect(const char *value)
 //    if (hex_prefix == 1 && digits+hexdigits > 0 && hexdigits+digits <= 16 && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     if (digits > 0 && dots == 1 && hexadigits == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     {
-        if (negative == 0 && X <= 0x7fffffff || negative == 1 && X <= 0x80000000)
+        if ((negative == 0 && X <= 0x7fffffff) || (negative == 1 && X <= 0x80000000))
         {
             if (decimals == 1) return XBT_INT32_DECI;
             if (decimals == 2) return XBT_INT32_CENTI;
@@ -912,7 +912,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 src  += offset;
 
                 if (size > 16) size = 16; // limited output
-                ASSERT_NO_RET_N1(2126,size*16+2 <= dst_size);
+                ASSERT_NO_RET_N1(2126,(int)size*16+2 <= dst_size);
 
                 Hex2Str(src,size,dst);
 

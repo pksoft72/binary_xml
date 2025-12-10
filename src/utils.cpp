@@ -614,7 +614,6 @@ char *UnixTime642Str(int64_t value,char *dst)
     char *p = UnixDate2Str(value / (1000 * 60*60*24),dst);
     p += strlen(p);
     value %= 1000 * 60*60*24;
-    int h = 
     sprintf(p," %02d:%02d:%02d.%03d",
         (int)((value / (1000 * 60 * 60)) % 24),
         (int)((value / (1000 * 60)) % 60),

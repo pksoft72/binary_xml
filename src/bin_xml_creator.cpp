@@ -1120,7 +1120,7 @@ void Bin_xml_creator::XBWStoreParamsEvent(const char *param_name,const char *par
     
     if (subnode_info.dst_bw_element != nullptr)
     {
-        BW_pool *pool = node_info->bw->getPool();
+        //BW_pool *pool = node_info->bw->getPool();
         //printf("\t%d.add(%d)\n",node_info->dst_bw_element->offset,subnode_info.dst_bw_element->offset);
         node_info->dst_bw_element->add(subnode_info.dst_bw_element);
     }
@@ -1139,7 +1139,7 @@ void Bin_xml_creator::XBWStoreChildrenEvent(void *element,void *userdata)
 
     if (subnode_info.dst_bw_element != nullptr)
     {
-        BW_pool *pool = node_info->bw->getPool();
+        //BW_pool *pool = node_info->bw->getPool();
         //printf("\t%d.add(%d)\n",node_info->dst_bw_element->offset,subnode_info.dst_bw_element->offset);
         node_info->dst_bw_element->add(subnode_info.dst_bw_element);
     }
