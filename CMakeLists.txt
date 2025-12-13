@@ -1,9 +1,13 @@
-cmake_minimum_required (VERSION 3.16.0)
+cmake_minimum_required (VERSION 3.21)
 project (binary_xml)
+set_property(GLOBAL PROPERTY CXX_STANDARD 98)
 
 #-----------------------------------------------------------------------------------------------
 
-set(CMAKE_CXX_COMPILER g++)
+message("binary_xml.CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
+message("binary_xml.CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+
+#set(CMAKE_CXX_COMPILER g++)
 add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
 #find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
@@ -18,13 +22,13 @@ set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
 
 if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-    message("TARGET_DEVICE: ${TARGET_DEVICE} ... part of big project")
-    message("CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+    message("binary_xml.TARGET_DEVICE: ${TARGET_DEVICE} ... part of big project")
+    message("binary_xml.CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
     #part of big project
     add_compile_options(-DBIN_WRITE_PLUGIN)
 else()
     if (CMAKE_SYSTEM_NAME STREQUAL "CYGWIN")
-        message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+        message("binary_xml.CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
         set(TARGET_DEVICE cygwin)
         add_compile_options(-DBIN_WRITE_PLUGIN)
     else()
