@@ -1,4 +1,4 @@
-#include "bin_xml.h"
+#include <binary_xml/bin_xml.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -8,13 +8,13 @@
 #include <assert.h>
 #include <iostream>
 
-#include "jsmn/jsmn.h"
+#include <binary_xml/jsmn/jsmn.h>
 
-#include "macros.h"
-#include "files.h"
-#include "bin_xml.h"
+#include <binary_xml/macros.h>
+#include <binary_xml/files.h>
+#include <binary_xml/bin_xml.h>
 
-#include "bin_json_plugin.h"
+#include <binary_xml/bin_json_plugin.h>
 
 using namespace pklib_xml;
 

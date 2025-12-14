@@ -1,16 +1,16 @@
-#include "bin_xml_packer.h"
+#include <binary_xml/bin_xml_packer.h>
 #include <assert.h>
 #include <string.h>
 
 #include <iostream>
 #include <iomanip>  // cout wide symbols ..
 //#include <openssl/sha.h>
-#include "missings.h"   // sha.h ...
+#include <binary_xml/missings.h>   // sha.h ...
 
-#include "bin_xml_plugin.h"
-#include "bin_json_plugin.h"
-#include "bin_write_plugin.h"
-#include "ANSI.h"
+#include <binary_xml/bin_xml_plugin.h>
+#include <binary_xml/bin_json_plugin.h>
+#include <binary_xml/bin_write_plugin.h>
+#include <binary_xml/ANSI.h>
 
 #define DBG(x) //x
 #define DBG2(x) //x

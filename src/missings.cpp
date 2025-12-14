@@ -1,10 +1,12 @@
-#include "missings.h"
+#include <binary_xml/missings.h>
+
 #include <string.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "macros.h"
+
+#include <binary_xml/macros.h>
 
 const SHA1_t SHA1_NULL = {0};
 

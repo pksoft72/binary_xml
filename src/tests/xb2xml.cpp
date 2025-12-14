@@ -3,11 +3,11 @@
 #include <string.h>
 #include <assert.h>
 
-#include "files.h"
-#include "macros.h"
+#include <binary_xml/files.h>
+#include <binary_xml/macros.h>
 
-#include "bin_xml.h"
-#include "bin_write_plugin.h"
+#include <binary_xml/bin_xml.h>
+#include <binary_xml/bin_write_plugin.h>
 
 int main(int argc,char **argv)
 {

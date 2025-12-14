@@ -1,10 +1,10 @@
 #include <assert.h>
 
-#include "macros.h"
-#include "bin_xml.h"
-#include "bin_xml_creator.h"
-#include "bin_xml_packer.h"
-#include "bin_write_plugin.h"
+#include <binary_xml/macros.h>
+#include <binary_xml/bin_xml.h>
+#include <binary_xml/bin_xml_creator.h>
+#include <binary_xml/bin_xml_packer.h>
+#include <binary_xml/bin_write_plugin.h>
 #include "test-data.h"
 
 using namespace pklib_xml;
@@ -163,13 +163,13 @@ int test_5()
 {
     printf("creating test5.xb ... ");
     BW_plugin W("test5.xbw",nullptr,0x40000,0);
-    ASSERT_NO_RET_(1193,W.Initialize(),1);
-    ASSERT_NO_RET_(1194,MakeDictionary(W),2);
+    ASSERT_NO_RET_(2137,W.Initialize(),1);
+    ASSERT_NO_RET_(2138,MakeDictionary(W),2);
     W.setRoot(W.tag(TAG_TEST)             // <main><person><name>Petr</name><surname>Kundrata</surname></person></main>
             ->attrInt32(ATTR_ID,5)
             ->attrTime64(ATTR_UPDATED,time(NULL)*(int64_t)1000 + 789)
             );
-    ASSERT_NO_RET_(1195,Bin_xml_packer::Convert(&W,nullptr),3);
+    ASSERT_NO_RET_(2139,Bin_xml_packer::Convert(&W,nullptr),3);
     printf("%d B\n",(int)file_getsize("test5.xb"));
     return 0;
 }

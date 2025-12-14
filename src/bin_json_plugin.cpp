@@ -1,6 +1,6 @@
-#include "bin_json_plugin.h"
-#include "macros.h"
-#include "jsmn/jsmn.h"
+#include <binary_xml/bin_json_plugin.h>
+#include <binary_xml/macros.h>
+#include <binary_xml/jsmn/jsmn.h>
 
 #include <sys/mman.h>
 #include <sys/types.h>

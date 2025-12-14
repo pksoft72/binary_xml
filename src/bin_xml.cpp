@@ -1,7 +1,7 @@
-#include "bin_xml.h"
+#include <binary_xml/bin_xml.h>
 
-#include "macros.h"
-#include "files.h"
+#include <binary_xml/macros.h>
+#include <binary_xml/files.h>
 
 #include <iomanip>  // cout wide symbols ..
 #include <unistd.h>
@@ -12,10 +12,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-#include "utils.h"
+#include <binary_xml/utils.h>
 #include <assert.h>
 
-#include "bin_xml_packer.h" // for autoconversion
+#include <binary_xml/bin_xml_packer.h> // for autoconversion
 
 
 namespace pklib_xml

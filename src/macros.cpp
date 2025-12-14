@@ -1,4 +1,4 @@
-#include "macros.h"
+#include <binary_xml/macros.h>
 
 static ProcessDebugStatus_t local_debug_status = {0};
 

@@ -1,5 +1,5 @@
-#include "utils.h"
-#include "macros.h"
+#include <binary_xml/utils.h>
+#include <binary_xml/macros.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <fcntl.h>
@@ -158,7 +158,7 @@ off_t FileGetSize(const char *filename)
         if (errno == ENOENT)
             return -1; // file not exists - no message
 
-        ERRNO_SHOW(0,"fstat",filename); 
+        ERRNO_SHOW(2136,"fstat",filename); 
         return -1; // failed
     }
     if (S_ISDIR(file_info.st_mode)) 

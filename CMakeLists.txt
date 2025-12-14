@@ -1,8 +1,13 @@
 cmake_minimum_required (VERSION 3.21)
-project (binary_xml)
-set_property(GLOBAL PROPERTY CXX_STANDARD 98)
+
+project(binary_xml 
+        DESCRIPTION "binary representation of XML optimized for fast access"
+        LANGUAGES CXX C)
+
+set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
 #-----------------------------------------------------------------------------------------------
+
 
 message("binary_xml.CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
 message("binary_xml.CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
@@ -18,7 +23,6 @@ find_package (LibXml2)
 
 
 
-set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
 
 if (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
@@ -54,12 +58,13 @@ include_directories(${CMAKE_BINARY_DIR})
 include_directories(/usr/include)
 
 #file(GLOB binary_xml_SOURCES src/*.cpp)
-file(GLOB binary_xml_SOURCES src/*.cpp src/jsmn/jsmn.c)
+file(GLOB binary_xml_SOURCES src/*.cpp src/*/*.c)
 file(GLOB binary_xml_HEADERS include/binary_xml/*.h)
 #message("Found: ${binary_xml_SOURCES}")
 #message("openssl: ${OPENSSL_INCLUDE_DIR}")
 #message("libxml2: ${LIBXML2_INCLUDE_DIR}")
 #message("binary_xml: ${binary_xml_SOURCES}")
+message("binary_xml_SOURCES: ${binary_xml_SOURCES}")
 
 add_library(binary_xml SHARED ${binary_xml_SOURCES})
     target_include_directories(binary_xml PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

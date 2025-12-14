@@ -12,3 +12,5 @@ build
 t.xml
 *.md.html
 install_manifest.txt
+*.so
+*.a

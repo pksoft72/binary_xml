@@ -1,9 +1,9 @@
-#include "bin_xml_creator.h"
-#include "bin_xml.h"
-#include "files.h"
-#include "utils.h"
-#include "ANSI.h"
-#include "macros.h"
+#include <binary_xml/bin_xml_creator.h>
+#include <binary_xml/bin_xml.h>
+#include <binary_xml/files.h>
+#include <binary_xml/utils.h>
+#include <binary_xml/ANSI.h>
+#include <binary_xml/macros.h>
 
 #include <alloca.h>
 #include <string.h>
@@ -18,7 +18,7 @@
 #include <limits.h> // PATH_MAX
 #include <iostream>
 
-#include "bin_write_plugin.h"
+#include <binary_xml/bin_write_plugin.h>
 
 #define DBG(x) x
 
@@ -1020,7 +1020,7 @@ void Bin_xml_creator::XStore2XBWEvent(void *element,void *userdata)
     if (node_info->param_name != nullptr)
     {
         id = _this->Find(node_info->param_name,SYMBOL_TABLE_PARAMS); // SLOW
-        ASSERT_NO_RET(0,id >= 0);
+        ASSERT_NO_RET(2134,id >= 0);
         st_type = SYMBOL_TABLE_PARAMS;
         flags = BIN_WRITE_ATTR_FLAG;
         value = node_info->param_value;
@@ -1130,7 +1130,7 @@ void Bin_xml_creator::XBWStoreChildrenEvent(void *element,void *userdata)
 {
     MakingXBW_1node *node_info = reinterpret_cast<MakingXBW_1node*>(userdata);
 
-    ASSERT_NO_RET(2090,node_info->dst_bw_element != nullptr);
+    ASSERT_NO_RET(2135,node_info->dst_bw_element != nullptr);
 
     MakingXBW_1node subnode_info = *node_info;
     subnode_info.src_element = element;

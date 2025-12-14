@@ -1,4 +1,4 @@
-#include "bin_xml_plugin.h"
+#include <binary_xml/bin_xml_plugin.h>
 #include <assert.h>
 
 namespace pklib_xml {

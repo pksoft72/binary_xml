@@ -1,8 +1,8 @@
-#include "bin_xml.h"
-#include "bin_xml_creator.h"
-#include "bin_xml_packer.h"
-#include "bin_xml_types.h"
-#include "macros.h"
+#include <binary_xml/bin_xml.h>
+#include <binary_xml/bin_xml_creator.h>
+#include <binary_xml/bin_xml_packer.h>
+#include <binary_xml/bin_xml_types.h>
+#include <binary_xml/macros.h>
 
 #include <stdio.h>
 #include <string.h> // strcpy...

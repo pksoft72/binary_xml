@@ -1,6 +1,6 @@
-#include "files.h"
+#include <binary_xml/files.h>
 
-#include "macros.h" // xb variant
+#include <binary_xml/macros.h> // xb variant
 #include "strings.h"
 
 #include <string.h>
