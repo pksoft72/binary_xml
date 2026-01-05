@@ -6,11 +6,9 @@ project(binary_xml
 
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 
-#-----------------------------------------------------------------------------------------------
 
-
-message("binary_xml.CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
-message("binary_xml.CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+#message("binary_xml.CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
+#message("binary_xml.CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 #set(CMAKE_CXX_COMPILER g++)
 add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
@@ -47,32 +45,28 @@ else()
     file(MAKE_DIRECTORY build)
     
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/${TARGET_DEVICE}")
-
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
 
-include_directories(${LIBXML2_INCLUDE_DIR})
-include_directories(${CMAKE_BINARY_DIR})
-include_directories(/usr/include)
 
-#file(GLOB binary_xml_SOURCES src/*.cpp)
-file(GLOB binary_xml_SOURCES src/*.cpp src/*/*.c)
-file(GLOB binary_xml_HEADERS include/binary_xml/*.h)
-#message("Found: ${binary_xml_SOURCES}")
+file(GLOB         binary_xml_SOURCES CONFIGURE_DEPENDS src/*.cpp src/jsmn/*.c)
+file(GLOB_RECURSE binary_xml_HEADERS CONFIGURE_DEPENDS SHARED include/binary_xml/*.h)
 #message("openssl: ${OPENSSL_INCLUDE_DIR}")
 #message("libxml2: ${LIBXML2_INCLUDE_DIR}")
-#message("binary_xml: ${binary_xml_SOURCES}")
-message("binary_xml_SOURCES: ${binary_xml_SOURCES}")
+#message("binary_xml_SOURCES: ${binary_xml_SOURCES}")
 
 add_library(binary_xml SHARED ${binary_xml_SOURCES})
+    target_include_directories(binary_xml PUBLIC /usr/include)
+    target_include_directories(binary_xml PUBLIC ${LIBXML2_INCLUDE_DIR})
     target_include_directories(binary_xml PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(binary_xml ${LIBXML2_LIBRARIES} ${LIBZ_LIBRARIES})
 
 add_library(binary_xml_static ${binary_xml_SOURCES})
+    target_include_directories(binary_xml_static PUBLIC /usr/include)
+    target_include_directories(binary_xml_static PUBLIC ${LIBXML2_INCLUDE_DIR})
     target_include_directories(binary_xml_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    target_link_libraries(binary_xml ${LIBXML2_LIBRARIES} ${LIBZ_LIBRARIES})
+    target_link_libraries(binary_xml_static PUBLIC ${LIBXML2_LIBRARIES} ${LIBZ_LIBRARIES})
 
 
 
