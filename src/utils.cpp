@@ -884,11 +884,61 @@ int  GetInt(const char *p)
     
     bool neg = (*p == '-');
     if (neg) p++;
-    if (!isdigit(*p)) return INT_NULL_VALUE;
 
     int x = 0;
-    while (isdigit(*p))
-        x = x *10 + (*(p++) - '0');
+    if (p[0] == '0' && p[1] == 'x') // HEXADECIMAL !
+    {
+        p += 2;
+        if (!isxdigit(*p)) return INT_NULL_VALUE;
+        
+        while (true)
+        {
+            switch(*p)
+            {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    x = (x << 4) + *p - '0';
+                    break;
+                case 'A':
+                case 'B':
+                case 'C':
+                case 'D':
+                case 'E':
+                case 'F':
+                    x = (x << 4) + *p - 'A' + 10;
+                    break;
+                case 'a':
+                case 'b':
+                case 'c':
+                case 'd':
+                case 'e':
+                case 'f':
+                    x = (x << 4) + *p - 'a' + 10;
+                    break;
+                default:
+                    return neg ? -x : x;
+            
+                     
+            }
+            p++;
+        }
+    }
+    else
+    {
+
+        if (!isdigit(*p)) return INT_NULL_VALUE;
+
+        while (isdigit(*p))
+            x = x *10 + (*(p++) - '0');
+    }
     
     return neg ? -x : x;
     
