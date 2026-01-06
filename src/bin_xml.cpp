@@ -185,7 +185,11 @@ const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,
 
 XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X) 
 {
-    XML_Binary_Data_Ref D = {type: XBT_UNKNOWN, data: nullptr, size: 0}; // D as Data
+    XML_Binary_Data_Ref D;
+    D.type = XBT_UNKNOWN;
+    D.data = nullptr;
+    D.size = 0; // D as Data
+
     if (this == nullptr || X == nullptr) return D;
     D.type = static_cast<XML_Binary_Type>(type);
     if (XBT_IS_4(type)) 
@@ -471,7 +475,11 @@ const int64_t *XML_Item::getInt64Ptr() const
 
 XML_Binary_Data_Ref XML_Item::getData()
 {
-    XML_Binary_Data_Ref R = {type: XBT_UNKNOWN,data: nullptr,size: 0};
+    XML_Binary_Data_Ref R;
+    R.type = XBT_UNKNOWN;
+    R.data = nullptr;
+    R.size = 0;
+
     if (this == nullptr) return R;
     CHECK_AA_THIS;
 
