@@ -187,6 +187,37 @@ BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
     return this;
 }
 
+BW_element*     BW_element::retype(XML_Binary_Type new_type)
+{
+    if (this == nullptr) return nullptr;
+    if (this->value_type == new_type) return this; // the same
+
+    if (XBT_IS_4(new_type))
+    {
+        if (XBT_IS_4(this->value_type))
+            this->value_type = new_type;
+        else
+            return nullptr; // failed
+    }
+    else if (XBT_IS_8(new_type))
+    {
+        if (XBT_IS_8(this->value_type))
+            this->value_type = new_type;
+        else
+            return nullptr; // failed
+    }
+    else if (XBT_IS_VARSIZE(new_type))
+    {
+        if (XBT_IS_VARSIZE(this->value_type))
+            this->value_type = new_type;
+        else
+            return nullptr; // failed
+    }
+    else
+        return nullptr; // failed
+
+    return this; // OK
+}
 
 
 BW_element*     BW_element::attrNull(int16_t id)
@@ -830,7 +861,12 @@ int32_t *BW_element::getInt32()
 
 //    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
-    if (attr_type != XBT_INT32)
+    if (attr_type != XBT_INT32 && 
+        attr_type != XBT_INT32_MILI &&
+        attr_type != XBT_INT32_DECI &&
+        attr_type != XBT_INT32_CENTI &&
+        attr_type != XBT_INT32_MICRO &&
+        attr_type != XBT_INT32_NANO)
     {
         LOG_ERROR("[1173] +%d %s'type = %d = %s but XBT_INT32 is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
         return nullptr;
@@ -2233,14 +2269,14 @@ BW_element* BW_plugin::tagHEX(int16_t id,const void *value,int32_t size)
 BW_element* BW_plugin::tagInt32(int16_t id,int32_t value)
 {
     XML_Binary_Type tag_type = pool->getTagType(id);
-    ASSERT_NO_RET_NULL(1130,tag_type == XBT_INT32 || tag_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(1130,XBT_IS_4(tag_type) || tag_type == XBT_VARIANT);
 
     ASSERT_NO_RET_NULL(1956,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(int32_t)));
 
-    BW_element* result = pool->new_element(XBT_INT32,0);
+    BW_element* result = pool->new_element(tag_type,0);
     ASSERT_NO_RET_NULL(2043,result != nullptr);
     
-    result->init(pool,id,XBT_INT32,BIN_WRITE_ELEMENT_FLAG);
+    result->init(pool,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
 
     *reinterpret_cast<int32_t*>(result+1) = value;
     return result;

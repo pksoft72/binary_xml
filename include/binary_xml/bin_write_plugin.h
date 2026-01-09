@@ -181,7 +181,7 @@ public:
     BW_element* add(BW_element *tag);
     BW_element* remove(BW_element *tag);
     BW_element* replace(BW_element *old_value,BW_element *new_value);
-
+    BW_element* retype(XML_Binary_Type new_type); // only "compatible" (=same size) types
 
     BW_element  *attrNull(int16_t id);
     BW_element  *attrStr(int16_t id,const char *value);
