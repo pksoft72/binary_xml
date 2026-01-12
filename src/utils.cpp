@@ -435,7 +435,7 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
         value += MONTH_OFFSET[month-1];
     value += day - 1;
 
-    if (value > MAX_DAY)
+    if (value > (uint32_t)MAX_DAY)
     {
         fprintf(stderr,"Date %s exceed 32 bit unsigned int! Please use different type.",beg);
         return false;

@@ -8,7 +8,11 @@
 
 #include <binary_xml/macros.h>
 
+#if __GNUC__ < 5 // GNU 4.7.2 has problem
+const SHA1_t SHA1_NULL = {{0}};
+#else
 const SHA1_t SHA1_NULL = {0};
+#endif
 
 void qsort_r2(void *base, int nmemb, int size,
                   int (*compar)(const void *, const void *, void *),
