@@ -71,6 +71,7 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #define STRCPY_LINE(dst,src) do {const char *_NL = strchr((src),'\n');int _size = sizeof(dst);if (_NL != nullptr) _size = _NL - (src);strncpy(dst,src,_size);dst[sizeof(dst)-1] = '\0';} while(0)
 #define STR_TERMINATE(_s) (_s)[sizeof(_s)-1] = '\0'
 #define STR_FMT(_name,_size,...) char _name[_size];snprintf(_name,_size,__VA_ARGS__);_name[_size-1] = '\0'
+#define DELETE_STR(x) if ((x) != nullptr) {delete [] (x);(x) = nullptr;}
 #define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
 #define LOG_ERROR(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_RED_BRIGHT "Error: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
