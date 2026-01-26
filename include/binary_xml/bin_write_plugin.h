@@ -206,6 +206,9 @@ public:
     BW_element  *attrGet(int16_t id);
     
     BW_element  *tagGet(int16_t id);
+    int32_t     *tagGetInt32(int16_t id); // if (this == nullptr) has undefined behavior in C++!!!!
+    char        *tagGetStr(int16_t id);
+
     BW_element  *tag(int16_t id); // find or create
     BW_element  *tagSetInt32(int16_t id,int32_t value);
     BW_element  *tagSetInt64(int16_t id,int64_t value);
@@ -223,6 +226,7 @@ public:
     BW_element  *findChildByTag(int16_t tag_id);
     BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
     BW_element  *findAttr(int16_t attr_id);
+    int32_t     *findAttrInt32(int16_t attr_id);
     BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);
     bool         EqualKeys(XB_reader &xb,XML_Item *src);
 

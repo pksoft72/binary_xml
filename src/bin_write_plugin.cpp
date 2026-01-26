@@ -713,6 +713,20 @@ BW_element  *BW_element::tagGet(int16_t id)
     return nullptr;
 }
 
+int32_t *BW_element::tagGetInt32(int16_t id)
+{
+    BW_element *bwe = tagGet(id);
+    if (bwe == nullptr) return nullptr;
+    return bwe->getInt32();
+}
+
+char *BW_element::tagGetStr(int16_t id)
+{
+    BW_element *bwe = tagGet(id);
+    if (bwe == nullptr) return nullptr;
+    return bwe->getStr();
+}
+
 BW_element  *BW_element::tag(int16_t id) // find or create
 {
     if (this == nullptr) return nullptr;
@@ -1031,6 +1045,13 @@ BW_element  *BW_element::findAttr(int16_t attr_id)
         attr = BWE(attr->next);
     }
     return nullptr;
+}
+
+int32_t  *BW_element::findAttrInt32(int16_t attr_id)
+{
+    BW_element *bwe = findAttr(attr_id);
+    if (bwe == nullptr) return nullptr;
+    return bwe->getInt32();
 }
 
 BW_element*  BW_element::CopyKeys(XB_reader &xb,XML_Item *src)
