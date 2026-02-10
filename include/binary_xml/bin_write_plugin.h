@@ -22,8 +22,8 @@
 // All data written just into temporary part will be visible for all other processes.
 // 
 
-#define BIN_WRITE_POOL_FORMAT_VERSION               0
-#define BIN_WRITE_POOL_FORMAT_VERSION_WITH_PARENT   1   
+#define BIN_WRITE_POOL_FORMAT_VERSION                                       0
+#define BIN_WRITE_POOL_FORMAT_VERSION_WITH_PARENT_WITHOUT_POOL_REFERENCE    1   
 // no first_child & first_attribute but parent & children 
 // extended pool info with type guid, doc guid and doc type name
 
@@ -114,6 +114,7 @@ public:
 //  pool_format_version = 1
 //  uint8_t                 doc_type_id[16]                 // GUID identification of type of document
 //  uint8_t                 doc_id[16]                      // GUID identification of this document - for match with newer versions
+//  uint8_t                 doc_prev_id[16]                 // GUID identification of previous document - this is continuation
 //  char                    doc_type_name[32]               // some document type name for logging
 
 public: // index tables (indexed by id) - allocated on pool
