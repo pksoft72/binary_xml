@@ -275,6 +275,7 @@ public:
     virtual bool Finalize();
 
     BW_pool*    getPool() { return pool; }
+    int         getFd() { return fd; }
     bool makeSpace(int size);
 
     bool registerTag(int16_t id,const char *name,XML_Binary_Type type);
