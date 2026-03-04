@@ -471,6 +471,20 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             *reinterpret_cast<int32_t*>(*_wp) = str2dec(src,9);
             *_wp += sizeof(int32_t);
             return true;
+        case XBT_IPv4:     
+            {
+                AA(*_wp);
+                uint32_t ip_addr;
+                if (ScanIPv4(src,ip_addr))
+                {
+                    *reinterpret_cast<int32_t*>(*_wp) = ip_addr;
+                    *_wp += sizeof(int32_t);
+                    return true;
+                }
+                fprintf(stderr,"%s: Conversion of value '%s' to binary representation failed!" ANSI_RESET_LF,XML_BINARY_TYPE_NAMES[type],src);
+                return false;
+                //bool ScanIPv4(const char *&p,uint32_t &value)
+            }
 
         case XBT_INT64:
             {
@@ -780,6 +794,16 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
             snprintf(dst,dst_size,"%u",*reinterpret_cast<const uint32_t*>(data));
             return strlen(dst);
 
+        case XBT_IPv4:
+            {
+                if (offset > 0) return 0;
+                offset += sizeof(uint32_t);
+                uint32_t ip_addr = *reinterpret_cast<const uint32_t*>(data);
+
+
+                snprintf(dst,dst_size,"%u.%u.%u.%u",ip_addr >> 24,(ip_addr >> 16) & 0xff,(ip_addr >> 8) & 0xff,ip_addr & 0xff);
+                return strlen(dst);
+            } 
         case XBT_INT64:
             {
                 if (offset > 0) return 0;
@@ -1189,6 +1213,8 @@ bool XBT_Test()
     
 
     ok = XBT_TestType(XBT_SHA1,"9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c","9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c") && ok;
+
+    ok = XBT_TestType(XBT_IPv4,"127.0.0.1","0100007f") && ok;
 
     ok = XBT_TestType(XBT_UNIX_TIME,"1970-01-01 00:00:00", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_TIME,"2021-06-15 22:41:40", "a42cc960") && ok;

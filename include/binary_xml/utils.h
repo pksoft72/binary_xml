@@ -21,6 +21,7 @@ void CloseSharedFile(char *pool,int max_pool_size,int fd,const char *debug_info)
 // const pointer variants
 bool Scan(const char *&p,const char *beg);
 bool ScanInt(const char *&p,int &value);
+bool ScanIPv4(const char *&p,uint32_t &value);
 bool ScanInt64(const char *&p,int64_t &value);
 bool ScanUInt64(const char *&p,uint64_t &value);
 bool ScanUInt64Hex(const char *&p,uint64_t &value);

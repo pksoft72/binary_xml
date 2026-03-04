@@ -294,6 +294,26 @@ bool ScanInt(const char *&p,int &value)
     return true;
 }
 
+bool ScanIPv4(const char *&p,uint32_t &value)
+// 127.0.0.1 --> 0x7f00 0001
+{
+    int A,B,C,D; // A.B.C.D
+    const char *p2 = p;
+    if (ScanInt(p2,A) && A >= 0 && A < 256 &&
+        *p2++ == '.' &&
+        ScanInt(p2,B) &&  B >= 0 && B < 256 &&
+        *p2++ == '.' &&
+        ScanInt(p2,C) &&  C >= 0 && C < 256 &&
+        *p2++ == '.' &&
+        ScanInt(p2,D) && D >= 0 && D < 256)
+    {
+        value = (A << 24) | (B << 16) | (C << 8) | D;
+        p = p2;
+        return true;
+    }
+    return false;
+}
+
 bool ScanInt64(const char *&p,int64_t &value)
 {
     while (isspace(*p)) p++;
