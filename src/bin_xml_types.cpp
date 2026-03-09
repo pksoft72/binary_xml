@@ -142,6 +142,8 @@ XML_Binary_Type XBT_Detect(const char *value)
         //        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
+    if (digits+hexadigits == 32 && negative == 0 && dashes == 4 && dots == 0 && colons == 0 && others == 0)
+        return XBT_GUID;
     // 2021-06-15 22:41:40
     if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
             value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':')

@@ -1231,6 +1231,10 @@ int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size)
 }
 
 
+int64_t genI64()
+{
+    return static_cast<int64_t>(random()) << 31 | random();
+}
 
 uint64_t genU64()
 {
