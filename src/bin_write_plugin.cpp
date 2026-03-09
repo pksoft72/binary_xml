@@ -989,7 +989,7 @@ BW_element  *BW_element::findChildByTag(int16_t tag_id)
     return nullptr;
 }
 
-BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size)
+BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,const void *data,int data_size)
 {
     if (this == nullptr) return nullptr;
     // for all children
@@ -2334,8 +2334,18 @@ BW_element* BW_plugin::tagUInt64(int16_t id,uint64_t value)
 
 BW_element* BW_plugin::tagFloat(int16_t id,float value)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1132,NOT_IMPLEMENTED);
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(0,tag_type == XBT_FLOAT);
+
+    ASSERT_NO_RET_NULL(0,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(float)));
+
+    BW_element* result = pool->new_element(tag_type,0);
+    ASSERT_NO_RET_NULL(0,result != nullptr);
+    
+    result->init(pool,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
+
+    *reinterpret_cast<float*>(result+1) = value;
+    return result;
 }
 
 BW_element* BW_plugin::tagDouble(int16_t id,double value)

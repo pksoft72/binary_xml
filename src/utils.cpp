@@ -760,6 +760,49 @@ const char *Hex3Str(const char *src,int src_size,char *dst)
     return dst;
 }
 
+const char *GUID2Str(const char *src,char *dst37)
+{
+    char hex_str[32+1];
+    Hex2Str(src,16,hex_str);
+    dst37[0] = hex_str[0];
+    dst37[1] = hex_str[1];
+    dst37[2] = hex_str[2];
+    dst37[3] = hex_str[3];
+    dst37[4] = hex_str[4];
+    dst37[5] = hex_str[5];
+    dst37[6] = hex_str[6];
+    dst37[7] = hex_str[7];
+    dst37[8] = '-';
+    dst37[9] = hex_str[8];
+    dst37[10] = hex_str[9];
+    dst37[11] = hex_str[10];
+    dst37[12] = hex_str[11];
+    dst37[13] = '-';
+    dst37[14] = hex_str[12];
+    dst37[15] = hex_str[13];
+    dst37[16] = hex_str[14];
+    dst37[17] = hex_str[15];
+    dst37[18] = '-';
+    dst37[19] = hex_str[16];
+    dst37[20] = hex_str[17];
+    dst37[21] = hex_str[18];
+    dst37[22] = hex_str[19];
+    dst37[23] = '-';
+    dst37[24] = hex_str[20];
+    dst37[25] = hex_str[21];
+    dst37[26] = hex_str[22];
+    dst37[27] = hex_str[23];
+    dst37[28] = hex_str[24];
+    dst37[29] = hex_str[25];
+    dst37[30] = hex_str[26];
+    dst37[31] = hex_str[27];
+    dst37[32] = hex_str[28];
+    dst37[33] = hex_str[29];
+    dst37[34] = hex_str[30];
+    dst37[35] = hex_str[31];
+    dst37[36] = '\0';
+    return dst37;
+}
 //-------------------------------------------------------------------------------------------------
 
 bool ScanW(char *&p,const char *beg)
@@ -1189,3 +1232,7 @@ int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size)
 
 
 
+uint64_t genU64()
+{
+    return static_cast<uint64_t>(random()) << 32 | random();
+}

@@ -225,7 +225,7 @@ public:
     XML_Binary_Data_Ref getData();
 
     BW_element  *findChildByTag(int16_t tag_id);
-    BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,void *data,int data_size);
+    BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,const void *data,int data_size);
     BW_element  *findAttr(int16_t attr_id);
     int32_t     *findAttrInt32(int16_t attr_id);
     BW_element*  CopyKeys(XB_reader &xb,XML_Item *src);

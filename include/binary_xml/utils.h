@@ -38,6 +38,7 @@ bool Go(const char *&p,char separator);
 int ScanHex(const char *&p,uint8_t *dst,int dst_size);
 const char *Hex2Str(const char *src,int src_size,char *dst);
 const char *Hex3Str(const char *src,int src_size,char *dst);
+const char *GUID2Str(const char *src,char *dst37);
 
 // writeable pointer variants
 bool ScanW(char *&p,const char *beg);
@@ -69,5 +70,6 @@ char *base64_encode(const unsigned char *src,int src_size,char *dst,int dst_size
 /* This function will decode binary data into base64 encoded string */
 int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size);
 
+uint64_t genU64();
 
 #endif

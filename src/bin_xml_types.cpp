@@ -509,6 +509,13 @@ bool XBT_FromString(const char *src,XML_Binary_Type type,char **_wp,char *limit)
             strcpy(*_wp,src);
             *_wp += strlen(src)+1;
             return true;
+        case XBT_GUID:
+            {
+                AA(*_wp);
+                int scanned = ScanHex(src,reinterpret_cast<uint8_t *>(*_wp),16);
+                *_wp += scanned;
+                return scanned == 16;
+            }
         case XBT_SHA1:
             {
                 AA(*_wp);
@@ -634,6 +641,13 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
             return nullptr; // empty value
         case XBT_STRING: 
             return reinterpret_cast<const char *>(data); 
+        case XBT_GUID:
+            {
+                GUID2Str(data,buffers[buffer_idx]);
+                const char *ret = buffers[buffer_idx++];
+                if (buffer_idx >= MAX_REETRANT_BUFFERS) buffer_idx = 0;
+                return ret;
+            }    
         case XBT_INT32:
         case XBT_INT32_DECI:
         case XBT_INT32_CENTI:     
@@ -648,7 +662,6 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_UNIX_DATE:
         case XBT_UNIX_TIME64_MSEC:
         case XBT_SHA1:
-        case XBT_GUID:
             {
                 
                 int offset = 0;
@@ -945,6 +958,19 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 dst[hex_len+1] = '\0';
                 offset += size;
                 return hex_len+2;
+            }
+        case XBT_GUID:
+            {
+                if (offset >= 16+4) return 0;
+                char guid_str[32+4+1];
+                GUID2Str(data,guid_str);
+                
+                Hex2Str(data+offset,16-offset,dst);
+                int ret = 2*(16-offset);
+                offset = 16;
+                // 8-4-4-4-12
+                // TODO: here should be some - inserted on positions"5f5b7603-6d55-45e6-8c60-07aa5fc6c945">
+                return ret;
             }
         case XBT_SHA1:
             {
