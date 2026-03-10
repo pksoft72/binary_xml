@@ -35,7 +35,7 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "!!!!"
 };
 
-XML_Binary_Type XBT_Detect(const char *value)
+XML_Binary_Type XBT_Detect(const char *value,bool verbose)
 {
     if (value == nullptr) return XBT_NULL;
     if (*value == '\0') return XBT_NULL;
@@ -70,7 +70,7 @@ XML_Binary_Type XBT_Detect(const char *value)
         if (*p == '-')
         {
             if (len == exponent_pos+1) negative++;
-            else dashes++;
+            dashes++;
         }
         else if (*p >= '0' && *p <= '9')
         {
@@ -108,10 +108,35 @@ XML_Binary_Type XBT_Detect(const char *value)
         else
             others++;
     }
+    if (verbose)
+        std::cerr << value << " --> if ("
+                <<     "hex_prefix == " << hex_prefix
+                << " && str_len == " << str_len
+                << " && digits == " << digits
+                << " && decimals == " << decimals
+                << " && hexadigits == " << hexadigits
+                << " && negative == " << negative
+                << " && dots == " << dots
+                << " && dashes == " << dashes
+                << " && colons == " << colons
+                << " && others == " << others
+                << " && exponent == " << exponent
+                << " && spaces == " << spaces
+                << " && whites == " << whites
+                << " && exponent_pos == " << exponent_pos
+                << " && overflow64 == " << overflow64 << "\n";
+
+    if (hex_prefix == 0 && str_len >= 7 && str_len <= 15 && digits >= 4 && hexadigits == 0 && negative == 0 && dots == 3 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && spaces == 0 && whites == 0 && exponent_pos == -1 && !overflow64)
+        return XBT_IPv4;
+
     if (str_len == 10 && digits == 8 && value[4] == '-' && value[7] == '-')
         return XBT_UNIX_DATE;
+
+
+//if (hex_prefix == 0 && str_len == 11 && digits == 10 && decimals == 0 && hexadigits == 0 && negative == 1 && dots == 0 && dashes == 1 && colons == 0 && others == 0 && exponent == 0 && spaces == 0 && whites == 0 && exponent_pos == -1 && overflow64 == 0
+
     if (digits > 0 && digits <= 19 && hexadigits == 0 && negative <= 1 
-            && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
+            && dots == 0 && dashes <= 1 && colons == 0 && others == 0 && exponent == 0 && spaces == 0 && whites == 0 && !overflow64)
     {
         if (negative == 0 && X <= 0x7fffffff) return XBT_INT32;
         if (negative == 1 && X <= 0x80000000) return XBT_INT32;
@@ -120,7 +145,7 @@ XML_Binary_Type XBT_Detect(const char *value)
         return XBT_INT64;
     }
 //    if (hex_prefix == 1 && digits+hexdigits > 0 && hexdigits+digits <= 16 && dots == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
-    if (digits > 0 && dots == 1 && hexadigits == 0 && dashes == 0 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
+    if (digits > 0 && dots == 1 && hexadigits == 0 && dashes <= 1 && colons == 0 && others == 0 && exponent == 0 && !overflow64)
     {
         if ((negative == 0 && X <= 0x7fffffff) || (negative == 1 && X <= 0x80000000))
         {
@@ -132,7 +157,7 @@ XML_Binary_Type XBT_Detect(const char *value)
         }
     }
     if (digits > 0 && hexadigits-exponent == 0 && negative <= 2
-            && dots <= 1 && dashes == 0 && colons == 0 && others == 0 && exponent <= 1)
+            && dots <= 1 && dashes <= 2 && colons == 0 && others == 0 && exponent <= 1)
     {
         if (EX > 38 || digits >= 8) return XBT_DOUBLE;  
         else return XBT_FLOAT;
@@ -142,7 +167,7 @@ XML_Binary_Type XBT_Detect(const char *value)
         //        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
-    if (digits+hexadigits == 32 && negative == 0 && dashes == 4 && dots == 0 && colons == 0 && others == 0)
+    if (hex_prefix == 0 && str_len == 36 && digits+hexadigits == 32 && decimals == 0 && dots == 0 && dashes == 4 && colons == 0 && others == 0 && exponent == 0 && spaces == 0 && whites == 0 && exponent_pos == -1 && overflow64 == 0)
         return XBT_GUID;
     // 2021-06-15 22:41:40
     if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
@@ -1155,7 +1180,10 @@ static int XBT_TestType(XML_Binary_Type type,const char *src,const char *hex = n
     int failures = 0;
     XML_Binary_Type type_detected = XBT_Detect(src);
     if (type != type_detected)
+    {
         std::cerr << ANSI_WHITE_HIGH << XML_BINARY_TYPE_NAMES[type] << ": T1 " ANSI_RED_BRIGHT "Value \"" << src << "\" was detected as " << XML_BINARY_TYPE_NAMES[type_detected] << ANSI_RESET_LF;
+        XBT_Detect(src,true);
+    }
 
     int src_size = strlen(src);
 
@@ -1243,12 +1271,17 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_SHA1,"9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c","9b6aa6cc7c5a71c13fc7ee1011ef309c333a904c") && ok;
 
     ok = XBT_TestType(XBT_IPv4,"127.0.0.1","0100007f") && ok;
+    ok = XBT_TestType(XBT_IPv4,"192.168.255.255","ffffa8c0") && ok;
 
     ok = XBT_TestType(XBT_UNIX_TIME,"1970-01-01 00:00:00", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_TIME,"2021-06-15 22:41:40", "a42cc960") && ok;
     
     ok = XBT_TestType(XBT_UNIX_DATE,"2000-01-01", "cd2a0000") && ok; // 10957
     ok = XBT_TestType(XBT_UNIX_DATE,"1999-12-31", "cc2a0000") && ok;
+
+
+    ok = XBT_TestType(XBT_GUID,"fcac7dbb-08c7-478d-bf97-7e595ca39aab","fcac7dbb08c7478dbf977e595ca39aab") && ok;
+
     for(int i = 0/*10957*/;ok && i < (2 << 30);i++)
     {
         time_t tm0 = i;
@@ -1262,7 +1295,7 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_DATE,"1970-01-01", "00000000") && ok;
     ok = XBT_TestType(XBT_UNIX_DATE,"1969-12-31", "ffffffff") && ok;
     
-    ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"1970-01-01 00:00:00.000", "00000000") && ok;
+    ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"1970-01-01 00:00:00.000", "0000000000000000") && ok;
     return ok;
 }
 
