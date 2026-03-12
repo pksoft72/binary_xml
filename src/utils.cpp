@@ -1,6 +1,7 @@
 #include <binary_xml/utils.h>
 #include <binary_xml/macros.h>
 #include <stdio.h>
+#include <stdlib.h> // random()
 #include <stdarg.h>
 #include <fcntl.h>
 #include <ctype.h>
