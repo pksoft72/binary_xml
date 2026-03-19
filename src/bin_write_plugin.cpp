@@ -950,7 +950,9 @@ XML_Binary_Data_Ref BW_element::getData()
     XML_Binary_Data_Ref R;
     R.type = XBT_UNKNOWN;
     R.data = nullptr;
+    R.content = nullptr;
     R.size = 0;
+    R.content_size = 0;
 
     if (this == nullptr) return R;
     R.content = R.data = reinterpret_cast<char*>(this+1);
