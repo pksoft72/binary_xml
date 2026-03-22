@@ -35,6 +35,16 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "!!!!"
 };
 
+#if 0
+// Array types are not supported now
+// Encoded as BLOB of basic value
+    XBT_INT8    = 18,
+    XBT_UINT8   = 19,
+    XBT_INT16   = 20,
+    XBT_UINT16  = 21
+    XBT_ARRAY   = 127   // when used this bitmask, data consist of many values of base type
+#endif
+
 XML_Binary_Type XBT_Detect(const char *value,bool verbose)
 {
     if (value == nullptr) return XBT_NULL;
@@ -187,6 +197,9 @@ XML_Binary_Type XBT_Detect(const char *value,bool verbose)
 XML_Binary_Type XBT_JoinTypes(XML_Binary_Type A,XML_Binary_Type B)
 {
 // string accumulates all like variant
+    if (A == XBT_BLOB_STRING) return A; // BLOB string keep blob string
+    if (B == XBT_BLOB_STRING) return B;
+
     if (A == XBT_STRING) return A;
     if (B == XBT_STRING) return B;
 
@@ -267,6 +280,8 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
 
             case XBT_STRING:
                                 return strcmp(reinterpret_cast<const char *>(A_value),reinterpret_cast<const char *>(B_value));
+            case XBT_BLOB_STRING:
+                                return strcmp(reinterpret_cast<const char *>(A_value),reinterpret_cast<const char *>(B_value));
             case XBT_HEX:
             case XBT_GUID:
             case XBT_SHA1:
@@ -283,6 +298,25 @@ int XBT_Compare(XML_Binary_Type A_type,const void *A_value,int A_size,XML_Binary
     // TODO: some conversions could be done here, but it is too much of code - matrix of types and their conversions
     return INT_NULL_VALUE; // uncomparable
 #undef RETURN_COMPARE_OF_TYPE
+}
+
+int XBT_GetBLOB_STRING_Size(int length)
+// round up string size + 1 termination ASCII.NUL symbol
+// to power of 2 or 75% of power of 2
+// 16,24,32,48,64,96,128,192,256,....
+{
+    length++; // termination symbol
+
+    int size = 16; // minimum
+    if (length <= size) return size;
+
+    while (size < length) size <<= 1;
+
+    int size_75prc = size - (size >> 2);
+    if (size_75prc >= length)
+        return size_75prc;
+    else
+        return size;
 }
 
 int XBT_Size2(XML_Binary_Type type,int size)
@@ -302,6 +336,8 @@ int XBT_Size2(XML_Binary_Type type,int size)
             break;
         case XBT_STRING:
             return size+1; // terminating character
+        case XBT_BLOB_STRING:
+            return sizeof(int32_t)+XBT_GetBLOB_STRING_Size(size);
         case XBT_BLOB:
         case XBT_HEX:
             return size + sizeof(int32_t);
@@ -639,6 +675,8 @@ int XBT_SizeFromString(const char *src,XML_Binary_Type type)
         case XBT_UINT32: return 4;
         case XBT_UINT64: return 8;
 
+        case XBT_BLOB_STRING:
+            return XBT_GetBLOB_STRING_Size(strlen(src));
         case XBT_BLOB:
             ASSERT_NO_RET_N1(2057,NOT_IMPLEMENTED);
             break;
@@ -651,6 +689,7 @@ int XBT_SizeFromString(const char *src,XML_Binary_Type type)
     }
     return false;
 }
+
 const char *XBT_ToString(XML_Binary_Type type,const char *data)
 {
     int align_size = XBT_Align(type);
@@ -696,6 +735,12 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
                 const char *ret = buffers[buffer_idx++];
                 if (buffer_idx >= MAX_REETRANT_BUFFERS) buffer_idx = 0;
                 return ret;
+            }
+        case XBT_BLOB_STRING:
+            {
+                uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
+                return reinterpret_cast<const char *>(data)+4;
+                
             }
         case XBT_BLOB:
             {
