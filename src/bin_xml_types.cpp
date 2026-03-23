@@ -403,6 +403,7 @@ int XBT_Align(XML_Binary_Type type)
             return 0; // TODO: alignment depend on transported type
         case XBT_STRING:
             return 0;
+        case XBT_BLOB_STRING:
         case XBT_BLOB:
         case XBT_HEX:
         case XBT_INT32:
@@ -739,7 +740,10 @@ const char *XBT_ToString(XML_Binary_Type type,const char *data)
         case XBT_BLOB_STRING:
             {
                 uint32_t size = *reinterpret_cast<const uint32_t*>(data);   
-                return reinterpret_cast<const char *>(data)+4;
+                if (reinterpret_cast<const char *>(data)[4+size-1] == '\0')
+                    return reinterpret_cast<const char *>(data)+4;
+                else
+                    return "";
                 
             }
         case XBT_BLOB:
@@ -1136,6 +1140,7 @@ XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type ds
         case XBT_STRING: 
             if (src.type == XBT_BLOB || src.type == XBT_HEX) return XBT_NONCONVERTABLE; // TODO: check presence of 0 character
             return XBT_CONVERTABLE;
+        case XBT_BLOB_STRING:
         case XBT_BLOB: 
             return XBT_CONVERTABLE; // all can be converted to BLOB
         case XBT_INT32:
