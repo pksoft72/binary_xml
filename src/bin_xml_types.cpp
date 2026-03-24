@@ -829,6 +829,18 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 offset += out;
                 return out;
             }
+        case XBT_BLOB_STRING: 
+            {
+                const char *p = reinterpret_cast<const char *>(data) + sizeof(uint32_t);
+                int len = strlen(p);
+                len -= offset;
+                p += offset;
+                if (len <= 0) return 0; // finished
+                strncpy(dst,p,dst_size);
+                int out = strlen(dst);
+                offset += out;
+                return out;
+            }
         case XBT_INT32: 
             if (offset > 0) return 0;
             offset += sizeof(int32_t);
@@ -1132,10 +1144,9 @@ bool XBT_Equal(XML_Binary_Data_Ref A,XML_Binary_Data_Ref B)
     return memcmp(A.data,B.data,A.size) == 0;
 }
 //-------------------------------------------------------------------------------------------------
-XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type dst_type)
-// TODO implement XBT_Convertable
+XBT_ConvertableStatus XBT_ConvertableType(XML_Binary_Type src_type,XML_Binary_Type dst_type)
 {
-    if (src.type == dst_type) return XBT_CONVERTABLE;
+    if (src_type == dst_type) return XBT_CONVERTABLE;
     switch(dst_type)
     {
         case XBT_NULL: 
@@ -1143,26 +1154,26 @@ XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type ds
         case XBT_VARIANT: 
             return XBT_NONCONVERTABLE; // not supported -> but could extract type and try to convert containing 
         case XBT_STRING: 
-            if (src.type == XBT_BLOB || src.type == XBT_HEX) return XBT_NONCONVERTABLE; // TODO: check presence of 0 character
+            if (src_type == XBT_BLOB || src_type == XBT_HEX) return XBT_NONCONVERTABLE; // TODO: check presence of 0 character
             return XBT_CONVERTABLE;
         case XBT_BLOB_STRING:
         case XBT_BLOB: 
             return XBT_CONVERTABLE; // all can be converted to BLOB
         case XBT_INT32:
-            if (src.type == XBT_UINT32) return XBT_NONCONVERTABLE; // TODO: check range of value
-            if (src.type == XBT_INT64) return XBT_NONCONVERTABLE; // TODO: check range of value
-            if (src.type == XBT_UINT64) return XBT_NONCONVERTABLE; // TODO: check range of value
-            if (src.type == XBT_STRING) return XBT_NONCONVERTABLE; // TODO: try convert and check range
-            if (src.type == XBT_FLOAT) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
-            if (src.type == XBT_DOUBLE) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
-            if (src.type == XBT_UNIX_TIME) return XBT_CONVERTABLE; // TODO: directly compatible
-            if (src.type == XBT_UNIX_DATE) return XBT_CONVERTABLE; // TODO: directly compatible
-            if (src.type == XBT_UNIX_TIME64_MSEC) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
-            if (src.type == XBT_INT32_DECI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
-            if (src.type == XBT_INT32_CENTI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
-            if (src.type == XBT_INT32_MILI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
-            if (src.type == XBT_INT32_MICRO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
-            if (src.type == XBT_INT32_NANO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src_type == XBT_UINT32) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src_type == XBT_INT64) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src_type == XBT_UINT64) return XBT_NONCONVERTABLE; // TODO: check range of value
+            if (src_type == XBT_STRING) return XBT_NONCONVERTABLE; // TODO: try convert and check range
+            if (src_type == XBT_FLOAT) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src_type == XBT_DOUBLE) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src_type == XBT_UNIX_TIME) return XBT_CONVERTABLE; // TODO: directly compatible
+            if (src_type == XBT_UNIX_DATE) return XBT_CONVERTABLE; // TODO: directly compatible
+            if (src_type == XBT_UNIX_TIME64_MSEC) return XBT_LOOSE_CONVERTABLE; // TODO: check range and presicion of conversion
+            if (src_type == XBT_INT32_DECI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src_type == XBT_INT32_CENTI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src_type == XBT_INT32_MILI) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src_type == XBT_INT32_MICRO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
+            if (src_type == XBT_INT32_NANO) return XBT_LOOSE_CONVERTABLE; // TODO: check range and precision of conversion
             return XBT_NONCONVERTABLE;
         case XBT_INT32_DECI:
         case XBT_INT32_CENTI:
@@ -1199,6 +1210,12 @@ XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type ds
 #endif
     }
     return XBT_NONCONVERTABLE; // default
+}
+
+XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type dst_type)
+// TODO implement XBT_Convertable
+{
+    return XBT_ConvertableType(src.type,dst_type);
 }
 
 bool XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Data_Ref dst)

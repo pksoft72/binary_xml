@@ -1227,11 +1227,9 @@ const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
         while (id <= max_id)
         { 
             //const char *start = p;
-            id = *(p++);
-            id |= *(p++) << 8;
+            id = p[0] | (p[1] << 8);
 
-            //XML_Binary_Type element_type = static_cast<XML_Binary_Type>(*(p++));
-
+            p += 3;
             if (id == search_id) return p; // found
 
             // compare symbol and name
@@ -1250,6 +1248,49 @@ const char *BW_symbol_table_16B::getName(BW_pool *pool,int search_id)
     BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
     const char *start = POOL+elements[search_id]; 
     return start+3;
+}
+
+XML_Binary_Type_Stored *BW_symbol_table_16B::getType(BW_pool *pool,int search_id)
+{
+    ASSERT_NO_RET_NULL(6663,pool != nullptr);
+    ASSERT_NO_RET_NULL(6664,search_id >= 0 && search_id <= max_id); // no built-ins alterable
+    char *POOL = reinterpret_cast<char*>(pool);
+    if (index == 0) // sequential search
+    {
+        int id = 0;
+        // ID:word|Type:byte|string|NUL:byte
+        char *p =       POOL+names_offset;
+        const char *p_limit = POOL+pool->allocator;
+
+        while (id <= max_id)
+        { 
+            //const char *start = p;
+            id = p[0] | (p[1] << 8);
+
+            //XML_Binary_Type element_type = static_cast<XML_Binary_Type>(p[2]);
+
+            if (id == search_id) 
+                return reinterpret_cast<XML_Binary_Type_Stored *>(p+2); // found
+
+            p += 3;
+
+            // compare symbol and name
+            while(p < p_limit && *p != '\0') p++;
+            // result?
+            if (p >= p_limit) return nullptr; // not found
+            p++; // skip ASCII.NUL
+
+            AA(p); // round 4B
+            // next id
+            id++;
+        }
+        return nullptr;
+    }
+    // OK, i have indexed access and this should be faster
+    BW_offset_t *elements = reinterpret_cast<BW_offset_t*>(POOL+index);
+    char *start = POOL+elements[search_id]; 
+    return reinterpret_cast<XML_Binary_Type_Stored*>(start+2);
+    
 }
 
 int32_t BW_symbol_table_16B::getNamesSize(BW_pool *pool)
@@ -1550,16 +1591,10 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
     }
     result->value_type = type;
     result->prev = result->next = result->offset = (reinterpret_cast<char*>(result) - reinterpret_cast<char*>(this));
-    switch(type)
-    {
-        case XBT_BLOB:
-        case XBT_HEX:
-        // size is stored to the 1st byte of data
+
+    if (XBT_IS_VARSIZE(type)) // write size to blob
             *reinterpret_cast<int32_t*>(1+result) = size2 - sizeof(int32_t);
-            break;
-        default:
-            break;
-    }
+
     return result;
 }
 
@@ -2049,6 +2084,27 @@ XML_Param_Names BW_plugin::registerParam(const char *name,XML_Binary_Type type)
     return static_cast<XML_Param_Names>(id);
 }
 
+bool BW_plugin::alterTag(int16_t id,XML_Binary_Type type)
+{
+    ASSERT_NO_RET_FALSE(6665,type >= XBT_NULL && type < XBT_LAST);
+    XML_Binary_Type_Stored *current = pool->tags.getType(pool,id);
+    ASSERT_NO_RET_FALSE(6666,current != nullptr);
+// check compatibility
+    ASSERT_NO_RET_FALSE(6667,XBT_ConvertableType(static_cast<XML_Binary_Type>(*current),type) == XBT_CONVERTABLE);
+    *current = type;
+    return true;
+}
+
+bool BW_plugin::alterAttr(int16_t id,XML_Binary_Type type)
+{
+    ASSERT_NO_RET_FALSE(6668,type >= XBT_NULL && type < XBT_LAST);
+    XML_Binary_Type_Stored *current = pool->params.getType(pool,id);
+    ASSERT_NO_RET_FALSE(6669,current != nullptr);
+// check compatibility
+    ASSERT_NO_RET_FALSE(6670,XBT_ConvertableType(static_cast<XML_Binary_Type>(*current),type) == XBT_CONVERTABLE);
+    *current = type;
+    return true;
+}
 void BW_plugin::importTags(XB_reader *src)
 {
     if (pool->tags.max_id == -1) pool->tags.flags |= BW_SYMBOLS_FAST_REG;
@@ -2228,17 +2284,21 @@ BW_element* BW_plugin::tag(int16_t id)
 BW_element* BW_plugin::tagStr(int16_t id,const char *value)
 {
     XML_Binary_Type tag_type = pool->getTagType(id);
-    ASSERT_NO_RET_NULL(1127,tag_type == XBT_STRING || tag_type == XBT_VARIANT);
+    ASSERT_NO_RET_NULL(1127,tag_type == XBT_STRING || tag_type == XBT_VARIANT || tag_type == XBT_BLOB_STRING);
+    if (tag_type == XBT_VARIANT) tag_type = XBT_STRING;
 
     int value_len = strlen(value);
-    ASSERT_NO_RET_NULL(1146,makeSpace(BW2_INITIAL_FILE_SIZE+value_len));
+    ASSERT_NO_RET_NULL(1146,makeSpace(BW2_INITIAL_FILE_SIZE+value_len*2));
 
-    BW_element* result = pool->new_element(XBT_STRING,value_len);
+    BW_element* result = pool->new_element(tag_type,value_len);
     ASSERT_NO_RET_NULL(2041,result != nullptr);
     
-    result->init(pool,id,XBT_STRING,BIN_WRITE_ELEMENT_FLAG);
+    result->init(pool,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
 
-    strcpy(reinterpret_cast<char*>(result+1),value);
+    if (tag_type == XBT_STRING)
+        strcpy(reinterpret_cast<char*>(result+1),value);
+    else
+        strcpy(reinterpret_cast<char*>(result+1)+4,value);
     return result;
 }
 
@@ -2337,12 +2397,12 @@ BW_element* BW_plugin::tagUInt64(int16_t id,uint64_t value)
 BW_element* BW_plugin::tagFloat(int16_t id,float value)
 {
     XML_Binary_Type tag_type = pool->getTagType(id);
-    ASSERT_NO_RET_NULL(0,tag_type == XBT_FLOAT);
+    ASSERT_NO_RET_NULL(6671,tag_type == XBT_FLOAT);
 
-    ASSERT_NO_RET_NULL(0,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(float)));
+    ASSERT_NO_RET_NULL(6672,makeSpace(BW2_INITIAL_FILE_SIZE+sizeof(float)));
 
     BW_element* result = pool->new_element(tag_type,0);
-    ASSERT_NO_RET_NULL(0,result != nullptr);
+    ASSERT_NO_RET_NULL(6673,result != nullptr);
     
     result->init(pool,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
 

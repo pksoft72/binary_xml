@@ -126,6 +126,7 @@ enum XBT_ConvertableStatus
 };
 
 XBT_ConvertableStatus XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Type dst_type);
+XBT_ConvertableStatus XBT_ConvertableType(XML_Binary_Type src_type,XML_Binary_Type dst_type);
 bool XBT_Convertable(XML_Binary_Data_Ref src,XML_Binary_Data_Ref dst);
 
 //-------------------------------------------------------------------------------------------------

@@ -87,6 +87,7 @@ public:
 
     int16_t         getByName(BW_pool *pool,const char *name,BW_offset_t *offset,XML_Binary_Type *type);
     const char      *getName(BW_pool *pool,int search_id);
+    XML_Binary_Type_Stored *getType(BW_pool *pool,int search_id);
     int32_t         getNamesSize(BW_pool *pool);
     bool            check(BW_pool *pool);
     bool            Open(BW_pool *pool);
@@ -284,6 +285,9 @@ public:
 
     XML_Tag_Names   registerTag(const char *name,XML_Binary_Type type);
     XML_Param_Names registerParam(const char *name,XML_Binary_Type type);
+
+    bool alterTag(int16_t id,XML_Binary_Type type);
+    bool alterAttr(int16_t id,XML_Binary_Type type);
 
     void importTags(XB_reader *src);
     void importParams(XB_reader *src);
