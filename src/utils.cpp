@@ -465,7 +465,8 @@ bool ScanUnixTime(const char *&p,uint32_t &value)
     value *= 24*60*60;
 
     if (*p == '\0') return true; // end of string
-    if (*(p++) != ' ' && *(p++) != 'T') return false;
+    if (*p != ' ' && *p != 'T') return false;
+    p++;
     
     if (!ScanInt(p,hour)) return false;    
     value += hour*3600;

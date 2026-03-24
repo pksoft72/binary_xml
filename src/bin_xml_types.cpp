@@ -187,6 +187,11 @@ XML_Binary_Type XBT_Detect(const char *value,bool verbose)
     if (str_len == 23 && digits == 17 && spaces == 1 && negative == 2 && colons == 2 &&
             value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
         return XBT_UNIX_TIME64_MSEC;
+    // 2026-03-20T15:51:55.773Z
+    if (str_len == 24 && digits == 17 && spaces == 0 && negative == 2 && colons == 2 &&
+            value[10] == 'T' && value[23] == 'Z' &&
+            value[4] == '-' && value[7] == '-' && value[13] == ':' && value[16] == ':' && value[19] == '.')
+        return XBT_UNIX_TIME64_MSEC;
     // 2024-12-22 - was DISABLED - not fully supported yet
     if (digits+hexadigits > 0 && negative == 0 && dots == 0 && dashes == 0 && colons == 0 && others == 0) 
         return XBT_HEX;
@@ -1329,6 +1334,7 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_DATE,"2000-01-01", "cd2a0000") && ok; // 10957
     ok = XBT_TestType(XBT_UNIX_DATE,"1999-12-31", "cc2a0000") && ok;
 
+    ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"2026-03-20T15:51:55.773Z",/*1774283837773*/ "4dd18e1b9d0100") && ok;
 
     ok = XBT_TestType(XBT_GUID,"fcac7dbb-08c7-478d-bf97-7e595ca39aab","fcac7dbb08c7478dbf977e595ca39aab") && ok;
 
