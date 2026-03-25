@@ -428,13 +428,14 @@ BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
-    CHECK_TYPE2_RET_NULL(1167,XBT_INT64,XBT_VARIANT);
+    if (!XBT_IS_8(attr_type))
+        CHECK_TYPE2_RET_NULL(1167,XBT_INT64,XBT_VARIANT);
 
-    if (attr_type == XBT_INT64)
+    if (XBT_IS_8(attr_type))
     {
-        BW_element* attr      = pool->new_element(XBT_INT64); // only variable types gives size  --- sizeof(int32_t));
+        BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
         ASSERT_NO_RET_NULL(1168,attr != nullptr);
-        attr->init(pool,id,XBT_INT64,BIN_WRITE_ATTR_FLAG);
+        attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
         int64_t *dst          = reinterpret_cast<int64_t*>(attr+1); // just after this element
         *dst                  = value; // store value
@@ -941,8 +942,9 @@ uint64_t *BW_element::getUInt64()
 char *BW_element::getStr()
 {
     if (this == nullptr) return nullptr;
-    if (value_type != XBT_STRING) return nullptr;
-    return reinterpret_cast<char*>(this+1);
+    if (value_type == XBT_STRING) return reinterpret_cast<char*>(this+1);
+    if (value_type == XBT_BLOB_STRING) return reinterpret_cast<char*>(this+1)+4;
+    return nullptr;
 }
 
 XML_Binary_Data_Ref BW_element::getData() 

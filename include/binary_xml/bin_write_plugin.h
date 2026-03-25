@@ -246,6 +246,8 @@ public:
     BW_element*  PrevChild(BW_offset_t &offset);
 };
 
+typedef BW_element* BW_element_ptr;
+
 //-------------------------------------------------------------------------------------------------
 
 class BW_plugin : public Bin_src_plugin  // !!! #define BIN_WRITE_PLUGIN
