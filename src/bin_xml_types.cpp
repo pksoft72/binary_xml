@@ -177,7 +177,7 @@ XML_Binary_Type XBT_Detect(const char *value,bool verbose)
         //        std::cout << ANSI_BLUE_DARK "XBT_SHA1 detected in value " << value << ANSI_RESET_LF;
         return XBT_SHA1;
     }
-    if (hex_prefix == 0 && str_len == 36 && digits+hexadigits == 32 && decimals == 0 && dots == 0 && dashes == 4 && colons == 0 && others == 0 && exponent == 0 && spaces == 0 && whites == 0 && exponent_pos == -1 && overflow64 == 0)
+    if (hex_prefix == 0 && str_len == 36 && digits+hexadigits == 32 && decimals == 0 && dots == 0 && dashes == 4 && colons == 0 && others == 0 && exponent == 0 && spaces == 0 && whites == 0 && exponent_pos == -1)
         return XBT_GUID;
     // 2021-06-15 22:41:40
     if (str_len == 19 && digits == 14 && spaces == 1 && negative == 2 && colons == 2 &&
@@ -1354,7 +1354,7 @@ bool XBT_Test()
     ok = XBT_TestType(XBT_UNIX_TIME64_MSEC,"2026-03-20T15:51:55.773Z",/*1774283837773*/ "4dd18e1b9d0100") && ok;
 
     ok = XBT_TestType(XBT_GUID,"fcac7dbb-08c7-478d-bf97-7e595ca39aab","fcac7dbb08c7478dbf977e595ca39aab") && ok;
-
+    ok = XBT_TestType(XBT_GUID,"4f5b7603-6d55-45e6-8c60-07aa5fc6c945","4f5b76036d5545e68c6007aa5fc6c945") && ok;
     for(int i = 0/*10957*/;ok && i < (2 << 30);i++)
     {
         time_t tm0 = i;

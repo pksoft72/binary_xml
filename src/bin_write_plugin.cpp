@@ -514,14 +514,40 @@ BW_element*     BW_element::attrDouble(int16_t id,double value)
 BW_element*     BW_element::attrGUID(int16_t id,const char *value)
 {
     if (this == nullptr) return nullptr;
-        ASSERT_NO_RET_NULL(1094,NOT_IMPLEMENTED); // TODO: variant
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    CHECK_TYPE_RET_NULL(1963,XBT_GUID);
+
+    BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
+    ASSERT_NO_RET_NULL(1964,attr != nullptr);
+    attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+
+    char *dst = reinterpret_cast<char*>(attr+1); // just after this element
+    memcpy(dst,value,XBT_Size2(attr_type,0));
+
+    add(attr);
+
     return this;
 }
 
 BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
 {
     if (this == nullptr) return nullptr;
-        ASSERT_NO_RET_NULL(1095,NOT_IMPLEMENTED); // TODO: variant
+
+    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = pool->getAttrType(id);
+    CHECK_TYPE_RET_NULL(1963,XBT_SHA1);
+
+    BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
+    ASSERT_NO_RET_NULL(1964,attr != nullptr);
+    attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
+
+    char *dst = reinterpret_cast<char*>(attr+1); // just after this element
+    memcpy(dst,value,XBT_Size2(attr_type,0));
+
+    add(attr);
+
     return this;
 }
 
