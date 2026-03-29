@@ -520,7 +520,7 @@ BW_element*     BW_element::attrGUID(int16_t id,const char *value)
     CHECK_TYPE_RET_NULL(1963,XBT_GUID);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
-    ASSERT_NO_RET_NULL(1964,attr != nullptr);
+    ASSERT_NO_RET_NULL(10428,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
     char *dst = reinterpret_cast<char*>(attr+1); // just after this element
@@ -540,7 +540,7 @@ BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
     CHECK_TYPE_RET_NULL(1963,XBT_SHA1);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
-    ASSERT_NO_RET_NULL(1964,attr != nullptr);
+    ASSERT_NO_RET_NULL(10429,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
     char *dst = reinterpret_cast<char*>(attr+1); // just after this element
@@ -1633,6 +1633,13 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
         LOG_ERROR("[%d] Tag %s has type %d=%s and not %s!",no,getTagName(id),tag_type,XBT2STR(tag_type),#type);\
         return nullptr;\
     }
+#define CHECK_TAG_TYPE_COND(no,id,cond)\
+    XML_Binary_Type tag_type = getTagType(id);\
+    if (!(cond))\
+    {\
+        LOG_ERROR("[%d] Tag %s has type %d=%s and not %s!",no,getTagName(id),tag_type,XBT2STR(tag_type),#cond);\
+        return nullptr;\
+    }
 BW_element* BW_pool::tag(int16_t id)
 {
     CHECK_TAG_TYPE(2014,id,XBT_NULL);
@@ -1645,12 +1652,12 @@ BW_element* BW_pool::tag(int16_t id)
 
 BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
 {
-    CHECK_TAG_TYPE(2027,id,XBT_INT32);
+    CHECK_TAG_TYPE_COND(2027,id,XBT_IS_4(tag_type));
 
-    BW_element* result = new_element(XBT_INT32,0);
+    BW_element* result = new_element(tag_type,0);
     ASSERT_NO_RET_NULL(2035,result != nullptr);
     
-    result->init(this,id,XBT_INT32,BIN_WRITE_ELEMENT_FLAG);
+    result->init(this,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
 
     *reinterpret_cast<int32_t*>(result+1) = value;
     return result;
@@ -1658,12 +1665,12 @@ BW_element* BW_pool::tagInt32(int16_t id,int32_t value)
 
 BW_element* BW_pool::tagInt64(int16_t id,int64_t value)
 {
-    CHECK_TAG_TYPE(2029,id,XBT_INT64);
+    CHECK_TAG_TYPE_COND(2029,id,XBT_IS_8(tag_type));
 
-    BW_element* result = new_element(XBT_INT64,sizeof(value));
+    BW_element* result = new_element(tag_type,sizeof(value));
     ASSERT_NO_RET_NULL(2036,result != nullptr);
     
-    result->init(this,id,XBT_INT64,BIN_WRITE_ELEMENT_FLAG);
+    result->init(this,id,tag_type,BIN_WRITE_ELEMENT_FLAG);
 
     *reinterpret_cast<int64_t*>(result+1) = value;
     return result;
