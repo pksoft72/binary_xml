@@ -93,6 +93,8 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
     #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
 
+#define DIV_MOD_1000(x) (int)((x) / 1000),(int)((x) % 1000)
+
 #define ARR_SIZE(_arr) (sizeof(_arr) / sizeof(_arr[0]))
 
 #ifndef ABS

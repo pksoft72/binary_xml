@@ -486,8 +486,11 @@ bool ScanUnixTime64msec(const char *&p,int64_t &value)
 {
     value = 0;
     uint32_t tm32;
+
+    const char *start = p;
+
     if (!ScanUnixTime(p,tm32)) return false;
-    if (*(p++) != '.') return false;
+    if (*(p++) != '.') return  (int64_t)tm32*1000; // whole seconds only
 
     if (*p < '0' || *p > '9') return false;
     int v000 = 100 * (*(p++) - '0');
@@ -496,7 +499,26 @@ bool ScanUnixTime64msec(const char *&p,int64_t &value)
     if (*p < '0' || *p > '9') return false;
     v000 += (*(p++) - '0');
 
+    if (start[10] == 'T') // zone expected
+    {
+    // skip next decimals
+        while (*p >= '0' && *p <= '9') p++;
+        if (*p == 'Z') ;// UTC
+        else if (*p == '+' || *p == '-')
+        {
+            char sign = *(p++);
+            int hour,min;
+            if (ScanInt(p,hour) && *(p++) == ':' && ScanInt(p,min))
+                if (sign == '+')
+                    tm32 -= hour*3600 + min*60; 
+                else
+                    tm32 += hour*3600 + min*60; 
+        }
+            
+    }
+
     value = v000 + (int64_t)tm32 * 1000;
+
     return true;
 }
 

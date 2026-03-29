@@ -916,6 +916,22 @@ int32_t *BW_element::getInt32()
     return reinterpret_cast<int32_t*>(this+1); // just after this element
 }
 
+float *BW_element::getFloat()
+{
+    if (this == nullptr) return nullptr;
+
+//    BW_pool             *pool = getPool();    
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_FLOAT)
+    {
+        LOG_ERROR("[10430] +%d %s'type = %d = %s but XBT_FLOAT is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<float*>(this+1); // just after this element
+}
+
+
 time_t *BW_element::getTime()
 {
     if (this == nullptr) return nullptr;
