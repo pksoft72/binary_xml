@@ -225,6 +225,7 @@ public:
     uint64_t    *getUInt64();
     char        *getStr();
     XML_Binary_Data_Ref getData();
+    bool        setStr(BW_plugin *W,BW_element *parent,const char *value);
 
     BW_element  *findChildByTag(int16_t tag_id);
     BW_element  *findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,const void *data,int data_size);

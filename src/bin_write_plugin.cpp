@@ -1015,6 +1015,44 @@ XML_Binary_Data_Ref BW_element::getData()
     return R;
 }
 
+bool BW_element::setStr(BW_plugin *W,BW_element *parent,const char *value)
+{
+    ASSERT_NO_RET_FALSE(10430,this != nullptr);
+    ASSERT_NO_RET_FALSE(10431,parent != nullptr);
+    XML_Binary_Data_Ref data_ref = getData();
+
+    if (value_type != XBT_STRING && value_type != XBT_BLOB_STRING) 
+    {
+        LOG_ERROR("%s/%s is not STRING but %s - cannot set value %s",parent->getName(),getName(),XBT2STR(value_type),value);
+        return false;
+    }
+    if (strcmp(data_ref.content,value) == 0) return false; // no change
+
+    int value_len = value != nullptr ? strlen(value) : 0;
+
+    if (value_len + 1 <=  data_ref.content_size)
+    {
+        if (value == nullptr)
+            data_ref.content[0] = '\0'; // empty string terminated
+        else
+            strcpy(data_ref.content,value);
+    }
+    else // must reallocate and it is not so easy
+    {
+        // remove and add
+        BW_offset_t _first_attribute = first_attribute;
+        first_attribute = 0; // disconnect children
+
+        parent->remove(this);
+
+        BW_element *new_value; 
+        parent->add(new_value = W->tagStr(identification,value));
+
+        new_value->first_attribute = _first_attribute;
+    }
+    return true;
+}
+
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
 // the same like tagGet(id)
 {
