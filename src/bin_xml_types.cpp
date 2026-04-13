@@ -32,6 +32,7 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "INT32_MILI",
     "INT32_MICRO",
     "INT32_NANO",
+    "BLOB_STRING",
     "!!!!"
 };
 
