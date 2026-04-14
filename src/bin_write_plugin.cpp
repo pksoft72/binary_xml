@@ -902,12 +902,7 @@ int32_t *BW_element::getInt32()
 
 //    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
-    if (attr_type != XBT_INT32 && 
-        attr_type != XBT_INT32_MILI &&
-        attr_type != XBT_INT32_DECI &&
-        attr_type != XBT_INT32_CENTI &&
-        attr_type != XBT_INT32_MICRO &&
-        attr_type != XBT_INT32_NANO)
+    if (!XBT_IS_4(attr_type))
     {
         LOG_ERROR("[1173] +%d %s'type = %d = %s but XBT_INT32 is expected!",offset,getName(),attr_type,XBT2STR(attr_type));
         return nullptr;
