@@ -62,8 +62,9 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
 #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
-#define NOT_IMPLEMENTED false // used in assert
-#define NOT_FINISHED false // used in assert
+
+extern const bool NOT_IMPLEMENTED;  // used in assert
+extern const bool NOT_FINISHED;     // used in assert
 
 #ifndef STRCPY
     #define STRCPY(dst,src) do {const char *__src = (src);if ((__src) != nullptr) {strncpy((dst),(__src),sizeof(dst)-1);dst[sizeof(dst)-1] = '\0';} else dst[0] = '\0';} while(0)
