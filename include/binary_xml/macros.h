@@ -20,6 +20,8 @@
 #define IFNULL2(a,b) ((a) == INT_NULL_VALUE ? (b) : (a))
 #define IFNULL3(a,b,c) ((a) != INT_NULL_VALUE ? (a) : ((b) != INT_NULL_VALUE ? (b) : (c)))
 
+#define SWAP32(x) (((x) >> 24) | ((x & 0xff0000) >> 8) | (((x) & 0xff00) << 8) | ((x) << 24))
+
 #define MAX_FAILURES 16 // 0 is first failure, 1 second ... it should be enough for make some stack of failure
 
 typedef struct 
