@@ -1919,6 +1919,7 @@ bool BW_plugin::Finalize()
     this->initialized = false;
     this->check_only = false;
     this->check_failures = 0;
+    this->initialized = false;
     return true;
 }
 
