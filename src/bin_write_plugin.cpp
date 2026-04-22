@@ -520,7 +520,7 @@ BW_element*     BW_element::attrGUID(int16_t id,const char *value)
     CHECK_TYPE_RET_NULL(1963,XBT_GUID);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
-    ASSERT_NO_RET_NULL(10428,attr != nullptr);
+    ASSERT_NO_RET_NULL(10429,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
     char *dst = reinterpret_cast<char*>(attr+1); // just after this element
@@ -540,7 +540,7 @@ BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
     CHECK_TYPE_RET_NULL(1963,XBT_SHA1);
 
     BW_element* attr      = pool->new_element(attr_type); // only variable types gives size  --- sizeof(int32_t));
-    ASSERT_NO_RET_NULL(10429,attr != nullptr);
+    ASSERT_NO_RET_NULL(10430,attr != nullptr);
     attr->init(pool,id,attr_type,BIN_WRITE_ATTR_FLAG);
 
     char *dst = reinterpret_cast<char*>(attr+1); // just after this element
@@ -975,6 +975,20 @@ uint64_t *BW_element::getUInt64()
     return reinterpret_cast<uint64_t*>(this+1); // just after this element
 }
 
+GUID_t *BW_element::getGUID()
+{
+    if (this == nullptr) return nullptr;
+
+    XML_Binary_Type     attr_type = getSymbolType();
+    if (attr_type != XBT_GUID)
+    {
+        LOG_ERROR("[10435] +%d %s'type = %d/%d = %s/%s but XBT_GUID is expected!",offset,getName(),
+        attr_type,value_type,XBT2STR(attr_type),XBT2STR(value_type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<GUID_t*>(this+1); // just after this element
+}
 
 char *BW_element::getStr()
 {
@@ -1012,7 +1026,7 @@ XML_Binary_Data_Ref BW_element::getData()
 
 bool BW_element::setStr(BW_plugin *W,BW_element *parent,const char *value)
 {
-    ASSERT_NO_RET_FALSE(10430,this != nullptr);
+    ASSERT_NO_RET_FALSE(10436,this != nullptr);
     ASSERT_NO_RET_FALSE(10431,parent != nullptr);
     XML_Binary_Data_Ref data_ref = getData();
 
@@ -2500,10 +2514,20 @@ BW_element* BW_plugin::tagDouble(int16_t id,double value)
     ASSERT_NO_RET_NULL(1133,NOT_IMPLEMENTED);
 }
 
-BW_element* BW_plugin::tagGUID(int16_t id,const char *value)
+BW_element* BW_plugin::tagGUID(int16_t id,GUID_t *guid)
 {
-// TODO: not implemented
-    ASSERT_NO_RET_NULL(1134,NOT_IMPLEMENTED);
+    XML_Binary_Type tag_type = pool->getTagType(id);
+    ASSERT_NO_RET_NULL(10432,tag_type == XBT_GUID);
+
+    ASSERT_NO_RET_NULL(10433,makeSpace(BW2_INITIAL_FILE_SIZE+4));
+
+    BW_element* result = pool->new_element(XBT_GUID,0);
+    ASSERT_NO_RET_NULL(10434,result != nullptr);
+    
+    result->init(pool,id,XBT_GUID,BIN_WRITE_ELEMENT_FLAG);
+   
+    memcpy(result+1,guid,sizeof(*guid)); 
+    return result;
 }
 
 BW_element* BW_plugin::tagSHA1(int16_t id,const uint8_t *value)
