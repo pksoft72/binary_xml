@@ -32,6 +32,7 @@ const char *XML_BINARY_TYPE_NAMES[XBT_LAST+1] = {
     "INT32_MILI",
     "INT32_MICRO",
     "INT32_NANO",
+    "BLOB_STRING",
     "!!!!"
 };
 
@@ -907,7 +908,7 @@ int XBT_ToStringChunk(XML_Binary_Type type,const char *data,int &offset,char *ds
                 uint32_t ip_addr = *reinterpret_cast<const uint32_t*>(data);
 
 
-                snprintf(dst,dst_size,"%u.%u.%u.%u",ip_addr >> 24,(ip_addr >> 16) & 0xff,(ip_addr >> 8) & 0xff,ip_addr & 0xff);
+                snprintf(dst,dst_size,"%u.%u.%u.%u",IPv4TO4U(ip_addr));//ip_addr >> 24,(ip_addr >> 16) & 0xff,(ip_addr >> 8) & 0xff,ip_addr & 0xff);
                 return strlen(dst);
             } 
         case XBT_INT64:

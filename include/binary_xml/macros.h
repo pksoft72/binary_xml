@@ -20,6 +20,8 @@
 #define IFNULL2(a,b) ((a) == INT_NULL_VALUE ? (b) : (a))
 #define IFNULL3(a,b,c) ((a) != INT_NULL_VALUE ? (a) : ((b) != INT_NULL_VALUE ? (b) : (c)))
 
+#define SWAP32(x) (((x) >> 24) | ((x & 0xff0000) >> 8) | (((x) & 0xff00) << 8) | ((x) << 24))
+
 #define MAX_FAILURES 16 // 0 is first failure, 1 second ... it should be enough for make some stack of failure
 
 typedef struct 
@@ -62,8 +64,9 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
 #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
 #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
-#define NOT_IMPLEMENTED false // used in assert
-#define NOT_FINISHED false // used in assert
+
+extern const bool NOT_IMPLEMENTED;  // used in assert
+extern const bool NOT_FINISHED;     // used in assert
 
 #ifndef STRCPY
     #define STRCPY(dst,src) do {const char *__src = (src);if ((__src) != nullptr) {strncpy((dst),(__src),sizeof(dst)-1);dst[sizeof(dst)-1] = '\0';} else dst[0] = '\0';} while(0)

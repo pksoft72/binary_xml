@@ -223,6 +223,7 @@ public:
     time_t      *getTime();
     int64_t     *getInt64();
     uint64_t    *getUInt64();
+    GUID_t      *getGUID();
     char        *getStr();
     XML_Binary_Data_Ref getData();
     bool        setStr(BW_plugin *W,BW_element *parent,const char *value);
@@ -316,7 +317,7 @@ public: // tag creation
     BW_element*     tagUInt64(int16_t id,uint64_t value);
     BW_element*     tagFloat(int16_t id,float value);
     BW_element*     tagDouble(int16_t id,double value);
-    BW_element*     tagGUID(int16_t id,const char *value);
+    BW_element*     tagGUID(int16_t id,GUID_t *guid);
     BW_element*     tagSHA1(int16_t id,const uint8_t *value);
     BW_element*     tagTime(int16_t id,time_t value);
     BW_element*     tagTime64(int16_t id,int64_t value);
