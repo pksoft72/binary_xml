@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 extern const char HEX[16+1];
+extern const char HEX_UP[16+1];
 
 typedef char char40_t[40];  // YYYYMMDD HHMMSS.sss
                             // 1c3e3c04-47a6-4fce-b6a7-7f3c2549156d
@@ -34,6 +35,7 @@ bool ScanStr(const char *&p,char separator,char *value,unsigned value_size);
 void SkipSpaces(const char *&p);
 bool SkipLine(const char *&p);
 bool Go(const char *&p,char separator);
+bool AdvEqual(const char *mask,const char *value);
 
 int ScanHex(const char *&p,uint8_t *dst,int dst_size);
 const char *Hex2Str(const char *src,int src_size,char *dst);

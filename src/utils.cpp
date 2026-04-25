@@ -108,7 +108,7 @@ static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_poo
     int open_fd = open(filename,open_flags,S_IRUSR | S_IWUSR | S_IRGRP);
     if (open_fd < 0)
     {
-        ERRNO_SHOW(2062,"open",filename);
+        ERRNO_SHOW(2063,"open",filename);
         return nullptr;
     }
     //  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -146,7 +146,7 @@ void CloseSharedFile(char *pool,int max_pool_size,int fd,const char *debug_info)
     if (pool != nullptr)
     {
         if (munmap(pool,max_pool_size) != 0)
-            ERRNO_SHOW(1949,"munmap",debug_info);
+            ERRNO_SHOW(2065,"munmap",debug_info);
     }
 }
 
@@ -725,6 +725,37 @@ bool Go(const char *&p,char separator)
     while (*p != '\0')
         if (*(p++) == separator) return true;
     return false;    
+}
+
+bool AdvEqual(const char *mask,const char *value)
+{
+    if (mask == nullptr) return true;
+    while (*mask != '\0' && *value != '\0')
+    {
+        if (*mask == *value || *mask == '?')
+        {
+            mask++;
+            value++;
+        }
+        else if (*mask == '*' && *(mask+1) == '\0') // asterix at the end
+            return true; // ok
+        else if (*mask == '*')
+        {
+            mask++;
+            while (*mask == '*' || *mask == '?') mask++;
+
+            // I need to find the first character after *
+
+            while (*value != '\0')
+            {
+                if (*mask == *value && AdvEqual(mask+1,value+1)) return true; // found
+                value++;
+            }
+        }
+        else return false; // no match
+
+    }
+    return *mask == '\0' && *value == '\0'; // both strings has the same end
 }
 
 int ScanHex(const char *&p,uint8_t *dst,int dst_size)
