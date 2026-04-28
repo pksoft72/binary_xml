@@ -1291,13 +1291,30 @@ int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size)
     return d-dst;
 }
 
+static int64_t base_xor_value = 0;
+
+static void s_init_base_xor_value()
+{
+    struct timespec tm0;
+    if (clock_gettime(CLOCK_MONOTONIC,&tm0) < 0)
+        base_xor_value = time(nullptr);
+    else
+        base_xor_value = (int64_t)tm0.tv_sec * 1000000000 + tm0.tv_nsec;
+}
 
 int64_t genI64()
 {
-    return static_cast<int64_t>(random()) << 31 | random();
+    int64_t value = static_cast<int64_t>(random()) << 31 | random();
+// this was not random enough
+    if (base_xor_value == 0) s_init_base_xor_value();
+    value ^= base_xor_value++; // using sequence for increment
+    return value;
 }
 
 uint64_t genU64()
 {
-    return static_cast<uint64_t>(random()) << 32 | random();
+    uint64_t value = static_cast<uint64_t>(random()) << 32 | random();
+    if (base_xor_value == 0) s_init_base_xor_value();
+    value ^= base_xor_value++;
+    return value;
 }
