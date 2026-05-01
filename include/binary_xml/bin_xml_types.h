@@ -22,6 +22,8 @@ typedef uint16_t    IPv6_t[8];
 
 #define MAX_REETRANT_BUFFERS 64  // workaround for XBT_ToString
 
+#define IPv4TO4U(_ip) (_ip) >> 24,((_ip) >> 16) & 0xff,((_ip) >> 8) & 0xff,((_ip) & 0xff)
+
 enum XML_Binary_Type 
 {
     XBT_NULL    = 0,    // empty value is almost compatible with all values

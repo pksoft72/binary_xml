@@ -108,7 +108,7 @@ static char *s_ShareFile(const char *filename,int open_flags,int *fd,int max_poo
     int open_fd = open(filename,open_flags,S_IRUSR | S_IWUSR | S_IRGRP);
     if (open_fd < 0)
     {
-        ERRNO_SHOW(2062,"open",filename);
+        ERRNO_SHOW(2063,"open",filename);
         return nullptr;
     }
     //  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -146,7 +146,7 @@ void CloseSharedFile(char *pool,int max_pool_size,int fd,const char *debug_info)
     if (pool != nullptr)
     {
         if (munmap(pool,max_pool_size) != 0)
-            ERRNO_SHOW(1949,"munmap",debug_info);
+            ERRNO_SHOW(2065,"munmap",debug_info);
     }
 }
 
@@ -486,8 +486,15 @@ bool ScanUnixTime64msec(const char *&p,int64_t &value)
 {
     value = 0;
     uint32_t tm32;
+
+    const char *start = p;
+
     if (!ScanUnixTime(p,tm32)) return false;
-    if (*(p++) != '.') return false;
+    if (*(p++) != '.') 
+    {
+        value = (int64_t)tm32*1000; // whole seconds only
+        return true;  // OK
+    }
 
     if (*p < '0' || *p > '9') return false;
     int v000 = 100 * (*(p++) - '0');
@@ -496,7 +503,28 @@ bool ScanUnixTime64msec(const char *&p,int64_t &value)
     if (*p < '0' || *p > '9') return false;
     v000 += (*(p++) - '0');
 
+    if (start[10] == 'T') // zone expected
+    {
+    // skip next decimals
+        while (*p >= '0' && *p <= '9') p++;
+        if (*p == 'Z') ;// UTC
+        else if (*p == '+' || *p == '-')
+        {
+            char sign = *(p++);
+            int hour,min;
+            if (ScanInt(p,hour) && *(p++) == ':' && ScanInt(p,min))
+            {
+                if (sign == '+')
+                    tm32 -= hour*3600 + min*60; 
+                else
+                    tm32 += hour*3600 + min*60; 
+            }
+        }
+            
+    }
+
     value = v000 + (int64_t)tm32 * 1000;
+
     return true;
 }
 
@@ -697,6 +725,37 @@ bool Go(const char *&p,char separator)
     while (*p != '\0')
         if (*(p++) == separator) return true;
     return false;    
+}
+
+bool AdvEqual(const char *mask,const char *value)
+{
+    if (mask == nullptr) return true;
+    while (*mask != '\0' && *value != '\0')
+    {
+        if (*mask == *value || *mask == '?')
+        {
+            mask++;
+            value++;
+        }
+        else if (*mask == '*' && *(mask+1) == '\0') // asterix at the end
+            return true; // ok
+        else if (*mask == '*')
+        {
+            mask++;
+            while (*mask == '*' || *mask == '?') mask++;
+
+            // I need to find the first character after *
+
+            while (*value != '\0')
+            {
+                if (*mask == *value && AdvEqual(mask+1,value+1)) return true; // found
+                value++;
+            }
+        }
+        else return false; // no match
+
+    }
+    return *mask == '\0' && *value == '\0'; // both strings has the same end
 }
 
 int ScanHex(const char *&p,uint8_t *dst,int dst_size)
@@ -1232,13 +1291,30 @@ int base64_decode(const unsigned char *src,int src_size,char *dst,int dst_size)
     return d-dst;
 }
 
+static int64_t base_xor_value = 0;
+
+static void s_init_base_xor_value()
+{
+    struct timespec tm0;
+    if (clock_gettime(CLOCK_MONOTONIC,&tm0) < 0)
+        base_xor_value = time(nullptr);
+    else
+        base_xor_value = (int64_t)tm0.tv_sec * 1000000000 + tm0.tv_nsec;
+}
 
 int64_t genI64()
 {
-    return static_cast<int64_t>(random()) << 31 | random();
+    int64_t value = static_cast<int64_t>(random()) << 31 | random();
+// this was not random enough
+    if (base_xor_value == 0) s_init_base_xor_value();
+    value ^= base_xor_value++; // using sequence for increment
+    return value;
 }
 
 uint64_t genU64()
 {
-    return static_cast<uint64_t>(random()) << 32 | random();
+    uint64_t value = static_cast<uint64_t>(random()) << 32 | random();
+    if (base_xor_value == 0) s_init_base_xor_value();
+    value ^= base_xor_value++;
+    return value;
 }
