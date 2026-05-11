@@ -125,14 +125,17 @@ public:
 
 class XML_Symbol_Info   // element of symbol table contains name and type of value
 {
+public:
     relative_ptr_t          name;   // null terminated string
     XML_Binary_Type         type;   // default type of value associated with symbol
 };
 
 class XML_ParamName_Info    // element of symbol table for paramnames
 {
+public:
     relative_ptr_t  name;
 };
+
 
 class XML_Param_Description
 {
