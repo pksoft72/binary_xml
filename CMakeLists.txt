@@ -11,7 +11,13 @@ set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 #message("binary_xml.CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 #set(CMAKE_CXX_COMPILER g++)
-add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
+
+if(ARCHITECTURE STREQUAL "ts7350")
+    add_compile_options(-g -fPIC )
+else()
+    add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
+endif()
+
 #find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
