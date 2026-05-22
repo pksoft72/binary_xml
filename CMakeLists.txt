@@ -18,6 +18,10 @@ else()
     add_compile_options(-g -fPIC -Wno-nonnull-compare )#-Wno-nonnull
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wno-psabi)
+endif()
+
 #find_package (OpenSSL)  #sudo apt-get install libssl-dev
 find_package (LibXml2)
 #include_directories(${OPENSSL_INCLUDE_DIRS})
