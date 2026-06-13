@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <iostream>
 
+#include <binary_xml/macros.h>
 #include <binary_xml/bin_xml_types.h>
 
 #if __cplusplus < 201103L
@@ -146,7 +147,7 @@ public:
     relative_ptr_t  data;
 
     int32_t getInt(const XML_Item *X) const {
-        if (this == nullptr) return INT32_NULL;
+        if (THIS_IS_NULL) return INT32_NULL;
         if (type == XBT_INT32) return static_cast<int32_t>(data);
         if (X == nullptr) return INT32_NULL;
         if (type == XBT_STRING) return atoi(reinterpret_cast<const char *>(X)+data);
@@ -209,7 +210,7 @@ public:
     inline const char *getFilename() const                          { return filename;}
     inline tag_name_id_t getNodeID(const char *name) const          { return static_cast<tag_name_id_t>(tag_symbols.getID(name));}
     inline param_name_id_t getParamID(const char *name) const       { return static_cast<param_name_id_t>(param_symbols.getID(name));}
-    inline XML_Item *getRoot() const                                { return (this == nullptr ? nullptr : data);}
+    inline XML_Item *getRoot() const                                { return (THIS_IS_NULL ? nullptr : data);}
     inline uint32_t getRelPtr(const char *value) const              { return (doc != nullptr && value > reinterpret_cast<char*>(doc) && value < reinterpret_cast<char*>(doc) + size ? (uint32_t)(value - reinterpret_cast<char*>(doc) ) : 0); } 
     inline const char *getString(uint32_t rel_ptr) const            { return (doc != nullptr && rel_ptr != 0 && rel_ptr < size ? (const char *) doc + rel_ptr : nullptr); }
 

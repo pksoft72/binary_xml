@@ -56,7 +56,7 @@ BW_plugins plugins;
 
 void BW_element::init(BW_pool *pool,int16_t identification,int8_t value_type,int8_t flags)
 {
-    if (this == nullptr)
+    if (THIS_IS_NULL)
     {
         LOG_ERROR("BW_element::init(NULL,id:%d=%s,value_type:%d=%s,flags:%u) called!",identification,
             (flags & BIN_WRITE_ELEMENT_FLAG ? pool->getTagName(identification) : pool->getAttrName(identification)),
@@ -129,7 +129,7 @@ BW_element* BW_element::join(BW_element *B)    // this will connect two circles
 
 BW_element* BW_element::add(BW_element *tag)
 {
-    if (this == nullptr) return this; // no where to add
+    if (THIS_IS_NULL) return this; // no where to add
     if (tag == nullptr) return this; // adding no elements
 
     BW_offset_t *list = (tag->flags & BIN_WRITE_ELEMENT_FLAG) ? &first_child : &first_attribute;
@@ -142,7 +142,7 @@ BW_element* BW_element::add(BW_element *tag)
 
 BW_element* BW_element::remove(BW_element *tag)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (tag == nullptr) return this;
 
     BW_offset_t *list = (tag->flags & BIN_WRITE_ELEMENT_FLAG) ? &first_child : &first_attribute;
@@ -163,7 +163,7 @@ BW_element* BW_element::remove(BW_element *tag)
 
 BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
 {
-    if (this == nullptr) return nullptr; // no where to add
+    if (THIS_IS_NULL) return nullptr; // no where to add
     if (old_value == nullptr) return nullptr; // failure
 
     ASSERT_NO_RET_NULL(2016,new_value->next == new_value->offset);
@@ -189,7 +189,7 @@ BW_element* BW_element::replace(BW_element *old_value,BW_element *new_value)
 
 BW_element*     BW_element::retype(XML_Binary_Type new_type)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (this->value_type == new_type) return this; // the same
 
     if (XBT_IS_4(new_type))
@@ -222,7 +222,7 @@ BW_element*     BW_element::retype(XML_Binary_Type new_type)
 
 BW_element*     BW_element::attrNull(int16_t id)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
     CHECK_TYPE2_RET_NULL(1985,XBT_NULL,XBT_VARIANT);
@@ -245,7 +245,7 @@ BW_element*     BW_element::attrNull(int16_t id)
 
 BW_element*     BW_element::attrStr(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (value == nullptr) return this; // adding null value string is as nothing is added
 
     BW_pool             *pool = getPool();    
@@ -275,7 +275,7 @@ BW_element*     BW_element::attrStr(int16_t id,const char *value)
 
 BW_element*     BW_element::attrStr2(int16_t id,const char *beg,const char *end)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (beg == nullptr) return this; // adding null value string is as nothing is added
     if (end == nullptr) return this; // adding null value string is as nothing is added
 
@@ -307,7 +307,7 @@ BW_element*     BW_element::attrStr2(int16_t id,const char *beg,const char *end)
 
 BW_element*     BW_element::attrHexStr(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (value == nullptr) return this; // adding null value string is as nothing is added
     ASSERT_NO_RET_NULL(1083,NOT_IMPLEMENTED); // TODO: variant
     return this;
@@ -315,7 +315,7 @@ BW_element*     BW_element::attrHexStr(int16_t id,const char *value)
 
 BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -346,7 +346,7 @@ BW_element*     BW_element::attrBLOB(int16_t id,const void *value,int32_t size)
 
 BW_element*     BW_element::attrHEX(int16_t id,const void *value,int32_t size)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -378,7 +378,7 @@ BW_element*     BW_element::attrHEX(int16_t id,const void *value,int32_t size)
 
 BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_attr)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -401,7 +401,7 @@ BW_element*     BW_element::attrInt32(int16_t id,int32_t value,BW_element **dst_
 
 BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -424,7 +424,7 @@ BW_element*     BW_element::attrUInt32(int16_t id,uint32_t value)
 
 BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -449,7 +449,7 @@ BW_element*     BW_element::attrInt64(int16_t id,int64_t value)
 
 BW_element  *BW_element::attrUInt64(int16_t id,uint64_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -473,7 +473,7 @@ BW_element  *BW_element::attrUInt64(int16_t id,uint64_t value)
 
 BW_element*     BW_element::attrFloat(int16_t id,float value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -493,7 +493,7 @@ BW_element*     BW_element::attrFloat(int16_t id,float value)
 
 BW_element*     BW_element::attrDouble(int16_t id,double value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -513,7 +513,7 @@ BW_element*     BW_element::attrDouble(int16_t id,double value)
 
 BW_element*     BW_element::attrGUID(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -533,7 +533,7 @@ BW_element*     BW_element::attrGUID(int16_t id,const char *value)
 
 BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -553,7 +553,7 @@ BW_element*     BW_element::attrSHA1(int16_t id,const char *value)
 
 BW_element*     BW_element::attrTime(int16_t id,time_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -580,7 +580,7 @@ BW_element*     BW_element::attrTime(int16_t id,time_t value)
 
 BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -608,21 +608,21 @@ BW_element* BW_element::attrTime64(int16_t id,int64_t value)
 
 BW_element*     BW_element::attrIPv4(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
         ASSERT_NO_RET_NULL(1097,NOT_IMPLEMENTED); // TODO: variant
     return this;
 }
 
 BW_element*     BW_element::attrIPv6(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
         ASSERT_NO_RET_NULL(1098,NOT_IMPLEMENTED); // TODO: variant
     return this;
 }
 
 BW_element*     BW_element::attrData(int16_t id,XML_Binary_Data_Ref &data)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = pool->getAttrType(id);
@@ -665,14 +665,14 @@ BW_element*     BW_element::attrData(int16_t id,XML_Binary_Data_Ref &data)
 
 BW_element*     BW_element::attrCopy(XB_reader &xb,XML_Item *X,XML_Param_Description *param_desc)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     XML_Binary_Data_Ref data = param_desc->getData(X);
     return attrData(param_desc->name,data);
 }
 
 BW_element  *BW_element::attrGet(int16_t id)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (first_attribute == 0) return nullptr;
 
     BW_element *A = BWE(first_attribute);
@@ -691,7 +691,7 @@ BW_element*  BW_element::NextChild(BW_offset_t &offset)
 // for(BW_offset_t idx = 0,BW_element *X;X != nullptr;X = NextChild(idx))
 // 
 {
-    if (this == nullptr) return nullptr; // empty list -> no children
+    if (THIS_IS_NULL) return nullptr; // empty list -> no children
 
     if (offset == 0) // first element of loop
     {
@@ -708,7 +708,7 @@ BW_element*  BW_element::NextChild(BW_offset_t &offset)
 
 BW_element*  BW_element::PrevChild(BW_offset_t &offset)
 {
-    if (this == nullptr) return nullptr; // empty list -> no children
+    if (THIS_IS_NULL) return nullptr; // empty list -> no children
     if (offset == 0) // first element of loop
     {
         if (first_child == 0) 
@@ -726,7 +726,7 @@ BW_element*  BW_element::PrevChild(BW_offset_t &offset)
 
 BW_element  *BW_element::tagGet(int16_t id)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (first_child == 0) return nullptr;
 
     BW_element *A = BWE(first_child);
@@ -756,7 +756,7 @@ char *BW_element::tagGetStr(int16_t id)
 
 BW_element  *BW_element::tag(int16_t id) // find or create
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     BW_element *target = tagGet(id);
     if (target != nullptr) return target;
     target = getPool()->tag(id);
@@ -767,7 +767,7 @@ BW_element  *BW_element::tag(int16_t id) // find or create
 
 BW_element  *BW_element::tagSetInt32(int16_t id,int32_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_element *target = tagGet(id);
     if (target == nullptr) // no previous value - ok, create new
@@ -795,7 +795,7 @@ BW_element  *BW_element::tagSetInt32(int16_t id,int32_t value)
 
 BW_element  *BW_element::tagSetInt64(int16_t id,int64_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_element *target = tagGet(id);
     if (target == nullptr) // no previous value - ok, create new
@@ -823,7 +823,7 @@ BW_element  *BW_element::tagSetInt64(int16_t id,int64_t value)
 
 BW_element  *BW_element::tagSetString(int16_t id,const char *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     BW_element *target = tagGet(id);
     if (target == nullptr) // no previous value - ok, create new
@@ -857,7 +857,7 @@ BW_element  *BW_element::tagSetString(int16_t id,const char *value)
 
 BW_element  *BW_element::tagSetTime(int16_t id,time_t value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     BW_element *target = tagGet(id);
     if (target != nullptr)
     {
@@ -875,7 +875,7 @@ BW_element  *BW_element::tagSetTime(int16_t id,time_t value)
 
 BW_element  *BW_element::tagSetSHA1(int16_t id,const uint8_t *value)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     BW_element *target = tagGet(id);
     if (target != nullptr)
     {
@@ -898,7 +898,7 @@ BW_element  *BW_element::tagSetSHA1(int16_t id,const uint8_t *value)
 
 int32_t *BW_element::getInt32()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
 //    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
@@ -913,7 +913,7 @@ int32_t *BW_element::getInt32()
 
 float *BW_element::getFloat()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
 //    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
@@ -929,7 +929,7 @@ float *BW_element::getFloat()
 
 time_t *BW_element::getTime()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     XML_Binary_Type     attr_type = getSymbolType();
     if (attr_type != XBT_UNIX_TIME)
@@ -943,7 +943,7 @@ time_t *BW_element::getTime()
 
 int64_t *BW_element::getInt64()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
 //    BW_pool             *pool = getPool();    
     XML_Binary_Type     attr_type = getSymbolType();
@@ -962,7 +962,7 @@ int64_t *BW_element::getInt64()
 
 uint64_t *BW_element::getUInt64()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     XML_Binary_Type     attr_type = getSymbolType();
     if (attr_type != XBT_UINT64)
@@ -977,7 +977,7 @@ uint64_t *BW_element::getUInt64()
 
 GUID_t *BW_element::getGUID()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
 
     XML_Binary_Type     attr_type = getSymbolType();
     if (attr_type != XBT_GUID)
@@ -992,7 +992,7 @@ GUID_t *BW_element::getGUID()
 
 char *BW_element::getStr()
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (value_type == XBT_STRING) return reinterpret_cast<char*>(this+1);
     if (value_type == XBT_BLOB_STRING) return reinterpret_cast<char*>(this+1)+4;
     return nullptr;
@@ -1007,7 +1007,7 @@ XML_Binary_Data_Ref BW_element::getData()
     R.size = 0;
     R.content_size = 0;
 
-    if (this == nullptr) return R;
+    if (THIS_IS_NULL) return R;
     R.content = R.data = reinterpret_cast<char*>(this+1);
     R.type = static_cast<XML_Binary_Type>(value_type);
     if (value_type == XBT_STRING) 
@@ -1065,7 +1065,7 @@ bool BW_element::setStr(BW_plugin *W,BW_element *parent,const char *value)
 BW_element  *BW_element::findChildByTag(int16_t tag_id)
 // the same like tagGet(id)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     // for all children
     
     if (first_child == 0) return nullptr; // no children
@@ -1084,7 +1084,7 @@ BW_element  *BW_element::findChildByTag(int16_t tag_id)
 
 BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Binary_Type value_type,const void *data,int data_size)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     // for all children
     
     if (first_child == 0) return nullptr; // no children
@@ -1123,7 +1123,7 @@ BW_element  *BW_element::findChildByParam(int16_t tag_id,int16_t attr_id,XML_Bin
 
 BW_element  *BW_element::findAttr(int16_t attr_id)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     // for all children
     
     if (first_attribute == 0) return nullptr; // no children
@@ -1604,7 +1604,7 @@ bool   BW_pool::check_id()
 const char *BW_pool::getDocTypeName() 
 // For debugging purposes - which XBW has problem?
 {
-    if (this == nullptr) return "(NULL)";
+    if (THIS_IS_NULL) return "(NULL)";
 //    if (pool_format_version >= BIN_WRITE_POOL_FORMAT_VERSION_WITH_PARENT)
 //    {
 //        return doc_type_name;

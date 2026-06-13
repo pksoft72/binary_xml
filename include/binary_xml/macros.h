@@ -129,5 +129,9 @@ extern const bool NOT_FINISHED;     // used in assert
 #define BIT32(_b) ((uint32_t)1 << (_b))
 #define BIT64(_b) ((uint64_t)1 << (_b))
 
+#define THIS_IS_NULL (this == NULL_PTR)
+
+extern void *NULL_PTR;
+
 //#define exit _exit
 #endif
