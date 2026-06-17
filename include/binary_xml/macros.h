@@ -1,5 +1,5 @@
-#ifndef _MACROS_H_
-#define _MACROS_H_
+#ifndef _XB_MACROS_H_
+#define _XB_MACROS_H_
 
 
 #ifdef __cplusplus
@@ -14,7 +14,10 @@
 #ifndef nullptr
     #define nullptr NULL
 #endif
-#define INT_NULL_VALUE -0x80000000
+
+#ifndef INT_NULL_VALUE 
+    #define INT_NULL_VALUE -0x80000000
+#endif
 #define INT16_NULL_VALUE -0x8000
 
 #define IFNULL2(a,b) ((a) == INT_NULL_VALUE ? (b) : (a))
@@ -35,50 +38,78 @@ typedef struct
 
 extern ProcessDebugStatus_t *debug_status; // automatically initialized to local variable, but it is better to redirect to shared memory
 
-#define LOG_NO(x)   do { if (debug_status != nullptr) { debug_status->log_no = (x);debug_status->log2_no = 0;} } while(0)
-#define LOG2_NO(x)  do { if (debug_status != nullptr) debug_status->log2_no = (x); } while(0)
+#ifndef LOG_NO
+    #define LOG_NO(x)   do { if (debug_status != nullptr) { debug_status->log_no = (x);debug_status->log2_no = 0;} } while(0)
+#endif
+
+#ifndef LOG2_NO
+    #define LOG2_NO(x)  do { if (debug_status != nullptr) debug_status->log2_no = (x); } while(0)
+#endif
 #define FAIL(x)     do { if (debug_status != nullptr && debug_status->fail_count < MAX_FAILURES) debug_status->failures[debug_status->fail_count++] = (x); } while(0) 
                        
 
-#define ERRNO_SHOW(code,command,params) do {FAIL(code);int __e = errno;std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
+#ifndef ERRNO_SHOW
+    #define ERRNO_SHOW(code,command,params) do {FAIL(code);int __e = errno;std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
+#endif
 #define ERRNO_SHOW_EXPL(code,command,params,__e) do {FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
 #define ERRNO_SHOW_MSG(code,command,params,msg) do {FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - : " << msg << ANSI_RESET_LF;} while(0)
 
 #define WORK_ID ""
 
-#ifdef __cplusplus
-    #ifndef NDEBUG
-        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << WORK_ID << ":" << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
-    #else
-        #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << WORK_ID << ":" << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
+#ifndef COMMON_MACROS_H_
+    #ifdef __cplusplus
+        #ifndef NDEBUG
+            #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << WORK_ID << ":" << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion " << #condition << " failed!" ANSI_RESET_LF;action;}} while(0)
+        #else
+            #define ASSERT_NO_(code,condition,action) do {if (!(condition)) { FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] " << WORK_ID << ":" << __FUNCTION__ << ":" ANSI_RED_DARK " Assertion failed!" ANSI_RESET_LF;action;}} while(0)
+        #endif
     #endif
+
+    #define ASSERT_NO_RET_FALSE(code,condition) ASSERT_NO_(code,condition,return false)
+    #define ASSERT_NO_RET_NULL(x,condition)    ASSERT_NO_(x,condition,return NULL)
+    #define ASSERT_NO_RET_0(x,condition)        ASSERT_NO_(x,condition,return 0)
+    #define ASSERT_NO_RET_1(x,condition)        ASSERT_NO_(x,condition,return 1)
+    #define ASSERT_NO_RET_N1(x,condition)        ASSERT_NO_(x,condition,return -1)
+    #define ASSERT_NO_RET_(x,condition,retvalue)        ASSERT_NO_((x),(condition),return (retvalue))
+    #define ASSERT_NO_RET_TIP_(x,condition,retvalue,tip)        ASSERT_NO_((x),(condition),std::cerr << ANSI_BLUE_BRIGHT << tip << ANSI_RESET_LF;return (retvalue))
+    #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
+    #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
+    #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
+    extern const bool NOT_IMPLEMENTED;  // used in assert
+    extern const bool NOT_FINISHED;     // used in assert
 #endif
 
-#define ASSERT_NO_RET_FALSE(code,condition) ASSERT_NO_(code,condition,return false)
-#define ASSERT_NO_RET_NULL(x,condition)    ASSERT_NO_(x,condition,return NULL)
-#define ASSERT_NO_RET_0(x,condition)        ASSERT_NO_(x,condition,return 0)
-#define ASSERT_NO_RET_1(x,condition)        ASSERT_NO_(x,condition,return 1)
-#define ASSERT_NO_RET_N1(x,condition)        ASSERT_NO_(x,condition,return -1)
-#define ASSERT_NO_RET_(x,condition,retvalue)        ASSERT_NO_((x),(condition),return (retvalue))
-#define ASSERT_NO_RET_TIP_(x,condition,retvalue,tip)        ASSERT_NO_((x),(condition),std::cerr << ANSI_BLUE_BRIGHT << tip << ANSI_RESET_LF;return (retvalue))
-#define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
-#define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
-#define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
-
-extern const bool NOT_IMPLEMENTED;  // used in assert
-extern const bool NOT_FINISHED;     // used in assert
 
 #ifndef STRCPY
     #define STRCPY(dst,src) do {const char *__src = (src);if ((__src) != nullptr) {strncpy((dst),(__src),sizeof(dst)-1);dst[sizeof(dst)-1] = '\0';} else dst[0] = '\0';} while(0)
 #endif
-#define STRCPY_LINE(dst,src) do {const char *_NL = strchr((src),'\n');int _size = sizeof(dst);if (_NL != nullptr) _size = _NL - (src);strncpy(dst,src,_size);dst[sizeof(dst)-1] = '\0';} while(0)
-#define STR_TERMINATE(_s) (_s)[sizeof(_s)-1] = '\0'
-#define STR_FMT(_name,_size,...) char _name[_size];snprintf(_name,_size,__VA_ARGS__);_name[_size-1] = '\0'
-#define DELETE_STR(x) if ((x) != nullptr) {delete [] (x);(x) = nullptr;}
-#define MEMSET(dst,value) memset(dst,value,sizeof(dst))
 
-#define LOG_ERROR(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_RED_BRIGHT "Error: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
-#define LOG_WARNING(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_MAGENTA_BRIGHT "Warning: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
+#ifndef STRCPY_LINE
+    #define STRCPY_LINE(dst,src) do {const char *_NL = strchr((src),'\n');int _size = sizeof(dst);if (_NL != nullptr) _size = _NL - (src);strncpy(dst,src,_size);dst[sizeof(dst)-1] = '\0';} while(0)
+#endif
+
+#ifndef STR_TERMINATE
+    #define STR_TERMINATE(_s) (_s)[sizeof(_s)-1] = '\0'
+#endif
+
+#ifndef STR_FMT
+    #define STR_FMT(_name,_size,...) char _name[_size];snprintf(_name,_size,__VA_ARGS__);_name[_size-1] = '\0'
+#endif
+
+#define DELETE_STR(x) if ((x) != nullptr) {delete [] (x);(x) = nullptr;}
+
+#ifndef MEMSET
+    #define MEMSET(dst,value) memset(dst,value,sizeof(dst))
+#endif
+
+
+#ifndef LOG_ERROR
+    #define LOG_ERROR(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_RED_BRIGHT "Error: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
+#endif
+
+#ifndef LOG_WARNING
+    #define LOG_WARNING(fmt,...) do { fflush(stdout);fprintf(stderr,"%s: " ANSI_MAGENTA_BRIGHT "Warning: " ANSI_RED_DARK fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while(0)
+#endif
 #define LOG(fmt,...) do {fflush(stdout);fprintf(stderr,ANSI_BLACK_BRIGHT "%s\t" ANSI_RESET fmt ANSI_RESET_LF,__FUNCTION__,__VA_ARGS__);fflush(stderr);} while (0)
 
 #define NSEC2MS_US(ns) (int)((ns) / 1000000),(int)((ns) / 1000 % 1000)
@@ -96,7 +127,9 @@ extern const bool NOT_FINISHED;     // used in assert
     #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
 
-#define DIV_MOD_1000(x) (int)((x) / 1000),(int)((x) % 1000)
+#ifndef DIV_MOD_1000
+    #define DIV_MOD_1000(x) (int)((x) / 1000),(int)((x) % 1000)
+#endif
 
 #define ARR_SIZE(_arr) (sizeof(_arr) / sizeof(_arr[0]))
 
@@ -104,12 +137,21 @@ extern const bool NOT_FINISHED;     // used in assert
     #define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
 #endif
 
-#define LT_U32(a,b) ((int32_t)((uint32_t)(a) - (uint32_t)(b)) < 0)
-#define GT_U32(a,b) ((int32_t)((uint32_t)(a) - (uint32_t)(b)) > 0)
+#ifndef LT_U32
+    #define LT_U32(a,b) ((int32_t)((uint32_t)(a) - (uint32_t)(b)) < 0)
+#endif
 
-#define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
+#ifndef GT_U32
+    #define GT_U32(a,b) ((int32_t)((uint32_t)(a) - (uint32_t)(b)) > 0)
+#endif
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#ifndef LIMITE
+    #define LIMITE(v,min,max) do{if ((v) < (min)) (v) = (min);if ((v) > (max)) (v) = (max);}while(0)
+#endif
+
+#ifndef ARRAY_SIZE
+    #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#endif
 
 #ifdef __cplusplus
     #define BEGIN_EXTERN_C extern "C" {
@@ -126,10 +168,14 @@ extern const bool NOT_FINISHED;     // used in assert
                         ((x) >= 'A' && (x) <= 'F' ? (x) - 'A' + 10 :\
                         -1)))
 
-#define BIT32(_b) ((uint32_t)1 << (_b))
+#ifndef BIT32
+    #define BIT32(_b) ((uint32_t)1 << (_b))
+#endif
 #define BIT64(_b) ((uint64_t)1 << (_b))
 
-#define THIS_IS_NULL (this == NULL_PTR)
+#ifndef THIS_IS_NULL 
+    #define THIS_IS_NULL (this == NULL_PTR)
+#endif
 
 extern void *NULL_PTR;
 
