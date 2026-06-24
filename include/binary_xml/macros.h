@@ -11,8 +11,10 @@
 #include <unistd.h>
 #include <binary_xml/ANSI.h>
 
-#ifndef nullptr
-    #define nullptr NULL
+#if __cplusplus <= 199711L
+    #ifndef nullptr
+        #define nullptr NULL
+    #endif
 #endif
 
 #ifndef INT_NULL_VALUE 

@@ -10,7 +10,7 @@
 #include <binary_xml/macros.h>
 #include <binary_xml/bin_xml_types.h>
 
-#if __cplusplus < 201103L
+#if __cplusplus <= 199711L
     #ifndef nullptr
         #define nullptr NULL
     #endif
