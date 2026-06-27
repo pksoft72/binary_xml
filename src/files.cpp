@@ -10,6 +10,10 @@
 #include <time.h>
 #include <dirent.h> // readdir ...
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 bool force_directory(const char *directory, mode_t mode)
 {
     const int len = strlen(directory);
@@ -86,6 +90,27 @@ bool file_exists(const char *filename)
         return false; // failed
     }
     return true;
+}
+
+int file_get_contents(const char *filename,char *content,int size)
+{
+    memset(content,0,size);
+
+    int fd = open(filename,O_RDONLY);
+    if (fd < 0)
+    {
+        ERRNO_SHOW(10509,"open",filename);
+        return -1; // fail
+    }
+
+    int rd = read(fd,content,size);
+    if (rd < 0)
+        ERRNO_SHOW(10510,"read",filename);
+
+    if (close(fd) < 0)
+        ERRNO_SHOW(10511,"close",filename);
+
+    return rd;
 }
 
 bool scan_dir(const char *base_dir,void *userdata,on_file_event on_file)
