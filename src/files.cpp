@@ -92,7 +92,7 @@ bool file_exists(const char *filename)
     return true;
 }
 
-int file_get_contents(const char *filename,char *content,int size)
+int file_get_contents(const char *filename,void *content,int size)
 {
     memset(content,0,size);
 

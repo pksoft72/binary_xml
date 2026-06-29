@@ -13,7 +13,10 @@ off_t file_getsize(const char *filename);
 time_t file_gettime(const char *filename);
 bool file_exists(const char *filename);
 
-int file_get_contents(const char *filename,char *conetent,int size);
+#ifndef FILE_GET_CONTENTS_DEFINED
+#define FILE_GET_CONTENTS_DEFINED
+int file_get_contents(const char *filename,void *content,int size);
+#endif
 
 typedef bool (*on_file_event)(const char *directory,const char *filename,void *userdata,uint8_t d_type);
 /*
