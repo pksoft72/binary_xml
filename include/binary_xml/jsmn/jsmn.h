@@ -29,7 +29,7 @@ typedef enum {
 	((t) == JSMN_ARRAY ? "ARRAY" :\
 	((t) == JSMN_STRING ? "STRING" :\
 	((t) == JSMN_PRIMITIVE ? "PRIMITIVE" :\
-	"???"())))))
+	"???")))))
 
 enum jsmnerr {
 	/* Not enough tokens were provided */

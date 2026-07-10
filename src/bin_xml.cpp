@@ -25,7 +25,7 @@ namespace pklib_xml
 bool XML_Item::Check(XB_reader *R,bool recursive) 
 // I want to check everything to be 100% sure, data are ok
 {
-    if (this == nullptr) return false;  // NULL is not ok
+    if (THIS_IS_NULL) return false;  // NULL is not ok
     if (R == nullptr) return false;
     if (this < R->doc) return false; // out of space
     if (reinterpret_cast<const char *>(this)+sizeof(XML_Item) > reinterpret_cast<const char *>(R->doc)+R->size) return false;
@@ -113,7 +113,7 @@ bool XML_Item::Check(XB_reader *R,bool recursive)
 int32_t s_int32_value = -1;
 const int32_t *XML_Param_Description::getInt32Ptr(const XML_Item *X,XML_Binary_Type int_type) const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (X == nullptr) return nullptr;
     if (type == int_type) return reinterpret_cast<const int32_t *>(&data);
     if (type == XBT_STRING) 
@@ -133,7 +133,7 @@ const int32_t *XML_Param_Description::getIntPtr(const XML_Item *X) const
 static int64_t s_int64_value = -1;
 const int64_t *XML_Param_Description::getInt64Ptr(const XML_Item *X) const 
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (X == nullptr) return nullptr;
     if (type == XBT_INT64) return reinterpret_cast<const int64_t *>(&data);
     if (type == XBT_STRING) 
@@ -148,7 +148,7 @@ const int64_t *XML_Param_Description::getInt64Ptr(const XML_Item *X) const
 
 const char *XML_Param_Description::getString(const XML_Item *X) const
 { 
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (X == nullptr) return nullptr;
 
 //    if (X.verbosity > 0)
@@ -171,7 +171,7 @@ const char *XML_Param_Description::getString(const XML_Item *X) const
 
 const int   XML_Param_Description::getStringChunk(const XML_Item *X,int &offset,char *dst,int dst_size) const
 {
-    if (this == nullptr) return 0;
+    if (THIS_IS_NULL) return 0;
     if (X == nullptr) return 0;
 
 
@@ -190,7 +190,7 @@ XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X)
     D.data = nullptr;
     D.size = 0; // D as Data
 
-    if (this == nullptr || X == nullptr) return D;
+    if (THIS_IS_NULL || X == nullptr) return D;
     D.type = static_cast<XML_Binary_Type>(type);
     if (XBT_IS_4(type)) 
     {
@@ -211,7 +211,7 @@ XML_Binary_Data_Ref XML_Param_Description::getData(XML_Item *X)
 
 XML_Param_Description *XML_Item::getParamByIndex(int i)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (i < 0) return nullptr;
     if (i >= paramcount) return nullptr;
     XML_Param_Description *params = reinterpret_cast<XML_Param_Description*>(this+1);
@@ -220,7 +220,7 @@ XML_Param_Description *XML_Item::getParamByIndex(int i)
 
 XML_Param_Description *XML_Item::getParamByName(XML_Param_Names code)
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (paramcount == 0) return nullptr;
     XML_Param_Description *params = reinterpret_cast<XML_Param_Description*>(this+1);
     for(int p = 0;p < paramcount;p++)
@@ -230,14 +230,14 @@ XML_Param_Description *XML_Item::getParamByName(XML_Param_Names code)
 
 const relative_ptr_t *XML_Item::getChildren() const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (childcount == 0) return nullptr;
     return reinterpret_cast<const relative_ptr_t*>(reinterpret_cast<const char*>(this+1)+paramcount*sizeof(XML_Param_Description));
 }
 
 XML_Item *XML_Item::getChildByIndex(int i) 
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (i < 0 || i >= childcount) return nullptr;
     
     return reinterpret_cast<XML_Item*>(reinterpret_cast<char*>(this)+getChildren()[i]);
@@ -245,7 +245,7 @@ XML_Item *XML_Item::getChildByIndex(int i)
 
 XML_Item *XML_Item::getChildByName(XML_Tag_Names code) 
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (childcount == 0) return nullptr;
     relative_ptr_t *children = reinterpret_cast<relative_ptr_t*>(reinterpret_cast<char*>(this+1)+paramcount*sizeof(XML_Param_Description));
     for(int ch = 0;ch < childcount;ch++)
@@ -259,7 +259,7 @@ XML_Item *XML_Item::getChildByName(XML_Tag_Names code)
 XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) // this method can show even extented xb elements
 // this method can show even extented xb elements
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     
     if (i >= childcount) return nullptr; // natural end of file
 
@@ -290,7 +290,7 @@ XML_Item *XML_Item::getNextChild(XB_reader &R,int &i) // this method can show ev
 
 void XML_Item::ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int deep)
 {
-    if (this == nullptr) return;
+    if (THIS_IS_NULL) return;
     ASSERT_NO_EXIT_1(1031,on_item != nullptr);
     for(int i = 0;i < childcount;i++)
     {
@@ -305,7 +305,7 @@ void XML_Item::ForAllChildrenRecursively(OnItem_t on_item,void *userdata,int dee
 
 void  XML_Item::ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userdata,int deep) 
 {
-    if (this == nullptr) return;
+    if (THIS_IS_NULL) return;
     ASSERT_NO_EXIT_1(1032,on_item != nullptr);
     for(int i = 0;i < childcount;i++)
     {
@@ -319,7 +319,7 @@ void  XML_Item::ForAllChildrenRecursively_PostOrder(OnItem_t on_item,void *userd
 
 void  XML_Item::ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *userdata,int deep,XML_Item **root)
 {
-    if (this == nullptr) return;
+    if (THIS_IS_NULL) return;
     ASSERT_NO_EXIT_1(1175,on_item != nullptr);
 
     if (root != nullptr && deep < XML_MAX_DEEP)
@@ -337,7 +337,7 @@ void  XML_Item::ForAllChildrenRecursively_PostOrderA(OnItemA_t on_item,void *use
 
 const char *XML_Item::getString() const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     CHECK_AA_THIS;
 
     const char *p = reinterpret_cast<const char*>(this+1)
@@ -354,7 +354,7 @@ const char *XML_Item::getString() const
 
 const int XML_Item::getStringChunk(int &offset,char *dst,int dst_size) const
 {
-    if (this == nullptr) return 0;
+    if (THIS_IS_NULL) return 0;
     CHECK_AA_THIS;
     
     const char *p = reinterpret_cast<const char*>(this+1)
@@ -370,7 +370,7 @@ const int XML_Item::getStringChunk(int &offset,char *dst,int dst_size) const
 
 const void *XML_Item::getBinary(int32_t *size) const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     CHECK_AA_THIS;
 
     const char *p = reinterpret_cast<const char*>(this+1)
@@ -397,7 +397,7 @@ const void *XML_Item::getBinary(int32_t *size) const
 
 int32_t XML_Item::getInt() const
 {
-    if (this == nullptr) return INT32_NULL;
+    if (THIS_IS_NULL) return INT32_NULL;
     CHECK_AA_THIS;
 
     const char *p = reinterpret_cast<const char*>(this+1)
@@ -422,7 +422,7 @@ int32_t XML_Item::getInt() const
 
 const int32_t *XML_Item::getIntPtr() const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     CHECK_AA_THIS;
 
     const char *p = reinterpret_cast<const char*>(this+1)
@@ -448,7 +448,7 @@ const int32_t *XML_Item::getIntPtr() const
 
 const int64_t *XML_Item::getInt64Ptr() const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     CHECK_AA_THIS;
 
     const char *p = reinterpret_cast<const char*>(this+1)
@@ -480,7 +480,7 @@ XML_Binary_Data_Ref XML_Item::getData()
     R.data = nullptr;
     R.size = 0;
 
-    if (this == nullptr) return R;
+    if (THIS_IS_NULL) return R;
     CHECK_AA_THIS;
 
     char *p = reinterpret_cast<char*>(this+1)
@@ -523,7 +523,7 @@ XML_Binary_Data_Ref XML_Item::getData()
 
 void XML_Item::write(std::ostream& os,XB_reader &R,int deep) 
 {
-    if (this == nullptr) return;
+    if (THIS_IS_NULL) return;
     if (R.verbosity > 0)
     {
         for(int t = 0;t < deep;t++) std::cerr << "\t";
@@ -604,7 +604,7 @@ void XML_Item::write(std::ostream& os,XB_reader &R,int deep)
 
 /*int32_t XML_Param_Description::getInt(const XML_Item *X) const
 {
-    if (this == nullptr) return INT32_NULL;
+    if (THIS_IS_NULL) return INT32_NULL;
     if (X == nullptr) return INT32_NULL;
     if (type == XBT_INT32) return static_cast<int32_t>(data);
 // TODO: all other types!
@@ -613,7 +613,7 @@ void XML_Item::write(std::ostream& os,XB_reader &R,int deep)
 
 const char *XML_Param_Description::getString(const XML_Item *X) const
 {
-    if (this == nullptr) return nullptr;
+    if (THIS_IS_NULL) return nullptr;
     if (X == nullptr) return nullptr;
     if (type == XBT_STRING) return reinterpret_cast<const char *>(X)+data;
     if (type == XBT_NULL) return "";
