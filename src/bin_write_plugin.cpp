@@ -2842,6 +2842,7 @@ void BW_plugin::ForAllChildrenRecursively(OnElementRec_t on_element,void *parent
         ForAllChildrenRecursively(on_element,child,userdata,deep+1);
 
         if (child->next == E->first_child) break; // finished
+        if (child->next == child->offset) break; // breaked
         child = BWE(child->next);
     }
 }
@@ -2859,6 +2860,7 @@ void BW_plugin::ForAllParams(OnParam_t on_param,void *element,void *userdata)
         on_param(pool->getAttrName(child->identification),getNodeValue(child),element,userdata);
 
         if (child->next == E->first_attribute) break; // finished
+        if (child->next == child->offset) break; // breaked
         child = BWE(child->next);
     }
 }
