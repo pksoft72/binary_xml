@@ -92,6 +92,7 @@ BW_pool* BW_element::getPool() // const cannot be here
 
 BW_element* BW_element::BWE(BW_offset_t offset) //const cannot be here!
 {
+    if (offset == 0) return nullptr;
     return reinterpret_cast<BW_element*>(THIS - this->offset + offset);
 }
 
@@ -2809,6 +2810,7 @@ const char *BW_plugin::getNodeBinValue(void *element,XML_Binary_Type &type,int &
 
 BW_element* BW_plugin::BWE(BW_offset_t offset)
 {
+    if (offset == 0) return nullptr;
     ASSERT_NO_RET_NULL(1165,offset >= 0);
     ASSERT_NO_RET_NULL(1166,offset+sizeof(BW_element) <= pool->file_size);
     
