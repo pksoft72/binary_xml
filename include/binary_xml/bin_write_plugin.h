@@ -131,7 +131,7 @@ public: // index tables (indexed by id) - allocated on pool
     bool            check_id();
 
     const char *    getDocTypeName();
-    BW_element*     BWE(BW_offset_t offset) {return reinterpret_cast<BW_element*>(reinterpret_cast<char *>(this) + offset);};
+    BW_element*     BWE(BW_offset_t offset) {if (offset == 0) return nullptr;return reinterpret_cast<BW_element*>(reinterpret_cast<char *>(this) + offset);};
 public:
     char*           allocate(int size);
     char*           allocate8(int size);        // 64 bit aligned value
