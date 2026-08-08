@@ -1438,7 +1438,9 @@ bool BW_symbol_table_16B::Open(BW_pool *pool)
 {
     ASSERT_NO_RET_FALSE(2100,pool != nullptr);
     int size = getNamesSize(pool);
-    if (index == 0 && names_offset + size == pool->allocator) return true; // no index means - it is opened
+    if (index == 0) // no index means - it is opened
+        if (names_offset == 0) return true; // will be externally initialized to allocator
+        else if (names_offset + size == pool->allocator) return true; 
 // prepare new copy of symbol tables with open end
     LOG("%s(%s/%s) - opening symbol table (max_id=%d,size=%d,offset.old=%d,allocator=%d (should be %d)",
                 __FUNCTION__,pool->getDocTypeName(),(&pool->tags == this ? "tags" : "params"),max_id,
@@ -2005,7 +2007,7 @@ bool BW_plugin::makeSpace(int size)
 
 bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 // I want to fill symbol tables with element names    
-// element names starts at offset pool->tags.names_offset and ends at pool->params.offset
+// element names starts at offset pool->tags.names_offset and ends at pool->params.names_offset
 {
     ASSERT_NO_RET_FALSE(1107,name != nullptr);
     ASSERT_NO_RET_FALSE(1119,type >= XBT_NULL && type < XBT_LAST);
@@ -2037,7 +2039,9 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
 
 // allocation
     int size = sizeof(int16_t)+sizeof(XML_Binary_Type_Stored)+len+1;
+    ROUND32UP(size);
     char *dst = pool->allocate(size); // ID:word|Type:byte|string|NUL:byte
+    //ASSERT_NO_RET_FALSE(2115,dst+size == reinterpret_cast<char*>(pool)+pool->allocator); this is normal after allocate
     ASSERT_NO_RET_FALSE(1121,dst != 0);
 // id
     *reinterpret_cast<int16_t*>(dst) = id;
@@ -2047,8 +2051,6 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
     dst += sizeof(XML_Binary_Type_Stored);
 // name
     strcpy(dst,name);
-    ROUND32UP(size);
-    ASSERT_NO_RET_FALSE(2115,dst+size == reinterpret_cast<char*>(pool)+pool->allocator);
     return true;
 }
 

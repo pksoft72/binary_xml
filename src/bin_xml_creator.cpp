@@ -270,6 +270,7 @@ Bin_xml_creator::Bin_xml_creator(const char *src,const char *dst,Bin_xml_creator
     this->dst_file_size = -1;
     
     this->data = nullptr;
+    this->data_size_allocated = 0;
 
 
 // 2nd pass to fill tables
@@ -972,7 +973,7 @@ void Bin_xml_creator::XStoreParamsEvent(const char *param_name,const char *param
     type = XBT_Detect2(param_value,type);
     int size = XBT_Size2(type,0);
     char *in_place_wp = reinterpret_cast<char*>(&xstore_data->params->data);
-    if (size == 4 && XBT_FromString(param_value,type,&in_place_wp,xstore_data->creator->data+xstore_data->creator->data_size_allocated))
+    if (size == 4 && XBT_FromString(param_value,type,&in_place_wp,xstore_data->creator->data + xstore_data->creator->data_size_allocated))
     {
         xstore_data->params->type = type;
     }
