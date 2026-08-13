@@ -1439,8 +1439,10 @@ bool BW_symbol_table_16B::Open(BW_pool *pool)
     ASSERT_NO_RET_FALSE(2100,pool != nullptr);
     int size = getNamesSize(pool);
     if (index == 0) // no index means - it is opened
+    {
         if (names_offset == 0) return true; // will be externally initialized to allocator
         else if (names_offset + size == pool->allocator) return true; 
+    }
 // prepare new copy of symbol tables with open end
     LOG("%s(%s/%s) - opening symbol table (max_id=%d,size=%d,offset.old=%d,allocator=%d (should be %d)",
                 __FUNCTION__,pool->getDocTypeName(),(&pool->tags == this ? "tags" : "params"),max_id,
