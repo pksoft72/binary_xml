@@ -132,6 +132,7 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #ifndef DIV_MOD_1000
     #define DIV_MOD_1000(x) (int)((x) / 1000),(int)((x) % 1000)
 #endif
+#define DIV_MOD_100(x) (int)((x) / 100),(int)((x) % 100)
 
 #define ARR_SIZE(_arr) (sizeof(_arr) / sizeof(_arr[0]))
 
