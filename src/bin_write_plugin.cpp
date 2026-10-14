@@ -109,7 +109,7 @@ BW_element* BW_element::join(BW_element *B)    // this will connect two circles
 // A0-A1-A2-A3-A4-A5...An-B0-B1-B2-B3-B4-B5...Bn-A0
 
 {
-    assert(this != nullptr);
+    assert(!THIS_IS_NULL);
     assert(B != nullptr);
 
     int A_prev_offset = this->prev;
@@ -1027,7 +1027,7 @@ XML_Binary_Data_Ref BW_element::getData()
 
 bool BW_element::setStr(BW_plugin *W,BW_element *parent,const char *value)
 {
-    ASSERT_NO_RET_FALSE(10436,this != nullptr);
+    ASSERT_NO_RET_FALSE(10436,!THIS_IS_NULL);
     ASSERT_NO_RET_FALSE(10431,parent != nullptr);
     XML_Binary_Data_Ref data_ref = getData();
 
@@ -1461,7 +1461,7 @@ bool BW_symbol_table_16B::Open(BW_pool *pool)
 
 XML_Binary_Type BW_pool::getTagType(int16_t id) 
 {
-    ASSERT_NO_(1063,this != nullptr,return XBT_UNKNOWN);
+    ASSERT_NO_(1063,!THIS_IS_NULL,return XBT_UNKNOWN);
     ASSERT_NO_(1051,tags.index != 0,return XBT_UNKNOWN);                // index not initialized 
 
     if (id >=0 && id <= tags.max_id)    // id in range
@@ -1494,7 +1494,7 @@ XML_Binary_Type BW_pool::getTagType(int16_t id)
 
 const char*     BW_pool::getTagName(int16_t id)
 {
-    ASSERT_NO_RET_NULL(1064,this != nullptr);
+    ASSERT_NO_RET_NULL(1064,!THIS_IS_NULL);
     ASSERT_NO_RET_NULL(1054,tags.index != 0);                // index not initialized 
     if (id < 0) return XTNR2str(id);
     ASSERT_NO_RET_NULL(1055,id >=0 && id <= tags.max_id);    // id out of range - should be in range, because range is defined by writing application
@@ -1508,7 +1508,7 @@ const char*     BW_pool::getTagName(int16_t id)
 
 XML_Binary_Type BW_pool::getAttrType(int16_t id)
 {
-    ASSERT_NO_(1065,this != nullptr,return XBT_UNKNOWN);
+    ASSERT_NO_(1065,!THIS_IS_NULL,return XBT_UNKNOWN);
     ASSERT_NO_(1057,params.index != 0,return XBT_UNKNOWN);                // index not initialized 
     if (id < 0)
     {
@@ -1538,7 +1538,7 @@ XML_Binary_Type BW_pool::getAttrType(int16_t id)
 
 const char*     BW_pool::getAttrName(int16_t id)
 {
-    ASSERT_NO_RET_NULL(1066,this != nullptr);
+    ASSERT_NO_RET_NULL(1066,!THIS_IS_NULL);
     ASSERT_NO_RET_NULL(1060,params.index != 0);                // index not initialized 
 
     if (id < 0) return XPNR2str(id);
@@ -1669,7 +1669,7 @@ BW_element*     BW_pool::new_element(XML_Binary_Type type,int size)
 // size is content only size
 // XBT_Size() will add envelope size
 {
-    ASSERT_NO_RET_NULL(1067,this != nullptr);
+    ASSERT_NO_RET_NULL(1067,!THIS_IS_NULL);
     int size2 = XBT_Size2(type,size);
     ASSERT_NO_RET_NULL(2075,size2 >= 0);
     //if (size2 < 0) return nullptr;
@@ -2026,7 +2026,7 @@ bool BW_plugin::registerTag(int16_t id,const char *name,XML_Binary_Type type)
         check_failures++; 
         return false;
     }
-    ASSERT_NO_RET_NULL(2108,pool->tags.Open(pool)); // must be opened
+    ASSERT_NO_RET_FALSE(2108,pool->tags.Open(pool)); // must be opened
 // elements must be defined first
 //    ASSERT_NO_RET_FALSE(1108,pool->params.names_offset == 0);
 
@@ -2075,7 +2075,7 @@ bool BW_plugin::registerAttr(int16_t id,const char *name,XML_Binary_Type type)
         check_failures++; 
         return false;
     }
-    ASSERT_NO_RET_NULL(2098,pool->params.Open(pool)); // must be opened
+    ASSERT_NO_RET_FALSE(2098,pool->params.Open(pool)); // must be opened
 
 // elements must be defined first, empty element are not allowed!
     ASSERT_NO_RET_FALSE(1115,pool->tags.names_offset != 0);
@@ -2281,7 +2281,7 @@ void BW_plugin::setRoot(const BW_element* X)
 
 void *BW_plugin::getRoot()
 {
-    ASSERT_NO_RET_NULL(1147,this != nullptr);
+    ASSERT_NO_RET_NULL(1147,!THIS_IS_NULL);
     ASSERT_NO_RET_NULL(1148,pool != nullptr);
     if (pool->root == 0) return nullptr;
 //    ASSERT_NO_RET_NULL(1183,pool->root != 0);
@@ -2608,7 +2608,7 @@ BW_element* BW_plugin::tagIPv6(int16_t id,const char *value)
 
 BW_element* BW_plugin::tagData(int16_t id,XML_Binary_Data_Ref &data)
 {
-    ASSERT_NO_RET_NULL(2003,this != nullptr);
+    ASSERT_NO_RET_NULL(2003,!THIS_IS_NULL);
     ASSERT_NO_RET_NULL(2002,makeSpace(BW2_INITIAL_FILE_SIZE+8+data.size));
 
     if (data.type == XBT_NULL)
