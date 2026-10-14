@@ -1005,6 +1005,8 @@ int  GetInt(const char *p)
     if (p == nullptr) return INT_NULL_VALUE;
 
     while (isspace(*p)) p++;
+
+    if (*p == '\0') return INT_NULL_VALUE; // no value
     
     bool neg = (*p == '-');
     if (neg) p++;
