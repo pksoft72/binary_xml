@@ -72,6 +72,7 @@ add_library(binary_xml SHARED ${binary_xml_SOURCES})
     target_include_directories(binary_xml PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(binary_xml ${LIBXML2_LIBRARIES} ${LIBZ_LIBRARIES})
     target_link_libraries(binary_xml rt) #glibc <2.17
+    target_link_libraries(binary_xml z)
 
 if(SPEC_XBW_LIB_AND_VIEW)
 else()
