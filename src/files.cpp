@@ -113,6 +113,27 @@ int file_get_contents(const char *filename,void *content,int size)
     return rd;
 }
 
+const char *get_proc_name(char *dst,int dst_size)
+{
+    int size = file_get_contents("/proc/self/comm",dst,dst_size);
+    if (size < 0)
+    {
+        strcpy(dst,"ERROR");
+        return dst;
+    }
+
+    if (size < dst_size)
+    {
+        dst[size] = '\0';
+        while(size > 0 && isspace(dst[size-1]))
+            dst[--size] = '\0';   
+    }
+    else
+        dst[dst_size-1] = '\0';
+
+    return dst;
+}
+
 bool scan_dir(const char *base_dir,void *userdata,on_file_event on_file)
 {
     DIR *dir = opendir(base_dir);

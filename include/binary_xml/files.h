@@ -18,6 +18,8 @@ bool file_exists(const char *filename);
 int file_get_contents(const char *filename,void *content,int size);
 #endif
 
+const char *get_proc_name(char *dst,int dst_size);
+
 typedef bool (*on_file_event)(const char *directory,const char *filename,void *userdata,uint8_t d_type);
 /*
 
