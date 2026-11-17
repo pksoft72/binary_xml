@@ -53,8 +53,12 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
 #ifndef ERRNO_SHOW
     #define ERRNO_SHOW(code,command,params) do {FAIL(code);int __e = errno;std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
 #endif
-#define ERRNO_SHOW_EXPL(code,command,params,__e) do {FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
-#define ERRNO_SHOW_MSG(code,command,params,msg) do {FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - : " << msg << ANSI_RESET_LF;} while(0)
+#ifndef ERRNO_SHOW_EXPL
+    #define ERRNO_SHOW_EXPL(code,command,params,__e) do {FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - " << __e << ": " << strerror(__e) << ANSI_RESET_LF;} while(0)
+#endif
+#ifndef ERRNO_SHOW_MSG
+    #define ERRNO_SHOW_MSG(code,command,params,msg) do {FAIL(code);std::cerr << ANSI_RED_BRIGHT "[" << (code) << "] Error: " command "(" << params << ") - : " << msg << ANSI_RESET_LF;} while(0)
+#endif
 
 #define WORK_ID ""
 
@@ -77,9 +81,9 @@ extern ProcessDebugStatus_t *debug_status; // automatically initialized to local
     #define ASSERT_NO_RET(x,condition)        ASSERT_NO_(x,condition,return)
     #define ASSERT_NO_EXIT_1(x,condition)        ASSERT_NO_(x,condition,_exit(1))
     #define ASSERT_NO_DO_NOTHING(x,condition)        ASSERT_NO_(x,condition,{})
-    extern const bool NOT_IMPLEMENTED;  // used in assert
-    extern const bool NOT_FINISHED;     // used in assert
 #endif
+extern const bool NOT_IMPLEMENTED;  // used in assert
+extern const bool NOT_FINISHED;     // used in assert
 
 
 #ifndef STRCPY
